@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f2f2ed" />
+    <meta name="description" content="Desafie um amigo a manter a consistência nos treinos." />
+    <title>Rep Club | Duelo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=challenge-period-1" />
+    <script src="app.js?v=challenge-period-1" defer></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <a class="brand" href="#inicio" aria-label="Rep Club, início">
+          <span class="brand-mark">R<span>+</span></span>
+          <span class="brand-name">REP<span>CLUB</span></span>
+        </a>
+
+        <div class="side-label">SEU ESPAÇO</div>
+        <nav class="side-nav">
+          <a class="nav-link active" href="#inicio"><span class="nav-mark">01</span>Visão geral</a>
+          <a class="nav-link" href="#programa"><span class="nav-mark">02</span>Programa</a>
+          <a class="nav-link" href="#atividade"><span class="nav-mark">03</span>Atividade</a>
+          <a class="nav-link" href="#evolucao"><span class="nav-mark">04</span>Evolução</a>
+          <a class="nav-link" href="#regras"><span class="nav-mark">05</span>Regras do duelo</a>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="challenge-mini">
+            <span class="live-dot"></span>
+            <span>DESAFIO ATIVO</span>
+            <strong>Até domingo</strong>
+          </div>
+          <button class="text-button reset-button" id="reset-demo" type="button">Reiniciar demonstração</button>
+          <p class="sidebar-note">MODO DEMO · DADOS NESTE NAVEGADOR</p>
+        </div>
+      </aside>
+
+      <main id="inicio" class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb"><span>REP CLUB</span><span class="breadcrumb-slash">/</span> DUELO 01</div>
+          <label class="profile-switcher">
+            <span>REGISTRAR COMO</span>
+            <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
+          </label>
+        </header>
+
+        <section class="intro-row">
+          <div>
+            <p class="eyebrow"><span class="live-dot"></span> DESAFIO PRIVADO <span class="eyebrow-divider">/</span> PERÍODO <span id="period-range-intro"></span></p>
+            <h1>Um treino a mais.<br /><span>Um ponto a mais.</span></h1>
+            <p class="intro-copy">Musculação, jiu-jitsu e cardio. Presença conta; execução faz a diferença.</p>
+          </div>
+        </section>
+
+        <section class="scoreboard" aria-labelledby="score-title">
+          <div class="scoreboard-topline"><span id="score-title">PERÍODO DO DUELO</span><span id="days-remaining">FALTAM 0 DIAS</span></div>
+          <div class="scoreboard-body">
+            <div class="competitor competitor-you">
+              <div class="avatar avatar-lime" id="you-avatar">M</div>
+              <div class="competitor-copy"><span class="competitor-label">SEU LADO</span><strong id="you-name">Matheus</strong></div>
+              <div class="competitor-score"><strong id="you-score">00</strong><span>PTS</span></div>
+            </div>
+            <div class="versus"><span>VS</span><div class="score-track"><div class="score-track-me" id="score-track-me"></div><div class="score-track-rival" id="score-track-rival"></div></div><p id="score-message">A disputa está aberta</p></div>
+            <div class="competitor competitor-rival">
+              <div class="competitor-score"><strong id="rival-score">00</strong><span>PTS</span></div>
+              <div class="competitor-copy"><span class="competitor-label">ADVERSÁRIO</span><strong id="rival-name">Rafa</strong></div>
+              <div class="avatar avatar-blue" id="rival-avatar">R</div>
+            </div>
+          </div>
+          <div class="scoreboard-footer"><span id="weekly-lead">A liderança muda a cada treino.</span><span>SESSÃO + EXECUÇÃO + ESFORÇO · ATÉ <strong>22 PTS</strong></span></div>
+          <div class="scoreboard-prize"><span>PRÊMIO DO DUELO</span><strong id="prize-display">Não definido</strong></div>
+          <div class="scoreboard-period"><span>DATAS</span><strong id="period-display">Segunda – domingo</strong></div>
+        </section>
+
+        <section class="roast-banner" aria-label="Provocação do duelo">
+          <span class="roast-label">RECADO DO PLACAR</span>
+          <p id="loser-roast">O empate está poupando os dois de passar vergonha.</p>
+        </section>
+
+        <section class="action-section" aria-label="Registrar atividade">
+          <button class="button button-primary action-button" id="open-workout" type="button"><span class="button-plus">+</span> Registrar treino</button>
+          <p class="action-status" id="action-status"></p>
+        </section>
+
+        <section class="program-section" id="programa" aria-labelledby="program-title">
+          <div class="section-heading program-heading">
+            <div><p class="eyebrow">PLANO DE MUSCULAÇÃO</p><h2 id="program-title">Quatro dias. Mesmo programa.</h2></div>
+            <span class="program-note">SEG · TER · QUI · SEX</span>
+          </div>
+          <div class="program-list" id="program-list"></div>
+        </section>
+
+        <div class="dashboard-grid">
+          <div class="primary-column">
+            <section class="activity-section" id="atividade" aria-labelledby="activity-title">
+              <div class="section-heading activity-heading">
+                <div><p class="eyebrow">SEMANA EM MOVIMENTO</p><h2 id="activity-title">Últimos treinos</h2></div>
+                <span class="activity-count" id="activity-count">0 REGISTROS</span>
+              </div>
+              <div class="activity-list" id="activity-list"></div>
+            </section>
+          </div>
+
+          <aside class="secondary-column">
+            <section class="week-section" id="comparacao" aria-labelledby="week-title">
+              <div class="section-heading compact-heading">
+                <div><p class="eyebrow">COMPARAÇÃO DIÁRIA</p><h2 id="week-title">Pontos do duelo.</h2></div>
+              </div>
+              <div class="week-chart-scroll"><div class="week-chart" id="week-chart" aria-label="Pontos diários de cada jogador neste período"></div></div>
+              <div class="week-legend"><span><i class="legend-dot legend-you"></i><span id="chart-you-name">Matheus</span></span><span><i class="legend-dot legend-rival"></i><span id="chart-rival-name">Rafa</span></span></div>
+              <div class="modality-breakdown" id="modality-breakdown"></div>
+              <div class="week-summary"><strong id="week-summary-number">0</strong><span>treinos seus<br />neste duelo</span><span class="week-summary-divider"></span><strong id="streak-number">0</strong><span>dias de<br />sequência</span></div>
+            </section>
+
+            <section class="rules-section" id="regras" aria-labelledby="rules-title">
+              <div class="rules-header"><span class="rules-icon">↗</span><p class="eyebrow">JOGO LIMPO</p></div>
+              <h2 id="rules-title">Presença + qualidade.</h2>
+              <p>Jiu-jitsu: 11 base + até 4 por duração + 7 por esforço. Musculação: 9 base + até 4 por execução + 2 por progressão + 7 por esforço. Cardio: 8 base + até 4 por duração + 8 por esforço. Máximos: 22, 22 e 20.</p>
+              <div class="rules-foot"><span>1 POR MODALIDADE / DIA</span><span>ESFORÇO 7+ = BÔNUS CHEIO</span></div>
+            </section>
+          </aside>
+        </div>
+        <section class="history-section" id="evolucao" aria-labelledby="history-title">
+          <div class="section-heading history-heading">
+            <div><p class="eyebrow">PROGRESSÃO INDIVIDUAL</p><h2 id="history-title">Histórico de exercício.</h2></div>
+            <label class="history-select-wrap"><span>EXERCÍCIO</span><select id="history-exercise" aria-label="Exercício exibido no histórico"></select></label>
+          </div>
+          <p class="history-profile" id="history-profile"></p>
+          <div class="history-chart-wrap">
+            <canvas id="history-chart" aria-label="Gráfico histórico do exercício selecionado"></canvas>
+            <p class="history-empty" id="history-empty" hidden></p>
+          </div>
+        </section>
+        <footer class="page-footer"><span>REP CLUB <span class="footer-dot">·</span> TREINEM JUNTOS, COMPITAM MELHOR.</span><span>PROTÓTIPO LOCAL</span></footer>
+      </main>
+    </div>
+
+    <dialog class="setup-dialog" id="setup-dialog" aria-labelledby="setup-title">
+      <form id="setup-form">
+        <a class="brand setup-brand" href="#inicio" aria-label="Rep Club">
+          <span class="brand-mark">R<span>+</span></span>
+          <span class="brand-name">REP<span>CLUB</span></span>
+        </a>
+        <p class="eyebrow">CONFIGURAÇÃO INICIAL</p>
+        <h1 id="setup-title">Quem entra no duelo?</h1>
+        <p class="setup-copy" id="setup-copy">Cadastre os dois nomes, o período e, se quiser, o prêmio.</p>
+        <label class="form-field"><span>JOGADOR 1</span><input name="playerOne" type="text" maxlength="24" placeholder="Seu nome" autocomplete="name" required autofocus /></label>
+        <label class="form-field"><span>JOGADOR 2</span><input name="playerTwo" type="text" maxlength="24" placeholder="Nome do amigo" required /></label>
+        <label class="form-field"><span>PRÊMIO DO DUELO · OPCIONAL</span><input name="prize" type="text" maxlength="80" placeholder="Ex.: o perdedor paga o açaí" /></label>
+        <fieldset class="period-fields"><legend>PERÍODO DO DUELO</legend><label class="form-field"><span>INÍCIO</span><input name="periodStart" type="date" required /></label><label class="form-field"><span>FIM</span><input name="periodEnd" type="date" required /></label></fieldset>
+        <p class="setup-error" id="setup-error" role="alert"></p>
+        <button class="button button-primary setup-submit" type="submit">Liberar o duelo <span>↗</span></button>
+        <p class="setup-storage-note">Nomes, período, prêmio e treinos ficam salvos neste navegador.</p>
+      </form>
+    </dialog>
+
+    <dialog class="workout-dialog" id="workout-dialog" aria-labelledby="dialog-title">
+      <form id="workout-form" method="dialog">
+        <div class="dialog-top"><div><p class="eyebrow">REGISTRO DE TREINO</p><h2 id="dialog-title">Novo treino.</h2></div><button class="close-button" type="button" id="close-dialog" aria-label="Fechar">×</button></div>
+        <p class="dialog-subtitle">Registrando como <strong id="dialog-profile-name">Matheus</strong> · <span id="dialog-date"></span></p>
+        <label class="form-field workout-name-field"><span>NOME DO TREINO · OPCIONAL</span><input id="workout-name" name="workoutName" type="text" maxlength="50" placeholder="Ex.: Treino A bem feito" /></label>
+        <label class="form-field"><span>COMENTÁRIOS · OPCIONAL</span><textarea name="comments" rows="3" maxlength="500" placeholder="Como foi o treino? Alguma observação para lembrar?"></textarea></label>
+        <label class="form-field"><span>DATA DO TREINO</span><input id="workout-date" name="workoutDate" type="date" required /></label>
+        <label class="form-field"><span>MODALIDADE</span><select name="category" id="workout-category"><option value="strength">Musculação</option><option value="bjj">Jiu-jitsu</option><option value="cardio">Cardio</option></select></label>
+        <div id="workout-fields"></div>
+        <p class="points-preview" id="points-preview" aria-live="polite"></p>
+        <p class="form-error" id="form-error" role="alert"></p>
+        <div class="dialog-actions"><button class="button button-quiet" type="button" id="cancel-dialog">Cancelar</button><button class="button button-primary" type="submit">Confirmar treino <span>↗</span></button></div>
+      </form>
+    </dialog>
+    <div class="rest-dock" aria-label="Cronômetro de descanso">
+      <div class="timer-readout"><span>DESCANSO</span><strong id="timer-display">00:00</strong></div>
+      <button type="button" class="timer-button" data-rest-seconds="60" aria-label="Iniciar descanso de 60 segundos">60s</button>
+      <button type="button" class="timer-button" data-rest-seconds="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
+      <button type="button" class="timer-reset" id="timer-reset" aria-label="Zerar cronômetro">×</button>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
