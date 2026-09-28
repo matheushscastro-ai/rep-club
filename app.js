@@ -2,6 +2,9 @@ const STORAGE_KEY = "rep-club-demo-v3";
 const PLAYERS_STORAGE_KEY = "rep-club-players-v1";
 const PRIZE_STORAGE_KEY = "rep-club-prize-v1";
 const PERIOD_STORAGE_KEY = "rep-club-period-v1";
+const SUPABASE_URL = "https://clojwloczhmjiivcazjh.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zQRh7cNIIcFebCxZ7_vpPA_2ceLdrB4";
+var supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
 const DEFAULT_PLAYERS = [
   { id: "player-1", name: "Jogador 1", short: "1", side: "me" },
   { id: "player-2", name: "Jogador 2", short: "2", side: "rival" },
@@ -275,9 +278,73 @@ let state = loadState();
 let toastTimer;
 let restTimerInterval = null;
 let restSecondsRemaining = 0;
+let remoteDuelId = localStorage.getItem("rep-club-remote-duel-id");
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function remoteWorkoutPayload(workout) {
+  return {
+    duel_id: remoteDuelId,
+    player_id: workout.owner,
+    category: workout.category,
+    workout_date: workout.date,
+    name: workout.name,
+    comments: workout.comments || null,
+    points: pointsForWorkout(workout),
+    effort: workout.effort || null,
+    duration: workout.duration || null,
+    exercises: workout.exercises || null,
+  };
+}
+
+async function syncWorkoutToSupabase(workout) {
+  if (!supabaseClient || !remoteDuelId || workout.id.startsWith("demo-")) return;
+  const { error } = await supabaseClient.from("workouts").insert(remoteWorkoutPayload(workout));
+  if (error) throw error;
+}
+
+async function hydrateFromSupabase() {
+  if (!supabaseClient) return;
+  try {
+    let duelQuery = supabaseClient.from("duels").select("*").order("created_at", { ascending: false }).limit(1);
+    if (remoteDuelId) duelQuery = supabaseClient.from("duels").select("*").eq("id", remoteDuelId).limit(1);
+    const { data: duels, error: duelError } = await duelQuery;
+    if (duelError || !duels?.[0]) return;
+
+    const duel = duels[0];
+    remoteDuelId = duel.id;
+    localStorage.setItem("rep-club-remote-duel-id", remoteDuelId);
+    savePlayerConfig([duel.player_one_name, duel.player_two_name]);
+    challengePrize = duel.prize || "";
+    duelPeriod = { start: duel.period_start, end: duel.period_end };
+    localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
+    localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
+
+    const { data: remoteWorkouts, error: workoutsError } = await supabaseClient.from("workouts").select("*").eq("duel_id", remoteDuelId).order("created_at", { ascending: false });
+    if (!workoutsError && remoteWorkouts) {
+      state.workouts = remoteWorkouts.map((workout) => ({
+        id: workout.id,
+        owner: workout.player_id,
+        category: workout.category,
+        date: workout.workout_date,
+        name: workout.name || MODALITIES[workout.category]?.label || workout.category,
+        comments: workout.comments || "",
+        points: workout.points || 0,
+        effort: workout.effort,
+        duration: workout.duration || 0,
+        exercises: workout.exercises,
+        qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
+      }));
+    }
+    state.activePlayer = PLAYERS[0].id;
+    saveState();
+    render();
+    if (byId("setup-dialog").open) byId("setup-dialog").close();
+  } catch (error) {
+    console.warn("Supabase indisponível; mantendo os dados locais.", error);
+  }
 }
 
 function savePlayerConfig(names) {
@@ -827,7 +894,7 @@ byId("profile-select").addEventListener("change", (event) => {
 });
 
 byId("setup-dialog").addEventListener("cancel", (event) => event.preventDefault());
-byId("setup-form").addEventListener("submit", (event) => {
+byId("setup-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   const names = [String(form.get("playerOne") || "").trim(), String(form.get("playerTwo") || "").trim()];
@@ -852,6 +919,21 @@ byId("setup-form").addEventListener("submit", (event) => {
   localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
   duelPeriod = { start: periodStart, end: periodEnd };
   localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
+  if (supabaseClient) {
+    const { data: duel, error: duelError } = await supabaseClient.from("duels").insert({
+      player_one_name: names[0],
+      player_two_name: names[1],
+      prize: challengePrize || null,
+      period_start: periodStart,
+      period_end: periodEnd,
+    }).select().single();
+    if (!duelError && duel) {
+      remoteDuelId = duel.id;
+      localStorage.setItem("rep-club-remote-duel-id", remoteDuelId);
+    } else if (duelError) {
+      console.warn("Não foi possível criar o duelo remoto; o modo local continua disponível.", duelError);
+    }
+  }
   state.activePlayer = PLAYERS[0].id;
   saveState();
   render();
@@ -887,7 +969,7 @@ byId("program-list").addEventListener("click", (event) => {
   if (button) openWorkoutDialog(button.dataset.startTemplate);
 });
 
-byId("workout-form").addEventListener("submit", (event) => {
+byId("workout-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   const form = new FormData(event.currentTarget);
   const category = form.get("category");
@@ -960,6 +1042,11 @@ byId("workout-form").addEventListener("submit", (event) => {
   workout.points = workout.basePoints + workout.qualityPoints;
   state.workouts.push(workout);
   saveState();
+  try {
+    await syncWorkoutToSupabase(workout);
+  } catch (error) {
+    console.warn("Treino salvo localmente, mas não foi enviado ao Supabase.", error);
+  }
   byId("workout-dialog").close();
   event.currentTarget.reset();
   render();
@@ -992,3 +1079,4 @@ if (!playerConfig || challengePrize === null || duelPeriod === null) {
   byId("setup-form").querySelector('[name="periodEnd"]').value = setupPeriod.end;
   byId("setup-dialog").showModal();
 }
+hydrateFromSupabase();
