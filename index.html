@@ -18,8 +18,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css?v=dbz-canvas-1" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=firebase-1" defer></script>
+    <script src="app.js?v=auth-1" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -64,10 +65,12 @@
             <button type="button" class="topbar-btn topbar-btn-danger" id="btn-reset-topbar" title="Zerar treinos do desafio atual">⚠️ Zerar</button>
           </div>
           <div class="topbar-right-wrap">
-            <label class="profile-switcher">
-              <span>REGISTRAR COMO</span>
-              <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
-            </label>
+            <div class="user-badge" id="user-badge" style="display:none; align-items:center; gap:6px; background:#fff; border:1px solid #d0d2c9; border-radius:4px; padding:3px 8px; height:32px;">
+              <span class="user-avatar" id="user-avatar-tag" style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--lime); color:#000; font-weight:800; font-size:11px;">M</span>
+              <span id="user-display-name" style="font-size:11px; font-weight:700; color:var(--ink);">Matheus</span>
+              <button type="button" id="btn-auth-logout" class="text-button" style="font-size:10px; color:#ef4444; margin-left:2px; padding:0; text-decoration:none;" title="Sair do perfil">Sair</button>
+            </div>
+            <button type="button" class="topbar-btn" id="btn-auth-open" title="Identificar competidor neste aparelho" style="background:#18181b; color:#fff; border-color:#27272a;">👤 Entrar</button>
             <button type="button" class="button-tag" id="btn-show-qr" title="Abrir no celular via QR Code" style="display:flex; align-items:center; gap:5px; height:32px; padding:0 10px; cursor:pointer;">📲 QR Code</button>
           </div>
         </header>
@@ -283,6 +286,34 @@
           <a href="https://matheushscastro-ai.github.io/rep-club/" target="_blank" style="color: #2563eb; font-weight: 700; font-size: 12px; word-break: break-all;">https://matheushscastro-ai.github.io/rep-club/</a>
         </div>
       </div>
+    </dialog>
+    <dialog class="setup-dialog auth-dialog" id="auth-dialog" aria-labelledby="auth-title">
+      <div class="dialog-top">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> ACESSO DO COMPETIDOR</p>
+          <h2 id="auth-title" style="margin-top:4px;">Quem é você?</h2>
+        </div>
+        <button class="close-button" type="button" id="close-auth-dialog" aria-label="Fechar">×</button>
+      </div>
+      <p style="font-size: 13px; color: #55574f; margin: 8px 0 16px;">
+        Identifique-se para que seus treinos sejam registrados sob seu nome e seus pontos subam no duelo.
+      </p>
+
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:14px;">
+        <button type="button" class="button" id="btn-google-login" style="background:#fff; border:1px solid #d0d2c9; color:#1f2937; justify-content:center; gap:10px; width:100%; box-shadow:0 1px 3px rgba(0,0,0,0.06); font-weight:700;">
+          <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.8-2.4 3.65v3.03h3.88c2.27-2.09 3.665-5.17 3.665-9.12z"/><path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.03c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.24v3.13C3.26 21.43 7.31 24 12 24z"/><path fill="#FBBC05" d="M5.28 14.29c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.29V6.58H1.24C.45 8.15 0 9.97 0 12s.45 3.85 1.24 5.42l4.04-3.13z"/><path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.31 0 3.26 2.57 1.24 6.58l4.04 3.13c.95-2.83 3.6-4.96 6.72-4.96z"/></svg>
+          <span>Entrar com conta Google</span>
+        </button>
+      </div>
+
+      <div style="display:flex; align-items:center; gap:8px; margin: 16px 0 12px; color:#888a81; font-size:10px; font-weight:700;">
+        <span style="flex:1; height:1px; background:#e2e3dc;"></span>
+        <span>OU VINCULE SEU PERFIL NESTE CELULAR</span>
+        <span style="flex:1; height:1px; background:#e2e3dc;"></span>
+      </div>
+
+      <div class="auth-competitors-list" id="auth-competitors-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:12px;"></div>
+      <p class="form-error" id="auth-error" style="color:#ef4444; font-size:11px; min-height:16px; margin:4px 0;"></p>
     </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </body>

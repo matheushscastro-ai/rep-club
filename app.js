@@ -18,10 +18,12 @@ const firebaseConfig = {
 
 let fbApp = null;
 let fbDb = null;
+let fbAuth = null;
 try {
   if (window.firebase) {
     fbApp = window.firebase.initializeApp(firebaseConfig);
     fbDb = window.firebase.database();
+    fbAuth = window.firebase.auth();
   }
 } catch (e) {
   console.warn("Firebase init error:", e);
@@ -475,6 +477,7 @@ async function resetDuelInFirebase() {
 async function syncDuelToFirebase(challenge) {
   const payload = {
     id: challenge.id || CANONICAL_DUEL_ID,
+    title: challenge.title || "Duelo 01",
     player_one_name: challenge.players?.[0]?.name || "Matheus",
     player_two_name: challenge.players?.[1]?.name || "Rafa",
     prize: challenge.prize || "",
@@ -535,10 +538,12 @@ async function hydrateFromFirebase() {
       localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
 
       if (challenges && challenges.length > 0) {
+        if (duelData.title) challenges[0].title = duelData.title;
         challenges[0].prize = challengePrize;
         challenges[0].period = duelPeriod;
         challenges[0].players = PLAYERS;
         saveChallenges();
+        renderChallengeSelector();
       }
     }
 
@@ -1538,6 +1543,7 @@ function drawHistoryChart() {
 
 function render() {
   renderChallengeSelector();
+  renderAuthUI();
   renderProfileSelect();
   renderScoreboard();
   renderToday();
@@ -1586,7 +1592,13 @@ function resetRestTimer() {
 }
 
 function openWorkoutDialog(templateId = null) {
-  const me = playerFor(state.activePlayer);
+  const boundId = getAuthProfile();
+  if (!boundId) {
+    openAuthDialog("Por favor, identifique quem você é antes de registrar o treino.");
+    return;
+  }
+  state.activePlayer = boundId;
+  const me = playerFor(boundId);
   const todayCategories = workoutsFor(me.id).filter((workout) => workout.date === localDate()).map((workout) => workout.category);
   const category = templateId ? "strength" : Object.keys(MODALITIES).find((item) => !todayCategories.includes(item)) || "strength";
 
@@ -1600,7 +1612,7 @@ function openWorkoutDialog(templateId = null) {
   byId("workout-dialog").showModal();
 }
 
-byId("profile-select").addEventListener("change", (event) => {
+byId("profile-select")?.addEventListener("change", (event) => {
   state.activePlayer = event.target.value;
   const cur = getActiveChallenge();
   if (cur) cur.activePlayer = state.activePlayer;
@@ -2105,6 +2117,11 @@ function setupFirebaseSync() {
           duelPeriod = { start: duelData.period_start, end: duelData.period_end };
           localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
           localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
+          if (duelData.title && challenges && challenges.length > 0) {
+            challenges[0].title = duelData.title;
+            saveChallenges();
+            renderChallengeSelector();
+          }
           render();
         }
       });
@@ -2166,3 +2183,138 @@ byId("btn-show-qr")?.addEventListener("click", () => {
 byId("close-qr-dialog")?.addEventListener("click", () => {
   byId("qr-dialog")?.close();
 });
+
+// AUTENTICAÇÃO E INDIVIDUALIZAÇÃO DE PERFIL DO COMPETIDOR
+const AUTH_PROFILE_KEY = "rep-club-auth-profile-v1";
+const AUTH_EMAIL_KEY = "rep-club-auth-email-v1";
+
+function getAuthProfile() {
+  const savedId = localStorage.getItem(AUTH_PROFILE_KEY);
+  if (savedId && PLAYERS.some((p) => p.id === savedId)) {
+    return savedId;
+  }
+  return null;
+}
+
+function setAuthProfile(playerId, email = null) {
+  localStorage.setItem(AUTH_PROFILE_KEY, playerId);
+  if (email) localStorage.setItem(AUTH_EMAIL_KEY, email);
+  state.activePlayer = playerId;
+  const cur = getActiveChallenge();
+  if (cur) cur.activePlayer = playerId;
+  saveChallenges();
+  saveState();
+  renderAuthUI();
+  render();
+  const player = playerFor(playerId);
+  showToast(`Identificado como ${player.name}! Seus treinos pontuarão para seu perfil.`);
+  byId("auth-dialog")?.close();
+}
+
+function clearAuthProfile() {
+  localStorage.removeItem(AUTH_PROFILE_KEY);
+  localStorage.removeItem(AUTH_EMAIL_KEY);
+  if (fbAuth) {
+    try { fbAuth.signOut(); } catch (e) {}
+  }
+  renderAuthUI();
+  render();
+  showToast("Você saiu do perfil.");
+}
+
+function renderAuthUI() {
+  const boundId = getAuthProfile();
+  const userBadge = byId("user-badge");
+  const authOpenBtn = byId("btn-auth-open");
+  const avatarTag = byId("user-avatar-tag");
+  const displayName = byId("user-display-name");
+
+  if (boundId) {
+    const p = playerFor(boundId);
+    if (userBadge) userBadge.style.display = "flex";
+    if (authOpenBtn) authOpenBtn.style.display = "none";
+    if (avatarTag) {
+      avatarTag.textContent = p.short;
+      avatarTag.style.background = p.color;
+      avatarTag.style.color = p.textColor;
+    }
+    if (displayName) displayName.textContent = p.name;
+    state.activePlayer = boundId;
+  } else {
+    if (userBadge) userBadge.style.display = "none";
+    if (authOpenBtn) authOpenBtn.style.display = "inline-flex";
+  }
+}
+
+function openAuthDialog(reasonMsg = null) {
+  const errorEl = byId("auth-error");
+  if (errorEl) errorEl.textContent = reasonMsg || "";
+  renderAuthCompetitors();
+  byId("auth-dialog")?.showModal();
+}
+
+function renderAuthCompetitors() {
+  const container = byId("auth-competitors-list");
+  if (!container) return;
+  const boundId = getAuthProfile();
+
+  container.innerHTML = PLAYERS.map((p) => {
+    const isCurrent = p.id === boundId;
+    return `
+      <button type="button" class="button" data-bind-player="${p.id}" style="justify-content:center; gap:8px; border: 2px solid ${p.color}; background: ${isCurrent ? p.color : 'transparent'}; color: ${isCurrent ? p.textColor : 'var(--ink)'}; font-weight:700; height:42px; border-radius:4px; cursor:pointer;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${isCurrent ? '#fff' : p.color}; color:${isCurrent ? '#000' : p.textColor}; font-size:11px; font-weight:800;">${p.short}</span>
+        <span>${escapeHTML(p.name)}</span>
+        ${isCurrent ? '<span style="font-size:10px;">✓ Ativo</span>' : ''}
+      </button>
+    `;
+  }).join("");
+}
+
+byId("btn-auth-open")?.addEventListener("click", () => openAuthDialog());
+byId("close-auth-dialog")?.addEventListener("click", () => byId("auth-dialog")?.close());
+byId("btn-auth-logout")?.addEventListener("click", () => clearAuthProfile());
+
+byId("auth-competitors-list")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-bind-player]");
+  if (btn) {
+    setAuthProfile(btn.dataset.bindPlayer);
+  }
+});
+
+byId("btn-google-login")?.addEventListener("click", async () => {
+  const errorEl = byId("auth-error");
+  if (errorEl) errorEl.textContent = "";
+
+  if (!fbAuth) {
+    if (errorEl) errorEl.textContent = "Firebase Auth indisponível. Vincule seu perfil diretamente abaixo.";
+    return;
+  }
+
+  try {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    const result = await fbAuth.signInWithPopup(provider);
+    const user = result.user;
+    const email = user.email || "";
+    const name = user.displayName || "";
+
+    const matched = PLAYERS.find((p) =>
+      name.toLowerCase().includes(p.name.toLowerCase()) ||
+      email.toLowerCase().includes(p.name.toLowerCase())
+    );
+
+    if (matched) {
+      setAuthProfile(matched.id, email);
+    } else {
+      if (errorEl) errorEl.textContent = `Logado como ${name || email}. Selecione abaixo qual competidor você é neste duelo:`;
+    }
+  } catch (err) {
+    console.warn("Google Auth error:", err);
+    if (err.code === "auth/configuration-not-found" || err.code === "auth/operation-not-allowed") {
+      if (errorEl) errorEl.textContent = "Provedor Google ainda não ativado no Firebase Console. Você pode clicar no seu nome abaixo para vincular seu perfil diretamente neste aparelho!";
+    } else {
+      if (errorEl) errorEl.textContent = err.message || "Não foi possível autenticar com o Google. Escolha seu perfil abaixo.";
+    }
+  }
+});
+
+renderAuthUI();
