@@ -1,4 +1,4 @@
-const CACHE_NAME = "rep-club-pwa-v1";
+const CACHE_NAME = "rep-club-pwa-v3";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -21,12 +21,12 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener("install", (event) => {
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS_TO_CACHE).catch((err) => console.warn("Cache addAll error:", err));
     })
   );
-  self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {
@@ -35,6 +35,7 @@ self.addEventListener("activate", (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log("Removendo cache antigo do PWA:", key);
             return caches.delete(key);
           }
         })
@@ -44,23 +45,29 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// NETWORK-FIRST: sempre busca versão online atualizada no GitHub Pages.
+// Só usa cache local se o usuário estiver completamente sem internet (offline).
 self.addEventListener("fetch", (event) => {
-  // Network first / bypass para APIs em tempo real (Firebase / Supabase)
-  if (event.request.url.includes("firebaseio.com") || event.request.url.includes("googleapis.com") || event.request.url.includes("supabase.co") || event.request.method !== "GET") {
+  if (
+    event.request.url.includes("firebaseio.com") ||
+    event.request.url.includes("googleapis.com") ||
+    event.request.url.includes("supabase.co") ||
+    event.request.method !== "GET"
+  ) {
     return;
   }
+
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networked = fetch(event.request)
-        .then((response) => {
-          if (response && response.status === 200) {
-            const copy = response.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          }
-          return response;
-        })
-        .catch(() => cached);
-      return cached || networked;
-    })
+    fetch(event.request)
+      .then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      })
+      .catch(() => {
+        return caches.match(event.request);
+      })
   );
 });

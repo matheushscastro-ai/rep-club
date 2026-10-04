@@ -350,6 +350,93 @@ const shiftDate = (days) => {
 const pointsForWorkout = (workout) => Number(workout.points ?? 10);
 const playerFor = (id) => PLAYERS.find((player) => player.id === id);
 
+// AUTENTICAÇÃO E INDIVIDUALIZAÇÃO DE PERFIL DO COMPETIDOR
+const AUTH_PROFILE_KEY = "rep-club-auth-profile-v1";
+const AUTH_EMAIL_KEY = "rep-club-auth-email-v1";
+
+function getAuthProfile() {
+  const savedId = localStorage.getItem(AUTH_PROFILE_KEY);
+  if (savedId && PLAYERS.some((p) => p.id === savedId)) {
+    return savedId;
+  }
+  return null;
+}
+
+function setAuthProfile(playerId, email = null) {
+  localStorage.setItem(AUTH_PROFILE_KEY, playerId);
+  if (email) localStorage.setItem(AUTH_EMAIL_KEY, email);
+  state.activePlayer = playerId;
+  const cur = getActiveChallenge();
+  if (cur) cur.activePlayer = playerId;
+  saveChallenges();
+  saveState();
+  renderAuthUI();
+  render();
+  const player = playerFor(playerId);
+  showToast(`Identificado como ${player.name}! Seus treinos pontuarão para seu perfil.`);
+  byId("auth-dialog")?.close();
+}
+
+function clearAuthProfile() {
+  localStorage.removeItem(AUTH_PROFILE_KEY);
+  localStorage.removeItem(AUTH_EMAIL_KEY);
+  if (fbAuth) {
+    try { fbAuth.signOut(); } catch (e) {}
+  }
+  renderAuthUI();
+  render();
+  showToast("Você saiu do perfil.");
+}
+
+function renderAuthUI() {
+  const boundId = getAuthProfile();
+  const userBadge = byId("user-badge");
+  const authOpenBtn = byId("btn-auth-open");
+  const avatarTag = byId("user-avatar-tag");
+  const displayName = byId("user-display-name");
+
+  if (boundId) {
+    const p = playerFor(boundId);
+    if (userBadge) userBadge.style.display = "flex";
+    if (authOpenBtn) authOpenBtn.style.display = "none";
+    if (avatarTag) {
+      avatarTag.textContent = p.short;
+      avatarTag.style.background = p.color;
+      avatarTag.style.color = p.textColor;
+    }
+    if (displayName) displayName.textContent = p.name;
+    state.activePlayer = boundId;
+  } else {
+    if (userBadge) userBadge.style.display = "none";
+    if (authOpenBtn) authOpenBtn.style.display = "inline-flex";
+  }
+  renderAuthCompetitors();
+}
+
+function openAuthDialog(reasonMsg = null) {
+  const errorEl = byId("auth-error");
+  if (errorEl) errorEl.textContent = reasonMsg || "";
+  renderAuthCompetitors();
+  byId("auth-dialog")?.showModal();
+}
+
+function renderAuthCompetitors() {
+  const container = byId("auth-competitors-list");
+  if (!container) return;
+  const boundId = getAuthProfile();
+
+  container.innerHTML = PLAYERS.map((p) => {
+    const isCurrent = p.id === boundId;
+    return `
+      <button type="button" class="button" data-bind-player="${p.id}" style="justify-content:center; gap:8px; border: 2px solid ${p.color}; background: ${isCurrent ? p.color : 'transparent'}; color: ${isCurrent ? p.textColor : 'var(--ink)'}; font-weight:700; height:42px; border-radius:4px; cursor:pointer;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${isCurrent ? '#fff' : p.color}; color:${isCurrent ? '#000' : p.textColor}; font-size:11px; font-weight:800;">${p.short}</span>
+        <span>${escapeHTML(p.name)}</span>
+        ${isCurrent ? '<span style="font-size:10px;">✓ Ativo</span>' : ''}
+      </button>
+    `;
+  }).join("");
+}
+
 function createDemoStrengthWorkout(id, date, effort, loads, repsByExercise, progressionPoints) {
   const plan = TRAINING_PLANS.find((item) => item.id === "A");
   const exercises = plan.exercises.map((exercise, index) => ({
@@ -1482,6 +1569,7 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
     const selectedSession = sessions.find((s) => s.id === curSessId) || sessions[0];
     activeStrengthPlan = planOverride ? cloneTrainingPlan(planOverride) : cloneTrainingPlan(selectedSession);
     const plan = activeStrengthPlan;
+    const isCustomPlan = Boolean(plan.isCustom || plan.id === "custom-new" || plan.id.startsWith("custom-"));
 
     fields.innerHTML = `
       ${plan.cardioBlock ? `<label class="form-field cardio-block-field"><span>${plan.cardioBlock.label.toUpperCase()} · MINUTOS</span><input name="cardioMinutes" type="number" min="${plan.cardioBlock.min}" max="${plan.cardioBlock.max}" value="${plan.cardioBlock.min}" required /><small>Este cardio faz parte do treino ${plan.id}; o registro continua como Musculação.</small></label>` : ""}
@@ -2332,7 +2420,9 @@ byId("btn-pwa-install")?.addEventListener("click", async () => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js").catch((err) => {
+    navigator.serviceWorker.register("./sw.js?v=2.2.0").then((reg) => {
+      reg.update();
+    }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
     });
   });
@@ -2346,91 +2436,7 @@ byId("close-qr-dialog")?.addEventListener("click", () => {
   byId("qr-dialog")?.close();
 });
 
-// AUTENTICAÇÃO E INDIVIDUALIZAÇÃO DE PERFIL DO COMPETIDOR
-const AUTH_PROFILE_KEY = "rep-club-auth-profile-v1";
-const AUTH_EMAIL_KEY = "rep-club-auth-email-v1";
-
-function getAuthProfile() {
-  const savedId = localStorage.getItem(AUTH_PROFILE_KEY);
-  if (savedId && PLAYERS.some((p) => p.id === savedId)) {
-    return savedId;
-  }
-  return null;
-}
-
-function setAuthProfile(playerId, email = null) {
-  localStorage.setItem(AUTH_PROFILE_KEY, playerId);
-  if (email) localStorage.setItem(AUTH_EMAIL_KEY, email);
-  state.activePlayer = playerId;
-  const cur = getActiveChallenge();
-  if (cur) cur.activePlayer = playerId;
-  saveChallenges();
-  saveState();
-  renderAuthUI();
-  render();
-  const player = playerFor(playerId);
-  showToast(`Identificado como ${player.name}! Seus treinos pontuarão para seu perfil.`);
-  byId("auth-dialog")?.close();
-}
-
-function clearAuthProfile() {
-  localStorage.removeItem(AUTH_PROFILE_KEY);
-  localStorage.removeItem(AUTH_EMAIL_KEY);
-  if (fbAuth) {
-    try { fbAuth.signOut(); } catch (e) {}
-  }
-  renderAuthUI();
-  render();
-  showToast("Você saiu do perfil.");
-}
-
-function renderAuthUI() {
-  const boundId = getAuthProfile();
-  const userBadge = byId("user-badge");
-  const authOpenBtn = byId("btn-auth-open");
-  const avatarTag = byId("user-avatar-tag");
-  const displayName = byId("user-display-name");
-
-  if (boundId) {
-    const p = playerFor(boundId);
-    if (userBadge) userBadge.style.display = "flex";
-    if (authOpenBtn) authOpenBtn.style.display = "none";
-    if (avatarTag) {
-      avatarTag.textContent = p.short;
-      avatarTag.style.background = p.color;
-      avatarTag.style.color = p.textColor;
-    }
-    if (displayName) displayName.textContent = p.name;
-    state.activePlayer = boundId;
-  } else {
-    if (userBadge) userBadge.style.display = "none";
-    if (authOpenBtn) authOpenBtn.style.display = "inline-flex";
-  }
-}
-
-function openAuthDialog(reasonMsg = null) {
-  const errorEl = byId("auth-error");
-  if (errorEl) errorEl.textContent = reasonMsg || "";
-  renderAuthCompetitors();
-  byId("auth-dialog")?.showModal();
-}
-
-function renderAuthCompetitors() {
-  const container = byId("auth-competitors-list");
-  if (!container) return;
-  const boundId = getAuthProfile();
-
-  container.innerHTML = PLAYERS.map((p) => {
-    const isCurrent = p.id === boundId;
-    return `
-      <button type="button" class="button" data-bind-player="${p.id}" style="justify-content:center; gap:8px; border: 2px solid ${p.color}; background: ${isCurrent ? p.color : 'transparent'}; color: ${isCurrent ? p.textColor : 'var(--ink)'}; font-weight:700; height:42px; border-radius:4px; cursor:pointer;">
-        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${isCurrent ? '#fff' : p.color}; color:${isCurrent ? '#000' : p.textColor}; font-size:11px; font-weight:800;">${p.short}</span>
-        <span>${escapeHTML(p.name)}</span>
-        ${isCurrent ? '<span style="font-size:10px;">✓ Ativo</span>' : ''}
-      </button>
-    `;
-  }).join("");
-}
+// LISTENERS DE AUTENTICAÇÃO E PERFIL
 
 byId("btn-auth-open")?.addEventListener("click", () => openAuthDialog());
 byId("close-auth-dialog")?.addEventListener("click", () => byId("auth-dialog")?.close());
