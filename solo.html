@@ -14,9 +14,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.4.0" />
-    <link rel="stylesheet" href="solo.css?v=2.4.0" />
-    <script src="solo-app.js?v=2.4.0" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2.5.0" />
+    <link rel="stylesheet" href="solo.css?v=2.5.0" />
+    <script src="solo-app.js?v=2.5.0" defer></script>
   </head>
   <body class="solo-body">
     <header class="solo-header">
@@ -216,12 +216,16 @@
         <!-- ANEXAR FOTO DO TREINO -->
         <div class="form-field" style="margin-top:12px;">
           <span>FOTO / COMPROVANTE DO TREINO · OPCIONAL</span>
-          <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
-            <label class="button button-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; font-size:11px;">
-              <span>📷 Tirar foto / Galeria</span>
-              <input type="file" id="solo-photo-input" accept="image/*" capture="environment" style="display:none;" />
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:4px;">
+            <label class="button button-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 10px; font-size:11px;">
+              <span>📷 Câmera</span>
+              <input type="file" id="solo-photo-camera" accept="image/*" capture="environment" style="display:none;" />
             </label>
-            <span id="solo-photo-filename" style="font-size:11px; color:#777970; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">Nenhuma foto anexada</span>
+            <label class="button button-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 10px; font-size:11px;">
+              <span>🖼️ Galeria</span>
+              <input type="file" id="solo-photo-gallery" accept="image/*" style="display:none;" />
+            </label>
+            <span id="solo-photo-filename" style="font-size:11px; color:#777970; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:160px;">Nenhuma foto anexada</span>
           </div>
           <div id="solo-photo-preview-wrap" style="display:none; margin-top:8px; position:relative; width:fit-content;">
             <img id="solo-photo-preview" src="" alt="Prévia da foto" style="max-height:120px; border-radius:6px; border:1px solid #d0d2c9; display:block;" />

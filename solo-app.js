@@ -510,15 +510,15 @@ function updateSoloVolumePreview() {
   }
 }
 
-// FOTO DO TREINO
-const soloPhotoInput = soloById("solo-photo-input");
+// FOTO DO TREINO (CÂMERA E GALERIA)
+const soloPhotoCamera = soloById("solo-photo-camera");
+const soloPhotoGallery = soloById("solo-photo-gallery");
 const soloPhotoPreviewWrap = soloById("solo-photo-preview-wrap");
 const soloPhotoPreview = soloById("solo-photo-preview");
 const soloPhotoFilename = soloById("solo-photo-filename");
 const soloBtnRemovePhoto = soloById("solo-btn-remove-photo");
 
-soloPhotoInput?.addEventListener("change", (e) => {
-  const file = e.target.files?.[0];
+function handleSoloPhotoFile(file) {
   if (!file) return;
   if (soloPhotoFilename) soloPhotoFilename.textContent = file.name;
   const reader = new FileReader();
@@ -547,13 +547,17 @@ soloPhotoInput?.addEventListener("change", (e) => {
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
-});
+}
+
+soloPhotoCamera?.addEventListener("change", (e) => handleSoloPhotoFile(e.target.files?.[0]));
+soloPhotoGallery?.addEventListener("change", (e) => handleSoloPhotoFile(e.target.files?.[0]));
 
 soloBtnRemovePhoto?.addEventListener("click", () => clearSoloPhoto());
 
 function clearSoloPhoto() {
   soloCurrentPhoto = null;
-  if (soloPhotoInput) soloPhotoInput.value = "";
+  if (soloPhotoCamera) soloPhotoCamera.value = "";
+  if (soloPhotoGallery) soloPhotoGallery.value = "";
   if (soloPhotoFilename) soloPhotoFilename.textContent = "Nenhuma foto anexada";
   if (soloPhotoPreview) soloPhotoPreview.src = "";
   if (soloPhotoPreviewWrap) soloPhotoPreviewWrap.style.display = "none";

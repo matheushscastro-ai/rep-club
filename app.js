@@ -412,38 +412,110 @@ function getAuthUser() {
   try {
     const saved = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
     if (saved && (saved.name || saved.email || saved.id)) return saved;
-  } catch (e) {}
+  } catch (e) { }
 
   // Fallback para perfil salvo anteriormente
   const savedId = localStorage.getItem(AUTH_PROFILE_KEY);
   if (savedId) {
-    const p = playerFor(savedId);
-    if (p) return { id: p.id, name: p.name, email: localStorage.getItem(AUTH_EMAIL_KEY) || "" };
+    return { id: savedId, name: savedId, email: localStorage.getItem(AUTH_EMAIL_KEY) || "" };
   }
   return null;
 }
 
+// CONTAS SALVAS NESTE APARELHO (APENAS AUTENTICADAS OU CRIADAS)
+const SAVED_ACCOUNTS_KEY = "rep-club-saved-accounts-v2";
+
+function getSavedAccounts() {
+  try {
+    const list = JSON.parse(localStorage.getItem(SAVED_ACCOUNTS_KEY));
+    if (Array.isArray(list)) return list;
+  } catch (e) {}
+  return [];
+}
+
+function saveAccountToHistory(user) {
+  if (!user || (!user.email && !user.id)) return;
+  const list = getSavedAccounts();
+  const key = String(user.email || user.id).toLowerCase();
+  const filtered = list.filter((a) => String(a.email || a.id).toLowerCase() !== key);
+  filtered.unshift({
+    id: user.id || user.uid,
+    name: user.name || (user.email ? user.email.split("@")[0] : "Atleta"),
+    email: user.email || "",
+    avatar: (user.name || user.email || "A").charAt(0).toUpperCase(),
+    lastLogin: new Date().toISOString()
+  });
+  localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(filtered.slice(0, 4)));
+}
+
+function removeSavedAccount(identifier) {
+  const list = getSavedAccounts().filter((a) => String(a.email || a.id).toLowerCase() !== String(identifier).toLowerCase());
+  localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(list));
+  renderSavedAccountsUI();
+}
+
+function renderSavedAccountsUI() {
+  const section = byId("saved-accounts-section");
+  const listContainer = byId("saved-accounts-list");
+  if (!section || !listContainer) return;
+  const accounts = getSavedAccounts();
+  if (accounts.length === 0) {
+    section.style.display = "none";
+    listContainer.innerHTML = "";
+    return;
+  }
+
+  section.style.display = "block";
+  listContainer.innerHTML = accounts.map((acc) => `
+    <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; background:#fff; border:1px solid #d0d2c9; border-radius:6px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+      <button type="button" class="button" data-login-saved="${escapeHTML(acc.email || acc.id)}" style="background:transparent; border:none; padding:0; flex:1; justify-content:flex-start; gap:10px; cursor:pointer; text-align:left;">
+        <span style="display:inline-flex; align-items:center; justify-content:center; width:28px; height:28px; border-radius:50%; background:var(--lime); color:var(--ink); font-weight:800; font-size:12px;">${escapeHTML(acc.avatar)}</span>
+        <div style="display:flex; flex-direction:column;">
+          <strong style="font-size:13px; color:#1f2937; line-height:1.2;">${escapeHTML(acc.name)}</strong>
+          <span style="font-size:10px; color:#6b7280;">${escapeHTML(acc.email || "Conta salva")}</span>
+        </div>
+      </button>
+      <button type="button" data-remove-saved="${escapeHTML(acc.email || acc.id)}" title="Remover da lista deste aparelho" style="background:transparent; border:none; color:#9ca3af; font-size:16px; cursor:pointer; padding:4px 8px; border-radius:4px; line-height:1;">×</button>
+    </div>
+  `).join("");
+}
+
 function userParticipatesInChallenge(challenge, user) {
-  if (!user || !challenge || !Array.isArray(challenge.players)) return false;
-  const uName = (user.name || "").trim().toLowerCase();
-  const uEmail = (user.email || "").trim().toLowerCase();
-  const uEmailPrefix = uEmail ? uEmail.split("@")[0].toLowerCase() : "";
-  const uId = user.id || user.uid;
+  if (!user || !challenge) return false;
+  const uId = String(user.id || user.uid || "").trim().toLowerCase();
+  const uEmail = String(user.email || "").trim().toLowerCase();
+  const uName = String(user.name || "").trim().toLowerCase();
+
+  // Se o usuário foi o criador do desafio
+  if (challenge.createdBy && (String(challenge.createdBy).toLowerCase() === uId || String(challenge.createdBy).toLowerCase() === uEmail)) return true;
+  if (challenge.creatorEmail && uEmail && String(challenge.creatorEmail).toLowerCase() === uEmail) return true;
+
+  if (!Array.isArray(challenge.players)) return false;
 
   return challenge.players.some((p) => {
-    const pName = (p.name || "").trim().toLowerCase();
-    const pEmail = (p.email || "").trim().toLowerCase();
-    const pId = p.id;
-    if (uId && (pId === uId || p.uid === uId)) return true;
-    if (pEmail && uEmail && pEmail === uEmail) return true;
-    if (pName && uName) {
-      if (pName === uName) return true;
-      const pFirst = pName.split(/\s+/)[0];
-      const uFirst = uName.split(/\s+/)[0];
-      if (pFirst && uFirst && pFirst === uFirst) return true;
-      if (uName.includes(pName) || pName.includes(uName)) return true;
+    if (!p) return false;
+    const pId = String(p.id || p.uid || "").trim().toLowerCase();
+    const pEmail = String(p.email || "").trim().toLowerCase();
+    const pName = String(p.name || "").trim().toLowerCase();
+
+    // 1. ID exato
+    if (uId && pId && (pId === uId || pId === `player-${uId}`)) return true;
+    // 2. Email exato
+    if (uEmail && pEmail && pEmail === uEmail) return true;
+    // 3. Nome exato
+    if (uName && pName && pName === uName) return true;
+    // 4. Primeiro e último nome coincidem (ou primeiro nome coincidente >= 3 letras)
+    if (uName && pName && uName.length >= 3 && pName.length >= 3) {
+      const uParts = uName.split(/\s+/);
+      const pParts = pName.split(/\s+/);
+      if (uParts[0] === pParts[0]) {
+        if (uParts.length > 1 && pParts.length > 1) {
+          if (uParts[uParts.length - 1] === pParts[pParts.length - 1]) return true;
+        } else {
+          return true;
+        }
+      }
     }
-    if (pName && uEmailPrefix && (pName.includes(uEmailPrefix) || uEmailPrefix.includes(pName))) return true;
     return false;
   });
 }
@@ -459,47 +531,107 @@ function getActiveUserPlayer() {
   if (!user) return null;
   const cur = getActiveChallenge();
   const pool = cur?.players || PLAYERS;
-  const uName = (user.name || "").trim().toLowerCase();
-  const uEmail = (user.email || "").trim().toLowerCase();
-  const uEmailPrefix = uEmail ? uEmail.split("@")[0].toLowerCase() : "";
-  const uId = user.id || user.uid;
+  const uName = String(user.name || "").trim().toLowerCase();
+  const uEmail = String(user.email || "").trim().toLowerCase();
+  const uId = String(user.id || user.uid || "").trim();
 
   return pool.find((p) => {
-    if (uId && (p.id === uId || p.uid === uId)) return true;
-    const pName = (p.name || "").trim().toLowerCase();
-    const pEmail = (p.email || "").trim().toLowerCase();
-    if (pEmail && uEmail && pEmail === uEmail) return true;
+    if (!p) return false;
+    const pId = String(p.id || p.uid || "").trim();
+    const pEmail = String(p.email || "").trim().toLowerCase();
+    const pName = String(p.name || "").trim().toLowerCase();
+    if (uId && pId && (pId === uId || pId.toLowerCase() === uId.toLowerCase())) return true;
+    if (uEmail && pEmail && pEmail === uEmail) return true;
     if (pName && uName) {
       if (pName === uName) return true;
       const pFirst = pName.split(/\s+/)[0];
       const uFirst = uName.split(/\s+/)[0];
-      if (pFirst && uFirst && pFirst === uFirst) return true;
-      if (uName.includes(pName) || pName.includes(uName)) return true;
+      if (pFirst.length >= 3 && uFirst.length >= 3 && pFirst === uFirst) return true;
     }
-    if (pName && uEmailPrefix && (pName.includes(uEmailPrefix) || uEmailPrefix.includes(pName))) return true;
     return false;
   }) || pool[0];
 }
 
-function getAllCompetitors() {
-  const map = new Map();
-  challenges.forEach((c) => {
-    (c.players || []).forEach((p) => {
-      if (p.name && !map.has(p.name.toLowerCase())) {
-        map.set(p.name.toLowerCase(), p);
-      }
-    });
-  });
-  if (map.size === 0) {
-    (PLAYERS || DEFAULT_PLAYERS).forEach((p) => map.set(p.name.toLowerCase(), p));
+async function syncChallengeToFirebase(challenge) {
+  if (!challenge || !challenge.id) return;
+  if (fbDb) {
+    try {
+      await fbDb.ref(`rep-club/challenges/${challenge.id}`).set(challenge);
+      return;
+    } catch (e) {
+      console.warn("Falha Firebase SDK desafios:", e);
+    }
   }
-  return Array.from(map.values());
+  try {
+    await fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/challenges/${challenge.id}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(challenge)
+    });
+  } catch (e) {
+    console.warn("Falha REST desafios:", e);
+  }
+}
+
+async function removeChallengeFromFirebase(challengeId) {
+  if (!challengeId) return;
+  if (fbDb) {
+    try {
+      await fbDb.ref(`rep-club/challenges/${challengeId}`).remove();
+      return;
+    } catch (e) {}
+  }
+  try {
+    await fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/challenges/${challengeId}.json`, {
+      method: "DELETE"
+    });
+  } catch (e) {}
+}
+
+async function hydrateChallengesFromFirebase() {
+  try {
+    let challengesData = null;
+    if (fbDb) {
+      try {
+        const snap = await fbDb.ref("rep-club/challenges").get();
+        challengesData = snap.val();
+      } catch (e) {}
+    }
+    if (!challengesData) {
+      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/challenges.json");
+      if (resp.ok) challengesData = await resp.json();
+    }
+    if (challengesData && typeof challengesData === "object") {
+      const remoteList = Object.values(challengesData);
+      let changed = false;
+      remoteList.forEach((rc) => {
+        if (!rc || !rc.id) return;
+        const idx = challenges.findIndex((c) => c.id === rc.id);
+        if (idx >= 0) {
+          challenges[idx] = rc;
+        } else {
+          challenges.push(rc);
+        }
+        changed = true;
+      });
+      if (changed) {
+        saveChallenges();
+        renderChallengeSelector();
+        render();
+      }
+    }
+  } catch (err) {
+    console.warn("Erro ao sincronizar desafios remotos:", err);
+  }
 }
 
 function setAuthUser(user) {
   localStorage.setItem(AUTH_USER_KEY, JSON.stringify(user));
   localStorage.setItem(AUTH_PROFILE_KEY, user.id || user.name);
   if (user.email) localStorage.setItem(AUTH_EMAIL_KEY, user.email);
+
+  // Salva no histórico de contas autenticadas deste aparelho
+  saveAccountToHistory(user);
 
   // Filtra e sincroniza os desafios exclusivos do atleta
   const userChallenges = getUserChallenges();
@@ -533,9 +665,7 @@ function clearAuthUser() {
 }
 
 function setAuthProfile(playerId, email = null) {
-  const all = getAllCompetitors();
-  const p = all.find((x) => x.id === playerId) || playerFor(playerId);
-  setAuthUser({ id: playerId, name: p ? p.name : playerId, email: email || `${playerId}@repclub.app` });
+  setAuthUser({ id: playerId, name: playerId, email: email || `${playerId}@repclub.app` });
 }
 
 function clearAuthProfile() {
@@ -570,32 +700,13 @@ function renderAuthUI() {
     if (userBadge) userBadge.style.display = "none";
     if (authOpenBtn) authOpenBtn.style.display = "inline-flex";
   }
-  renderAuthCompetitors();
 }
 
 function openAuthDialog(reasonMsg = null) {
   const errorEl = byId("auth-error");
   if (errorEl) errorEl.textContent = reasonMsg || "";
-  renderAuthCompetitors();
+  renderSavedAccountsUI();
   byId("auth-dialog")?.showModal();
-}
-
-function renderAuthCompetitors() {
-  const container = byId("auth-competitors-list");
-  if (!container) return;
-  const user = getAuthUser();
-  const all = getAllCompetitors();
-
-  container.innerHTML = all.map((p) => {
-    const isCurrent = user && (user.id === p.id || (user.name && user.name.toLowerCase().includes(p.name.toLowerCase())));
-    return `
-      <button type="button" class="button" data-bind-player="${p.id}" data-player-name="${escapeHTML(p.name)}" style="justify-content:center; gap:8px; border: 2px solid ${p.color || 'var(--lime)'}; background: ${isCurrent ? (p.color || 'var(--lime)') : 'transparent'}; color: ${isCurrent ? (p.textColor || '#000') : 'var(--ink)'}; font-weight:700; height:38px; border-radius:4px; cursor:pointer;">
-        <span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:${isCurrent ? '#fff' : (p.color || 'var(--lime)')}; color:${isCurrent ? '#000' : (p.textColor || '#000')}; font-size:11px; font-weight:800;">${p.short || p.name.charAt(0)}</span>
-        <span>${escapeHTML(p.name)}</span>
-        ${isCurrent ? '<span style="font-size:10px;">✓ Ativo</span>' : ''}
-      </button>
-    `;
-  }).join("");
 }
 
 function createDemoStrengthWorkout(id, date, effort, loads, repsByExercise, progressionPoints) {
@@ -862,8 +973,8 @@ async function hydrateFromFirebase() {
     state.workouts = [...pendingLocal, ...syncedRemote];
     state.activePlayer = PLAYERS[0].id;
     saveState();
-    render();
     hydrateProgramsFromFirebase();
+    await hydrateChallengesFromFirebase();
     if (byId("setup-dialog")?.open) byId("setup-dialog").close();
     const ind = byId("sync-status-indicator");
     if (ind) {
@@ -972,7 +1083,20 @@ if (!challenges.some((c) => c.id === activeChallengeId)) {
 }
 
 function getActiveChallenge() {
-  return challenges.find((c) => c.id === activeChallengeId) || challenges[0];
+  const user = getAuthUser();
+  if (user) {
+    const userChallenges = getUserChallenges();
+    if (userChallenges.length > 0) {
+      return userChallenges.find((c) => c.id === activeChallengeId) || userChallenges[0];
+    }
+  }
+  return challenges.find((c) => c.id === activeChallengeId) || challenges[0] || {
+    id: "challenge-empty",
+    title: "Sem Duelo",
+    players: DEFAULT_PLAYERS,
+    period: defaultDuelPeriod(),
+    prize: ""
+  };
 }
 
 function saveChallenges() {
@@ -982,15 +1106,15 @@ function saveChallenges() {
 
 function syncActiveChallengeGlobals() {
   const cur = getActiveChallenge();
-  PLAYERS = Array.isArray(cur.players) && cur.players.length >= 2 ? cur.players : DEFAULT_PLAYERS;
-  challengePrize = cur.prize || "";
-  duelPeriod = cur.period || defaultDuelPeriod();
+  PLAYERS = Array.isArray(cur?.players) && cur.players.length >= 2 ? cur.players : DEFAULT_PLAYERS;
+  challengePrize = cur?.prize || "";
+  duelPeriod = cur?.period || defaultDuelPeriod();
   playerConfig = PLAYERS;
   localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(playerConfig));
   localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
   localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
   if (!PLAYERS.some((p) => p.id === state.activePlayer)) {
-    state.activePlayer = cur.activePlayer || PLAYERS[0].id;
+    state.activePlayer = cur?.activePlayer || PLAYERS[0].id;
   }
 }
 
@@ -1263,7 +1387,7 @@ function renderScoreboard() {
 
   const me = playerFor(state.activePlayer);
   const meStats = rankedPlayers.find((r) => r.player.id === me.id) || { player: me, points: totalPoints(me.id), workouts: duelWorkouts(me.id), volume: 0 };
-  
+
   // No topo (duelo direto 1v1 ou Top 1 vs Top 2)
   const fighter1 = rankedPlayers[0] || meStats;
   const fighter2 = rankedPlayers[1] || (PLAYERS.find((p) => p.id !== fighter1.player.id) ? { player: PLAYERS.find((p) => p.id !== fighter1.player.id), points: 0, workouts: [], volume: 0 } : fighter1);
@@ -1274,6 +1398,26 @@ function renderScoreboard() {
   const lead = f1Points - f2Points;
 
   // Atualização dos botões de estilo e visibilidade
+  const user = getAuthUser();
+  const emptyView = byId("scoreboard-empty");
+  const classicView = byId("scoreboard-classic");
+  const kamehamehaView = byId("scoreboard-kamehameha");
+
+  if (user && getUserChallenges().length === 0) {
+    if (emptyView) {
+      emptyView.style.display = "block";
+      const uNameEl = byId("empty-user-name");
+      if (uNameEl) uNameEl.textContent = user.name || user.email || "Atleta";
+      const btnEmpty = byId("btn-empty-new-challenge");
+      if (btnEmpty) btnEmpty.onclick = () => openSetupDialog("create");
+    }
+    if (classicView) classicView.hidden = true;
+    if (kamehamehaView) kamehamehaView.hidden = true;
+    return;
+  } else {
+    if (emptyView) emptyView.style.display = "none";
+  }
+
   const btnClassic = byId("btn-style-classic");
   const btnKamehameha = byId("btn-style-kamehameha");
   if (btnClassic) {
@@ -1284,8 +1428,6 @@ function renderScoreboard() {
     btnKamehameha.classList.toggle("active", scoreboardStyle === "kamehameha");
     btnKamehameha.setAttribute("aria-pressed", String(scoreboardStyle === "kamehameha"));
   }
-  const classicView = byId("scoreboard-classic");
-  const kamehamehaView = byId("scoreboard-kamehameha");
   if (classicView) classicView.hidden = scoreboardStyle !== "classic";
   if (kamehamehaView) kamehamehaView.hidden = scoreboardStyle !== "kamehameha";
 
@@ -1493,13 +1635,13 @@ function renderWeekChart() {
   byId("modality-breakdown").innerHTML = `
     <div class="modality-row modality-heading"><span>MODALIDADE</span>${PLAYERS.map((p) => `<span>${escapeHTML(p.name)}</span>`).join("")}</div>
     ${Object.entries(MODALITIES).map(([category, modality]) => {
-      const playerCols = PLAYERS.map((player) => {
-        const sessions = duelWorkouts(player.id).filter((w) => w.category === category);
-        const pts = sessions.reduce((sum, w) => sum + pointsForWorkout(w), 0);
-        return `<span class="modality-player"><strong>${sessions.length}t</strong>${pts} pts</span>`;
-      }).join("");
-      return `<div class="modality-row"><span>${modality.label}</span>${playerCols}</div>`;
-    }).join("")}`;
+    const playerCols = PLAYERS.map((player) => {
+      const sessions = duelWorkouts(player.id).filter((w) => w.category === category);
+      const pts = sessions.reduce((sum, w) => sum + pointsForWorkout(w), 0);
+      return `<span class="modality-player"><strong>${sessions.length}t</strong>${pts} pts</span>`;
+    }).join("");
+    return `<div class="modality-row"><span>${modality.label}</span>${playerCols}</div>`;
+  }).join("")}`;
 
   const me = playerFor(state.activePlayer);
   const mePeriod = duelWorkouts(me.id);
@@ -2264,6 +2406,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     };
   });
 
+  const authUser = getAuthUser();
   if (setupMode === "create") {
     const newId = `challenge-${Date.now()}`;
     const newChallenge = {
@@ -2273,6 +2416,8 @@ byId("setup-form").addEventListener("submit", async (event) => {
       period: { start: periodStart, end: periodEnd },
       players: configuredPlayers,
       activePlayer: configuredPlayers[0].id,
+      createdBy: authUser?.id || authUser?.uid || null,
+      creatorEmail: authUser?.email || null,
       createdAt: new Date().toISOString(),
     };
     challenges.push(newChallenge);
@@ -2280,6 +2425,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     saveChallenges();
     syncActiveChallengeGlobals();
     saveState();
+    syncChallengeToFirebase(newChallenge);
     render();
     byId("setup-dialog").close();
     showToast(`Novo desafio "${challengeTitle}" criado com sucesso!`);
@@ -2289,6 +2435,10 @@ byId("setup-form").addEventListener("submit", async (event) => {
     cur.prize = prize;
     cur.period = { start: periodStart, end: periodEnd };
     cur.players = configuredPlayers;
+    if (authUser && !cur.createdBy) {
+      cur.createdBy = authUser.id || authUser.uid;
+      cur.creatorEmail = authUser.email;
+    }
     if (!configuredPlayers.some((p) => p.id === cur.activePlayer)) {
       cur.activePlayer = configuredPlayers[0].id;
     }
@@ -2296,6 +2446,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     syncActiveChallengeGlobals();
     saveState();
     syncDuelToFirebase(cur);
+    syncChallengeToFirebase(cur);
     render();
     byId("setup-dialog").close();
     showToast(`Desafio "${challengeTitle}" atualizado com sucesso!`);
@@ -2597,6 +2748,29 @@ function setupFirebaseSync() {
           render();
         }
       });
+
+      fbDb.ref("rep-club/challenges").on("value", (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          const remoteList = Object.values(val);
+          let changed = false;
+          remoteList.forEach((rc) => {
+            if (!rc || !rc.id) return;
+            const idx = challenges.findIndex((c) => c.id === rc.id);
+            if (idx >= 0) {
+              challenges[idx] = rc;
+            } else {
+              challenges.push(rc);
+            }
+            changed = true;
+          });
+          if (changed) {
+            saveChallenges();
+            renderChallengeSelector();
+            render();
+          }
+        }
+      });
     } catch (e) {
       console.warn("Erro ao configurar listeners Firebase:", e);
     }
@@ -2664,17 +2838,20 @@ byId("btn-auth-open")?.addEventListener("click", () => openAuthDialog());
 byId("close-auth-dialog")?.addEventListener("click", () => byId("auth-dialog")?.close());
 byId("btn-auth-logout")?.addEventListener("click", () => clearAuthProfile());
 
-byId("auth-competitors-list")?.addEventListener("click", (e) => {
-  const btn = e.target.closest("[data-bind-player]");
-  if (btn) {
-    const pId = btn.dataset.bindPlayer;
-    const pName = btn.dataset.playerName || pId;
-    setAuthUser({
-      id: pId,
-      uid: pId,
-      name: pName,
-      email: `${pId}@repclub.app`
-    });
+byId("saved-accounts-list")?.addEventListener("click", (e) => {
+  const removeBtn = e.target.closest("[data-remove-saved]");
+  if (removeBtn) {
+    e.stopPropagation();
+    removeSavedAccount(removeBtn.dataset.removeSaved);
+    return;
+  }
+  const loginBtn = e.target.closest("[data-login-saved]");
+  if (loginBtn) {
+    const key = String(loginBtn.dataset.loginSaved).toLowerCase();
+    const acc = getSavedAccounts().find((a) => String(a.email || a.id).toLowerCase() === key);
+    if (acc) {
+      setAuthUser(acc);
+    }
   }
 });
 
@@ -2874,7 +3051,7 @@ async function hydrateProgramsFromFirebase() {
       try {
         const snap = await fbDb.ref("rep-club/training-programs").get();
         programsData = snap.val();
-      } catch (e) {}
+      } catch (e) { }
     }
     if (!programsData) {
       const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/training-programs.json");
@@ -3040,16 +3217,16 @@ byId("workout-plan-session")?.addEventListener("change", (e) => {
   renderWorkoutFields(e.target.value);
 });
 
-// ANEXO DE FOTO NO REGISTRO DE TREINO
+// ANEXO DE FOTO NO REGISTRO DE TREINO (CÂMERA E GALERIA)
 let currentWorkoutPhoto = null;
-const photoInput = byId("workout-photo-input");
+const photoCameraInput = byId("workout-photo-camera");
+const photoGalleryInput = byId("workout-photo-gallery");
 const photoPreviewWrap = byId("workout-photo-preview-wrap");
 const photoPreview = byId("workout-photo-preview");
 const photoFilename = byId("photo-filename");
 const btnRemovePhoto = byId("btn-remove-photo");
 
-photoInput?.addEventListener("change", (e) => {
-  const file = e.target.files?.[0];
+function handleWorkoutPhotoFile(file) {
   if (!file) return;
   if (photoFilename) photoFilename.textContent = file.name;
   const reader = new FileReader();
@@ -3078,7 +3255,10 @@ photoInput?.addEventListener("change", (e) => {
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
-});
+}
+
+photoCameraInput?.addEventListener("change", (e) => handleWorkoutPhotoFile(e.target.files?.[0]));
+photoGalleryInput?.addEventListener("change", (e) => handleWorkoutPhotoFile(e.target.files?.[0]));
 
 btnRemovePhoto?.addEventListener("click", () => {
   clearWorkoutPhoto();
@@ -3086,7 +3266,8 @@ btnRemovePhoto?.addEventListener("click", () => {
 
 function clearWorkoutPhoto() {
   currentWorkoutPhoto = null;
-  if (photoInput) photoInput.value = "";
+  if (photoCameraInput) photoCameraInput.value = "";
+  if (photoGalleryInput) photoGalleryInput.value = "";
   if (photoFilename) photoFilename.textContent = "Nenhuma foto anexada";
   if (photoPreview) photoPreview.src = "";
   if (photoPreviewWrap) photoPreviewWrap.style.display = "none";
