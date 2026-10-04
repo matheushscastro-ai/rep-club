@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.2.0" />
+    <link rel="stylesheet" href="styles.css?v=2.3.0" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.2.0" defer></script>
+    <script src="app.js?v=2.3.0" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -101,14 +101,14 @@
               <button class="button-tag" id="btn-open-raiox" type="button" title="Abrir Raio-X por modalidade e comentários">🔍 Modo Raio-X</button>
               <button class="button-tag" id="open-setup-btn" type="button" title="Gerenciar participantes do duelo">👥 Participantes</button>
               <div class="score-style-toggle" role="radiogroup" aria-label="Estilo visual do placar">
-                <button type="button" class="style-toggle-btn" id="btn-style-classic" data-style="classic" aria-pressed="false">⚔️ Clássico</button>
-                <button type="button" class="style-toggle-btn active" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="true">⚡ Kamehameha</button>
+                <button type="button" class="style-toggle-btn active" id="btn-style-classic" data-style="classic" aria-pressed="true">⚔️ Clássico</button>
+                <button type="button" class="style-toggle-btn" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="false">⚡ Kamehameha</button>
               </div>
             </div>
           </div>
 
           <!-- MODO CLÁSSICO -->
-          <div class="scoreboard-body scoreboard-classic-view" id="scoreboard-classic" hidden>
+          <div class="scoreboard-body scoreboard-classic-view" id="scoreboard-classic">
             <div class="competitor competitor-you">
               <div class="avatar avatar-lime" id="you-avatar">M</div>
               <div class="competitor-copy"><span class="competitor-label" id="you-label">SEU LADO</span><strong id="you-name">Matheus</strong></div>
@@ -127,7 +127,7 @@
           </div>
 
           <!-- MODO KAMEHAMEHA DRAGON BALL (GOKU SSJ VS PERFECT CELL - 16-BIT RETRO ARCADE) -->
-          <div class="scoreboard-body scoreboard-kamehameha-view" id="scoreboard-kamehameha">
+          <div class="scoreboard-body scoreboard-kamehameha-view" id="scoreboard-kamehameha" hidden>
             <div class="kamehameha-card">
               <!-- Top Fighters Bar -->
               <div class="kamehameha-fighters-header">
@@ -171,56 +171,86 @@
           <p class="action-status" id="action-status"></p>
         </section>
 
-        <section class="program-section" id="programa" aria-labelledby="program-title">
-          <div class="section-heading program-heading">
+        <section class="program-section collapsible-section is-collapsed" id="programa" aria-labelledby="program-title">
+          <div class="section-heading program-heading collapsible-header" role="button" tabindex="0" aria-expanded="false" aria-controls="programa-body">
             <div><p class="eyebrow">PROGRAMA DE MUSCULAÇÃO</p><h2 id="program-title">Treino Jiu + Cardio</h2></div>
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <select id="program-select" class="challenge-select" style="font-size:12px; height:32px; padding:3px 22px 3px 8px;" aria-label="Selecione o programa de musculação"></select>
               <button type="button" class="button-tag" id="btn-open-program-builder" style="height:32px; font-size:11px;">📋 Criar / Gerenciar Treinos</button>
+              <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
             </div>
           </div>
-          <div class="program-list" id="program-list"></div>
+          <div class="collapsible-body" id="programa-body">
+            <div class="program-list" id="program-list"></div>
+          </div>
         </section>
 
         <div class="dashboard-grid">
           <div class="primary-column">
-            <section class="activity-section" id="atividade" aria-labelledby="activity-title">
-              <div class="section-heading activity-heading">
+            <section class="activity-section collapsible-section is-collapsed" id="atividade" aria-labelledby="activity-title">
+              <div class="section-heading activity-heading collapsible-header" role="button" tabindex="0" aria-expanded="false" aria-controls="atividade-body">
                 <div><p class="eyebrow">SEMANA EM MOVIMENTO</p><h2 id="activity-title">Últimos treinos</h2></div>
-                <span class="activity-count" id="activity-count">0 REGISTROS</span>
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="activity-count" id="activity-count">0 REGISTROS</span>
+                  <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+                </div>
               </div>
-              <div class="activity-list" id="activity-list"></div>
+              <div class="collapsible-body" id="atividade-body">
+                <div class="activity-list" id="activity-list"></div>
+              </div>
             </section>
           </div>
 
           <aside class="secondary-column">
-            <section class="week-section" id="comparacao" aria-labelledby="week-title">
-              <div class="section-heading compact-heading">
+            <section class="week-section collapsible-section is-collapsed" id="comparacao" aria-labelledby="week-title">
+              <div class="section-heading compact-heading collapsible-header" role="button" tabindex="0" aria-expanded="false" aria-controls="comparacao-body">
                 <div><p class="eyebrow">COMPARAÇÃO DIÁRIA</p><h2 id="week-title">Pontos do duelo.</h2></div>
+                <div>
+                  <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+                </div>
               </div>
-              <div class="week-chart-scroll"><div class="week-chart" id="week-chart" aria-label="Pontos diários de cada jogador neste período"></div></div>
-              <div class="week-legend"><span><i class="legend-dot legend-you"></i><span id="chart-you-name">Matheus</span></span><span><i class="legend-dot legend-rival"></i><span id="chart-rival-name">Rafa</span></span></div>
-              <div class="modality-breakdown" id="modality-breakdown"></div>
-              <div class="week-summary"><strong id="week-summary-number">0</strong><span>treinos seus<br />neste duelo</span><span class="week-summary-divider"></span><strong id="streak-number">0</strong><span>dias de<br />sequência</span></div>
+              <div class="collapsible-body" id="comparacao-body">
+                <div class="week-chart-scroll"><div class="week-chart" id="week-chart" aria-label="Pontos diários de cada jogador neste período"></div></div>
+                <div class="week-legend"><span><i class="legend-dot legend-you"></i><span id="chart-you-name">Matheus</span></span><span><i class="legend-dot legend-rival"></i><span id="chart-rival-name">Rafa</span></span></div>
+                <div class="modality-breakdown" id="modality-breakdown"></div>
+                <div class="week-summary"><strong id="week-summary-number">0</strong><span>treinos seus<br />neste duelo</span><span class="week-summary-divider"></span><strong id="streak-number">0</strong><span>dias de<br />sequência</span></div>
+              </div>
             </section>
 
-            <section class="rules-section" id="regras" aria-labelledby="rules-title">
-              <div class="rules-header"><span class="rules-icon">↗</span><p class="eyebrow">JOGO LIMPO</p></div>
-              <h2 id="rules-title">Presença + qualidade.</h2>
-              <p>Jiu-jitsu: 11 base + até 4 por duração + 7 por esforço. Musculação: 9 base + até 4 por execução + 2 por progressão + 7 por esforço. Cardio: 8 base + até 4 por duração + 8 por esforço. Máximos: 22, 22 e 20.</p>
-              <div class="rules-foot"><span>1 POR MODALIDADE / DIA</span><span>ESFORÇO 7+ = BÔNUS CHEIO</span></div>
+            <section class="rules-section collapsible-section is-collapsed" id="regras" aria-labelledby="rules-title">
+              <div class="rules-header collapsible-header" role="button" tabindex="0" aria-expanded="false" aria-controls="regras-body" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span class="rules-icon">↗</span>
+                  <div>
+                    <p class="eyebrow" style="margin:0;">JOGO LIMPO</p>
+                    <h2 id="rules-title" style="margin:2px 0 0; font-size:18px;">Presença + qualidade.</h2>
+                  </div>
+                </div>
+                <div>
+                  <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+                </div>
+              </div>
+              <div class="collapsible-body" id="regras-body">
+                <p style="margin-top:10px;">Jiu-jitsu: 11 base + até 4 por duração + 7 por esforço. Musculação: 9 base + até 4 por execução + 2 por progressão + 7 por esforço. Cardio: 8 base + até 4 por duração + 8 por esforço. Máximos: 22, 22 e 20.</p>
+                <div class="rules-foot"><span>1 POR MODALIDADE / DIA</span><span>ESFORÇO 7+ = BÔNUS CHEIO</span></div>
+              </div>
             </section>
           </aside>
         </div>
-        <section class="history-section" id="evolucao" aria-labelledby="history-title">
-          <div class="section-heading history-heading">
+        <section class="history-section collapsible-section is-collapsed" id="evolucao" aria-labelledby="history-title">
+          <div class="section-heading history-heading collapsible-header" role="button" tabindex="0" aria-expanded="false" aria-controls="evolucao-body">
             <div><p class="eyebrow">PROGRESSÃO INDIVIDUAL</p><h2 id="history-title">Histórico de exercício.</h2></div>
-            <label class="history-select-wrap"><span>EXERCÍCIO</span><select id="history-exercise" aria-label="Exercício exibido no histórico"></select></label>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <label class="history-select-wrap" style="margin:0;"><span>EXERCÍCIO</span><select id="history-exercise" aria-label="Exercício exibido no histórico"></select></label>
+              <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+            </div>
           </div>
-          <p class="history-profile" id="history-profile"></p>
-          <div class="history-chart-wrap">
-            <canvas id="history-chart" aria-label="Gráfico histórico do exercício selecionado"></canvas>
-            <p class="history-empty" id="history-empty" hidden></p>
+          <div class="collapsible-body" id="evolucao-body">
+            <p class="history-profile" id="history-profile"></p>
+            <div class="history-chart-wrap">
+              <canvas id="history-chart" aria-label="Gráfico histórico do exercício selecionado"></canvas>
+              <p class="history-empty" id="history-empty" hidden></p>
+            </div>
           </div>
         </section>
         <footer class="page-footer"><span>REP CLUB <span class="footer-dot">·</span> TREINEM JUNTOS, COMPITAM MELHOR.</span><span>PROTÓTIPO LOCAL</span></footer>

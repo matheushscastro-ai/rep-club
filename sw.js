@@ -1,4 +1,4 @@
-const CACHE_NAME = "rep-club-pwa-v3";
+const CACHE_NAME = "rep-club-pwa-v4";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",

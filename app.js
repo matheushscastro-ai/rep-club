@@ -2,7 +2,7 @@ const STORAGE_KEY = "rep-club-demo-v3";
 const PLAYERS_STORAGE_KEY = "rep-club-players-v1";
 const PRIZE_STORAGE_KEY = "rep-club-prize-v1";
 const PERIOD_STORAGE_KEY = "rep-club-period-v1";
-const SCOREBOARD_STYLE_KEY = "rep-club-score-style-v1";
+const SCOREBOARD_STYLE_KEY = "rep-club-score-style-v2";
 const CHALLENGES_STORAGE_KEY = "rep-club-challenges-v2";
 const ACTIVE_CHALLENGE_KEY = "rep-club-active-challenge-v2";
 const firebaseConfig = {
@@ -70,7 +70,7 @@ function loadPlayerConfig() {
 let playerConfig = loadPlayerConfig();
 let PLAYERS = playerConfig || DEFAULT_PLAYERS;
 let challengePrize = localStorage.getItem(PRIZE_STORAGE_KEY);
-let scoreboardStyle = localStorage.getItem(SCOREBOARD_STYLE_KEY) || "kamehameha";
+let scoreboardStyle = localStorage.getItem(SCOREBOARD_STYLE_KEY) || "classic";
 const DEFAULT_PROGRAM = {
   id: "program-jiu-cardio",
   name: "Treino Jiu + Cardio",
@@ -2796,17 +2796,17 @@ function openRaioXDialog() {
     const p2Pct = 100 - p1Pct;
     return `
       <div class="raiox-comparison-row">
-        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:4px;">
+        <div class="raiox-row-header">
           <span>${icon} ${label}</span>
-          <span style="font-size:11px; color:#666;">${s1.count}t (${s1.pts} pts) vs ${s2.count}t (${s2.pts} pts)</span>
+          <span class="raiox-row-stats">${s1.count}t (${s1.pts} pts) vs ${s2.count}t (${s2.pts} pts)</span>
         </div>
         <div class="raiox-bar-track">
-          <div class="raiox-bar-fill-p1" style="width:${p1Pct}%; background:${p1.color};" title="${p1.name}: ${s1.pts} pts (${p1Pct}%)"></div>
-          <div class="raiox-bar-fill-p2" style="width:${p2Pct}%; background:${p2.color};" title="${p2.name}: ${s2.pts} pts (${p2Pct}%)"></div>
+          <div class="raiox-bar-fill-p1" style="width:${p1Pct}%; background:${p1.color};" title="${escapeHTML(p1.name)}: ${s1.pts} pts (${p1Pct}%)"></div>
+          <div class="raiox-bar-fill-p2" style="width:${p2Pct}%; background:${p2.color};" title="${escapeHTML(p2.name)}: ${s2.pts} pts (${p2Pct}%)"></div>
         </div>
-        <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:800; color:#555; margin-top:2px;">
-          <span style="color:${p1.color};">${p1.name}: ${s1.pts} pts (${p1Pct}%)</span>
-          <span style="color:${p2.color};">${p2.name}: ${s2.pts} pts (${p2Pct}%)</span>
+        <div class="raiox-row-footer">
+          <span style="color:${p1.color};">${escapeHTML(p1.name)}: ${s1.pts} pts (${p1Pct}%)</span>
+          <span style="color:${p2.color};">${escapeHTML(p2.name)}: ${s2.pts} pts (${p2Pct}%)</span>
         </div>
       </div>
     `;
@@ -2828,6 +2828,43 @@ function openRaioXDialog() {
 byId("btn-open-raiox")?.addEventListener("click", () => openRaioXDialog());
 byId("close-raiox-dialog")?.addEventListener("click", () => byId("raiox-dialog")?.close());
 byId("btn-close-raiox")?.addEventListener("click", () => byId("raiox-dialog")?.close());
+
+// CONTROLE DOS TÓPICOS RECOLHÍVEIS (MINIMIZADOS POR PADRÃO)
+document.addEventListener("click", (e) => {
+  const header = e.target.closest(".collapsible-header");
+  if (!header) return;
+
+  // Ignorar cliques diretos em selects ou botões de ação internos (exceto o próprio badge de toggle)
+  if (e.target.closest("select, input") || (e.target.closest("button") && !e.target.closest(".collapse-toggle-badge"))) {
+    return;
+  }
+
+  const section = header.closest(".collapsible-section");
+  if (!section) return;
+
+  const isCollapsed = section.classList.toggle("is-collapsed");
+  header.setAttribute("aria-expanded", String(!isCollapsed));
+
+  const textEl = header.querySelector(".toggle-text");
+  if (textEl) {
+    textEl.textContent = isCollapsed ? "Expandir" : "Recolher";
+  }
+
+  // Se abriu a seção de histórico, redesenhar gráfico com dimensões corretas
+  if (!isCollapsed && section.id === "evolucao") {
+    setTimeout(() => renderHistoryChart(), 50);
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
+    const header = e.target.closest(".collapsible-header");
+    if (header && e.target === header) {
+      e.preventDefault();
+      header.click();
+    }
+  }
+});
 
 // MENU DA ENGRENAGEM (DROPDOWN NO TOPO)
 const btnGear = byId("btn-gear-menu");

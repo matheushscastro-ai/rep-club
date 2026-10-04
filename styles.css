@@ -103,8 +103,111 @@ a { color: inherit; text-decoration: none; }
 .gear-divider { height: 1px; background: #e5e7eb; margin: 4px 0; }
 .activity-photo-thumb { width: 44px; height: 44px; object-fit: cover; border-radius: 4px; border: 1px solid #d0d2c9; cursor: pointer; transition: transform .15s ease; }
 .activity-photo-thumb:hover { transform: scale(1.08); }
-.raiox-comparison-row { display: grid; grid-template-columns: 85px 1fr 85px; align-items: center; gap: 8px; padding: 8px 10px; background: #fbfbf8; border: 1px solid #e5e7eb; border-radius: 6px; }
-.raiox-bar-track { display: flex; height: 8px; background: #e5e7eb; border-radius: 4px; overflow: hidden; }
+
+/* RAIO-X RESPONSIVO */
+.raiox-dialog {
+  width: min(520px, calc(100vw - 24px)) !important;
+  max-width: 520px !important;
+  padding: 20px 16px !important;
+  border-radius: 8px !important;
+  box-sizing: border-box !important;
+}
+.raiox-comparison-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 12px;
+  background: #fbfbf8;
+  border: 1px solid #e2e4dc;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.raiox-bar-track {
+  display: flex;
+  height: 12px;
+  background: #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+  width: 100%;
+}
+.raiox-bar-fill-p1, .raiox-bar-fill-p2 {
+  height: 100%;
+  transition: width 0.3s ease;
+}
+.raiox-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.raiox-row-stats {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.raiox-row-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 800;
+  gap: 8px;
+}
+
+/* SEÇÕES RECOLHÍVEIS / MINIMIZADAS */
+.collapsible-section {
+  transition: all 0.2s ease;
+}
+.collapsible-header {
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  padding: 6px 0;
+  border-radius: 4px;
+}
+.collapsible-header:hover {
+  opacity: 0.92;
+}
+.collapse-toggle-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  background: #f0f2eb;
+  color: #4b5563;
+  border: 1px solid #d0d2c9;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+.collapse-toggle-badge:hover {
+  background: #e4e7dc;
+  color: #111827;
+}
+.collapsible-section.is-collapsed .collapsible-body {
+  display: none !important;
+}
+.collapsible-section.is-collapsed {
+  padding-bottom: 6px;
+}
+.collapsible-section:not(.is-collapsed) .toggle-icon {
+  transform: rotate(180deg);
+}
+.toggle-icon {
+  display: inline-block;
+  transition: transform 0.2s ease;
+  font-size: 10px;
+  line-height: 1;
+}
+
 .topbar-btn {
   display: inline-flex;
   align-items: center;
