@@ -45,8 +45,8 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  // Network first for API/Supabase, cache first for static assets
-  if (event.request.url.includes("supabase.co") || event.request.method !== "GET") {
+  // Network first / bypass para APIs em tempo real (Firebase / Supabase)
+  if (event.request.url.includes("firebaseio.com") || event.request.url.includes("googleapis.com") || event.request.url.includes("supabase.co") || event.request.method !== "GET") {
     return;
   }
   event.respondWith(

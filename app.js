@@ -5,9 +5,27 @@ const PERIOD_STORAGE_KEY = "rep-club-period-v1";
 const SCOREBOARD_STYLE_KEY = "rep-club-score-style-v1";
 const CHALLENGES_STORAGE_KEY = "rep-club-challenges-v2";
 const ACTIVE_CHALLENGE_KEY = "rep-club-active-challenge-v2";
-const SUPABASE_URL = "https://clojwloczhmjiivcazjh.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_zQRh7cNIIcFebCxZ7_vpPA_2ceLdrB4";
-var supabaseClient = window.supabase?.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const firebaseConfig = {
+  apiKey: "AIzaSyCWCyQ-2XLKrkJ_Z1_saihANmcD1Oz6lCI",
+  authDomain: "mathub-f08b6.firebaseapp.com",
+  databaseURL: "https://mathub-f08b6-default-rtdb.firebaseio.com",
+  projectId: "mathub-f08b6",
+  storageBucket: "mathub-f08b6.firebasestorage.app",
+  messagingSenderId: "298779617555",
+  appId: "1:298779617555:web:6a5d5bdf022d37c86412e6",
+  measurementId: "G-3XNWNEEXMK"
+};
+
+let fbApp = null;
+let fbDb = null;
+try {
+  if (window.firebase) {
+    fbApp = window.firebase.initializeApp(firebaseConfig);
+    fbDb = window.firebase.database();
+  }
+} catch (e) {
+  console.warn("Firebase init error:", e);
+}
 
 const PLAYER_PALETTE = [
   { color: "#d7fa52", text: "#111827", name: "Lime" },
@@ -369,19 +387,15 @@ let toastTimer;
 let restTimerInterval = null;
 let restSecondsRemaining = 0;
 const CANONICAL_DUEL_ID = "a3026d38-17fe-48a1-92d3-d5e8df833147";
-let remoteDuelId = localStorage.getItem("rep-club-remote-duel-id");
-if (!remoteDuelId || remoteDuelId === "eb2bd8e3-d7d1-47ed-8a33-d037b65fd6a7" || remoteDuelId === "8ccacbe4-c067-48b4-b116-ca1d26743ad7") {
-  remoteDuelId = CANONICAL_DUEL_ID;
-  localStorage.setItem("rep-club-remote-duel-id", CANONICAL_DUEL_ID);
-}
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-function remoteWorkoutPayload(workout) {
+function firebaseWorkoutPayload(workout) {
   return {
-    duel_id: remoteDuelId,
+    id: workout.id,
+    duel_id: CANONICAL_DUEL_ID,
     player_id: workout.owner,
     category: workout.category,
     workout_date: workout.date,
@@ -391,125 +405,172 @@ function remoteWorkoutPayload(workout) {
     effort: workout.effort || null,
     duration: workout.duration || null,
     exercises: workout.exercises || null,
+    created_at: workout.createdAt || new Date().toISOString()
   };
 }
 
-async function syncWorkoutToSupabase(workout) {
-  if (!supabaseClient || !remoteDuelId || String(workout.id).startsWith("demo-")) return;
-  try {
-    const payload = remoteWorkoutPayload(workout);
-    const { data, error } = await supabaseClient.from("workouts").insert(payload).select().single();
-    if (error) {
-      console.warn("Erro ao salvar treino no Supabase:", error);
+async function syncWorkoutToFirebase(workout) {
+  if (String(workout.id).startsWith("demo-")) return;
+  const payload = firebaseWorkoutPayload(workout);
+
+  if (fbDb) {
+    try {
+      await fbDb.ref(`rep-club/workouts/${workout.id}`).set(payload);
       return;
+    } catch (err) {
+      console.warn("Erro ao salvar no Firebase via SDK:", err);
     }
-    if (data?.id) {
-      const oldId = workout.id;
-      workout.id = data.id;
-      const local = state.workouts.find((w) => w.id === oldId);
-      if (local) local.id = data.id;
-      saveState();
+  }
+
+  try {
+    await fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts/${workout.id}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (err) {
+    console.warn("Falha de rede ao sincronizar com Firebase:", err);
+  }
+}
+
+async function deleteWorkoutFromFirebase(workoutId) {
+  if (!workoutId || String(workoutId).startsWith("demo-")) return;
+  if (fbDb) {
+    try {
+      await fbDb.ref(`rep-club/workouts/${workoutId}`).remove();
+      return;
+    } catch (err) {
+      console.warn("Erro ao excluir do Firebase via SDK:", err);
     }
+  }
+
+  try {
+    await fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts/${workoutId}.json`, {
+      method: "DELETE"
+    });
   } catch (err) {
-    console.warn("Falha de rede ao sincronizar com Supabase:", err);
+    console.warn("Falha ao excluir no Firebase REST:", err);
   }
 }
 
-async function deleteWorkoutFromSupabase(workoutId) {
-  if (!supabaseClient || !workoutId || String(workoutId).startsWith("demo-")) return;
+async function resetDuelInFirebase() {
+  if (fbDb) {
+    try {
+      await fbDb.ref("rep-club/workouts").remove();
+      return;
+    } catch (err) {
+      console.warn("Erro ao resetar treinos no Firebase via SDK:", err);
+    }
+  }
+
   try {
-    const { error } = await supabaseClient.from("workouts").delete().eq("id", workoutId);
-    if (error) console.warn("Erro ao excluir do Supabase:", error);
+    await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts.json", {
+      method: "DELETE"
+    });
   } catch (err) {
-    console.warn("Falha ao excluir do Supabase:", err);
+    console.warn("Falha ao resetar no Firebase REST:", err);
   }
 }
 
-async function resetDuelInSupabase(duelId) {
-  if (!supabaseClient || !duelId) return;
+async function syncDuelToFirebase(challenge) {
+  const payload = {
+    id: challenge.id || CANONICAL_DUEL_ID,
+    player_one_name: challenge.players?.[0]?.name || "Matheus",
+    player_two_name: challenge.players?.[1]?.name || "Rafa",
+    prize: challenge.prize || "",
+    period_start: challenge.period?.start || "",
+    period_end: challenge.period?.end || ""
+  };
+  if (fbDb) {
+    try {
+      await fbDb.ref("rep-club/duel").update(payload);
+      return;
+    } catch (e) {
+      console.warn("Falha ao salvar duelo via SDK:", e);
+    }
+  }
   try {
-    const { error } = await supabaseClient.from("workouts").delete().eq("duel_id", duelId);
-    if (error) console.warn("Erro ao resetar treinos no Supabase:", error);
-  } catch (err) {
-    console.warn("Falha ao resetar no Supabase:", err);
+    await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/duel.json", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+  } catch (e) {
+    console.warn("Falha ao salvar duelo via REST:", e);
   }
 }
 
-async function hydrateFromSupabase() {
-  if (!supabaseClient) return;
+async function hydrateFromFirebase() {
   try {
-    const targetDuelId = remoteDuelId || CANONICAL_DUEL_ID;
-    let { data: duels, error: duelError } = await supabaseClient
-      .from("duels")
-      .select("*")
-      .eq("id", targetDuelId)
-      .limit(1);
+    let workoutsData = null;
+    let duelData = null;
 
-    if (duelError || !duels?.[0]) {
-      if (targetDuelId !== CANONICAL_DUEL_ID) {
-        remoteDuelId = CANONICAL_DUEL_ID;
-        localStorage.setItem("rep-club-remote-duel-id", CANONICAL_DUEL_ID);
-        const fallback = await supabaseClient.from("duels").select("*").eq("id", CANONICAL_DUEL_ID).limit(1);
-        if (fallback.data?.[0]) {
-          duels = fallback.data;
-        } else {
-          return;
-        }
-      } else {
-        return;
+    if (fbDb) {
+      try {
+        const [workoutsSnap, duelSnap] = await Promise.all([
+          fbDb.ref("rep-club/workouts").get(),
+          fbDb.ref("rep-club/duel").get()
+        ]);
+        workoutsData = workoutsSnap.val();
+        duelData = duelSnap.val();
+      } catch (e) {
+        console.warn("Firebase SDK get falhou, tentando REST:", e);
       }
     }
 
-    const duel = duels[0];
-    remoteDuelId = duel.id;
-    localStorage.setItem("rep-club-remote-duel-id", remoteDuelId);
-    savePlayerConfig([duel.player_one_name, duel.player_two_name]);
-    challengePrize = duel.prize || "";
-    duelPeriod = { start: duel.period_start, end: duel.period_end };
-    localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
-    localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
-
-    if (challenges && challenges.length > 0) {
-      challenges[0].prize = challengePrize;
-      challenges[0].period = duelPeriod;
-      challenges[0].players = PLAYERS;
-      saveChallenges();
+    if (!workoutsData && !duelData) {
+      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club.json");
+      if (resp.ok) {
+        const root = await resp.json();
+        workoutsData = root?.workouts || null;
+        duelData = root?.duel || null;
+      }
     }
 
-    const { data: remoteWorkouts, error: workoutsError } = await supabaseClient
-      .from("workouts")
-      .select("*")
-      .eq("duel_id", remoteDuelId)
-      .order("created_at", { ascending: false });
+    if (duelData) {
+      savePlayerConfig([duelData.player_one_name, duelData.player_two_name]);
+      challengePrize = duelData.prize || "";
+      duelPeriod = { start: duelData.period_start, end: duelData.period_end };
+      localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
+      localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
 
-    if (!workoutsError && remoteWorkouts) {
-      // Mantenha quaisquer treinos locais que ainda não foram sincronizados
-      const pendingLocal = state.workouts.filter((lw) => !remoteWorkouts.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
-      const syncedRemote = remoteWorkouts.map((workout) => ({
-        id: workout.id,
-        challengeId: activeChallengeId || "challenge-1",
-        owner: workout.player_id,
-        category: workout.category,
-        date: workout.workout_date,
-        name: workout.name || MODALITIES[workout.category]?.label || workout.category,
-        comments: workout.comments || "",
-        points: workout.points || 0,
-        effort: workout.effort,
-        duration: workout.duration || 0,
-        exercises: workout.exercises,
-        qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
-      }));
-
-      state.workouts = [...pendingLocal, ...syncedRemote];
+      if (challenges && challenges.length > 0) {
+        challenges[0].prize = challengePrize;
+        challenges[0].period = duelPeriod;
+        challenges[0].players = PLAYERS;
+        saveChallenges();
+      }
     }
+
+    const remoteWorkoutsList = workoutsData ? Object.values(workoutsData) : [];
+    const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
+    const syncedRemote = remoteWorkoutsList.map((workout) => ({
+      id: workout.id,
+      challengeId: activeChallengeId || "challenge-1",
+      owner: workout.player_id,
+      category: workout.category,
+      date: workout.workout_date,
+      name: workout.name || MODALITIES[workout.category]?.label || workout.category,
+      comments: workout.comments || "",
+      points: workout.points || 0,
+      effort: workout.effort,
+      duration: workout.duration || 0,
+      exercises: workout.exercises,
+      qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
+    }));
+
+    state.workouts = [...pendingLocal, ...syncedRemote];
     state.activePlayer = PLAYERS[0].id;
     saveState();
     render();
     if (byId("setup-dialog")?.open) byId("setup-dialog").close();
     const ind = byId("sync-status-indicator");
-    if (ind) ind.textContent = "● Supabase Sincronizado";
+    if (ind) {
+      ind.textContent = "● Google Firebase Ao Vivo";
+      ind.style.color = "var(--lime)";
+    }
   } catch (error) {
-    console.warn("Supabase indisponível; mantendo os dados locais.", error);
+    console.warn("Firebase indisponível; mantendo os dados locais.", error);
   }
 }
 
@@ -1674,9 +1735,7 @@ function handleResetChallenge() {
 
   state.workouts = state.workouts.filter((w) => (w.challengeId || "challenge-1") !== cur.id);
   saveState();
-  if (remoteDuelId) {
-    resetDuelInSupabase(remoteDuelId);
-  }
+  resetDuelInFirebase();
   render();
   showToast(`Desafio "${cur.title}" foi zerado com sucesso!`);
 }
@@ -1697,7 +1756,7 @@ byId("activity-list")?.addEventListener("click", (event) => {
   }
   state.workouts = state.workouts.filter((w) => String(w.id) !== String(workoutId));
   saveState();
-  deleteWorkoutFromSupabase(workoutId);
+  deleteWorkoutFromFirebase(workoutId);
   render();
   showToast("Treino excluído com sucesso.");
 });
@@ -1770,6 +1829,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     saveChallenges();
     syncActiveChallengeGlobals();
     saveState();
+    syncDuelToFirebase(cur);
     render();
     byId("setup-dialog").close();
     showToast(`Desafio "${challengeTitle}" atualizado com sucesso!`);
@@ -1949,9 +2009,9 @@ byId("workout-form").addEventListener("submit", async (event) => {
   }
   saveState();
   try {
-    await syncWorkoutToSupabase(workout);
+    await syncWorkoutToFirebase(workout);
   } catch (error) {
-    console.warn("Treino salvo localmente, mas não foi enviado ao Supabase.", error);
+    console.warn("Treino salvo localmente, mas não foi enviado ao Firebase.", error);
   }
   byId("workout-dialog").close();
   workoutForm.reset();
@@ -2003,48 +2063,70 @@ if (!playerConfig || challengePrize === null || duelPeriod === null) {
   byId("setup-period-end").value = setupPeriod.end;
   byId("setup-dialog").showModal();
 }
-hydrateFromSupabase();
+hydrateFromFirebase();
 
-// SINCRONIZAÇÃO EM TEMPO REAL E MULTI-DISPOSITIVOS VIA SUPABASE
-function setupSupabaseSync() {
-  if (!supabaseClient) return;
-
-  // Canal Realtime para escutar inserções e deleções de outros celulares
-  try {
-    supabaseClient
-      .channel("rep-club-sync-channel")
-      .on("postgres_changes", { event: "*", schema: "public", table: "workouts" }, (payload) => {
-        console.log("Supabase Realtime workout update:", payload);
-        hydrateFromSupabase();
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "duels" }, () => {
-        hydrateFromSupabase();
-      })
-      .subscribe((status) => {
+// SINCRONIZAÇÃO EM TEMPO REAL E MULTI-DISPOSITIVOS VIA GOOGLE FIREBASE
+function setupFirebaseSync() {
+  if (fbDb) {
+    try {
+      fbDb.ref("rep-club/workouts").on("value", (snapshot) => {
+        const val = snapshot.val();
+        const remoteWorkoutsList = val ? Object.values(val) : [];
+        const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
+        const syncedRemote = remoteWorkoutsList.map((workout) => ({
+          id: workout.id,
+          challengeId: activeChallengeId || "challenge-1",
+          owner: workout.player_id,
+          category: workout.category,
+          date: workout.workout_date,
+          name: workout.name || MODALITIES[workout.category]?.label || workout.category,
+          comments: workout.comments || "",
+          points: workout.points || 0,
+          effort: workout.effort,
+          duration: workout.duration || 0,
+          exercises: workout.exercises,
+          qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
+        }));
+        state.workouts = [...pendingLocal, ...syncedRemote];
+        saveState();
+        render();
         const ind = byId("sync-status-indicator");
         if (ind) {
-          ind.textContent = status === "SUBSCRIBED" ? "● Supabase Ao Vivo" : "● Supabase Conectado";
-          ind.style.color = status === "SUBSCRIBED" ? "var(--lime)" : "#a1a1aa";
+          ind.textContent = "● Google Firebase Ao Vivo";
+          ind.style.color = "var(--lime)";
         }
       });
-  } catch (err) {
-    console.warn("Falha ao inicializar Supabase Realtime:", err);
+
+      fbDb.ref("rep-club/duel").on("value", (snapshot) => {
+        const duelData = snapshot.val();
+        if (duelData) {
+          savePlayerConfig([duelData.player_one_name, duelData.player_two_name]);
+          challengePrize = duelData.prize || "";
+          duelPeriod = { start: duelData.period_start, end: duelData.period_end };
+          localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
+          localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
+          render();
+        }
+      });
+    } catch (e) {
+      console.warn("Erro ao configurar listeners Firebase:", e);
+    }
   }
 
-  // Polling automático a cada 15 segundos para garantir paridade entre celulares
+  // Backup polling a cada 15s para garantir consistência total
   setInterval(() => {
     if (!document.hidden) {
-      hydrateFromSupabase();
+      hydrateFromFirebase();
     }
   }, 15000);
 
   // Sincroniza ao focar ou alternar de volta ao app no celular
-  window.addEventListener("focus", () => hydrateFromSupabase());
+  window.addEventListener("focus", () => hydrateFromFirebase());
   document.addEventListener("visibilitychange", () => {
-    if (!document.hidden) hydrateFromSupabase();
+    if (!document.hidden) hydrateFromFirebase();
   });
 }
-setupSupabaseSync();
+setupFirebaseSync();
 
 // PWA: SERVICE WORKER & INSTALAÇÃO NO CELULAR
 let deferredPwaPrompt = null;
