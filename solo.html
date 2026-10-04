@@ -7,38 +7,273 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <title>Rep Club | Meu treino</title>
+    <title>Rep Club | Modo Solo</title>
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
     <link rel="icon" type="image/png" href="assets/icons/icon-192.png" />
-    <link rel="stylesheet" href="styles.css?v=challenge-period-1" />
-    <link rel="stylesheet" href="solo.css" />
-    <script src="solo-app.js" defer></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css?v=2.3.0" />
+    <link rel="stylesheet" href="solo.css?v=2.3.0" />
+    <script src="solo-app.js?v=2.3.0" defer></script>
   </head>
   <body class="solo-body">
     <header class="solo-header">
-      <a class="brand" href="index.html" aria-label="Rep Club, voltar ao duelo"><span class="brand-mark">R<span>+</span></span><span class="brand-name">REP<span>CLUB</span></span></a>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <span class="solo-tag">MODO INDIVIDUAL</span>
+      <a class="brand" href="index.html" aria-label="Rep Club, voltar ao duelo">
+        <span class="brand-mark">R<span>+</span></span>
+        <span class="brand-name">REP<span>CLUB</span></span>
+      </a>
+      <div class="solo-header-actions">
+        <button type="button" class="button-tag" id="btn-open-solo-raiox" title="Abrir Raio-X individual">🔍 Meu Raio-X</button>
         <a href="index.html" class="button button-outline" style="min-height:30px; font-size:10px; padding:0 10px;">⚔️ Voltar ao Duelo</a>
       </div>
     </header>
+
     <main class="solo-main">
-      <section class="solo-hero"><p class="eyebrow"><span class="live-dot"></span> MEU TREINO</p><h1>Treine. Registre.<br /><span>Veja a evolução.</span></h1><p>Seu histórico fica salvo neste celular, sem duelo e sem outro participante.</p></section>
-      <nav class="solo-tabs" aria-label="Seções"><button class="solo-tab active" data-tab="workouts">Treinos</button><button class="solo-tab" data-tab="history">Histórico</button></nav>
-      <section id="solo-workouts" class="solo-panel">
-        <div class="solo-heading"><div><p class="eyebrow">PROGRAMA</p><h2>Escolha sua sessão.</h2></div><span id="solo-session-count"></span></div>
+      <section class="solo-hero">
+        <p class="eyebrow"><span class="live-dot"></span> MODO SOLO · EVOLUÇÃO INDIVIDUAL</p>
+        <h1>Treine no seu ritmo.<br /><span>Supere sua meta.</span></h1>
+        <p>Seus treinos, fotos, cargas e histórico ficam salvos neste aparelho com pontuação e acompanhamento de nível.</p>
+      </section>
+
+      <!-- PLACAR SOLO: META SEMANAL & NÍVEL DE PODER (ESTILO CLÁSSICO) -->
+      <section class="scoreboard solo-scoreboard" aria-labelledby="solo-score-title">
+        <div class="scoreboard-topline">
+          <div class="scoreboard-period-badge">
+            <span id="solo-score-title">META DA SEMANA</span>
+            <span id="solo-days-remaining">FALTAM 0 DIAS</span>
+          </div>
+          <div class="scoreboard-top-actions">
+            <div id="solo-tier-badge" class="solo-power-badge">🥋 Faixa Branca</div>
+          </div>
+        </div>
+
+        <div class="scoreboard-body solo-scoreboard-body">
+          <div class="solo-user-side">
+            <div class="avatar avatar-lime" id="solo-avatar">🎯</div>
+            <div class="competitor-copy">
+              <span class="competitor-label">PROGRESSO SEMANAL</span>
+              <strong id="solo-user-name">Treino Solo</strong>
+            </div>
+          </div>
+
+          <div class="solo-progress-wrap">
+            <div class="solo-score-display">
+              <strong id="solo-week-pts">00</strong>
+              <span>/ 60 PTS (<span id="solo-week-pct">0%</span>)</span>
+            </div>
+            <div class="solo-progress-track">
+              <div id="solo-progress-fill" class="solo-progress-fill" style="width: 0%;"></div>
+            </div>
+            <p id="solo-lead-message" class="solo-lead-message">Registre seu primeiro treino da semana para subir de nível!</p>
+          </div>
+        </div>
+
+        <div class="scoreboard-footer solo-scoreboard-footer">
+          <div>🔥 SEQUÊNCIA: <strong id="solo-streak-count">0</strong> DIAS SEGUIDOS</div>
+          <div>🏋️ TOTAL: <strong id="solo-week-volume">0 kg</strong> LEVANTADOS</div>
+          <div>📅 SESSÕES: <strong id="solo-week-workouts">0</strong> CONCLUÍDAS</div>
+        </div>
+      </section>
+
+      <!-- ESCOLHA DA SESSÃO DE TREINO -->
+      <section class="solo-workout-picker">
+        <div class="solo-heading">
+          <div>
+            <p class="eyebrow">PROGRAMA DE TREINO</p>
+            <h2 id="solo-current-program-name">Treino Jiu + Cardio</h2>
+          </div>
+          <select id="solo-program-select" class="challenge-select" style="font-size:12px; height:32px; padding:3px 20px 3px 8px;" aria-label="Selecione o programa"></select>
+        </div>
+
         <div class="solo-plan-nav" id="solo-plan-nav"></div>
         <div class="solo-plan-title" id="solo-plan-title"></div>
-        <button class="button button-primary solo-register" id="solo-register" type="button">+ Registrar treino selecionado</button>
-        <div class="solo-activity" id="solo-activity"></div>
+
+        <button class="button button-primary solo-register" id="solo-register" type="button">
+          <span class="button-plus">+</span> Registrar treino selecionado
+        </button>
       </section>
-      <section id="solo-history" class="solo-panel" hidden>
-        <div class="solo-heading"><div><p class="eyebrow">PROGRESSÃO</p><h2>Evolução por exercício.</h2></div><select id="solo-history-exercise" aria-label="Exercício do histórico"></select></div>
-        <p class="history-profile">Carga, reps ou tempo dos seus registros.</p>
-        <div class="history-chart-wrap"><canvas id="solo-history-chart"></canvas><p id="solo-history-empty" class="history-empty" hidden></p></div>
-      </section>
+
+      <!-- TÓPICOS MINIMIZADOS POR PADRÃO -->
+      <div class="solo-collapsible-stack">
+        <!-- TÓPICO 1: MEUS ÚLTIMOS TREINOS -->
+        <section class="activity-section collapsible-section is-collapsed" id="solo-section-activity" aria-labelledby="solo-activity-title">
+          <div class="section-heading activity-heading collapsible-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+              <p class="eyebrow">SEMANA EM MOVIMENTO</p>
+              <h2 id="solo-activity-title">Meus últimos treinos</h2>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="activity-count" id="solo-session-count">0 REGISTROS</span>
+              <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+            </div>
+          </div>
+          <div class="collapsible-body">
+            <div class="solo-activity-list" id="solo-activity"></div>
+          </div>
+        </section>
+
+        <!-- TÓPICO 2: EVOLUÇÃO POR EXERCÍCIO -->
+        <section class="history-section collapsible-section is-collapsed" id="solo-section-history" aria-labelledby="solo-history-title">
+          <div class="section-heading history-heading collapsible-header" role="button" tabindex="0" aria-expanded="false">
+            <div>
+              <p class="eyebrow">PROGRESSÃO INDIVIDUAL</p>
+              <h2 id="solo-history-title">Evolução por exercício</h2>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <label class="history-select-wrap" style="margin:0;">
+                <span>EXERCÍCIO</span>
+                <select id="solo-history-exercise" aria-label="Exercício do histórico"></select>
+              </label>
+              <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+            </div>
+          </div>
+          <div class="collapsible-body">
+            <p class="history-profile" id="solo-history-profile">Histórico de cargas e repetições salvas neste aparelho.</p>
+            <div class="history-chart-wrap">
+              <canvas id="solo-history-chart" aria-label="Gráfico de evolução do exercício selecionado"></canvas>
+              <p id="solo-history-empty" class="history-empty" hidden></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- TÓPICO 3: REGRAS E PONTUAÇÃO SOLO -->
+        <section class="rules-section collapsible-section is-collapsed" id="solo-section-rules" aria-labelledby="solo-rules-title">
+          <div class="rules-header collapsible-header" role="button" tabindex="0" aria-expanded="false" style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span class="rules-icon">↗</span>
+              <div>
+                <p class="eyebrow" style="margin:0;">SISTEMA DE PONTOS</p>
+                <h2 id="solo-rules-title" style="margin:2px 0 0; font-size:18px;">Como funcionam os pontos solo</h2>
+              </div>
+            </div>
+            <div>
+              <span class="collapse-toggle-badge"><span class="toggle-icon">▾</span> <span class="toggle-text">Expandir</span></span>
+            </div>
+          </div>
+          <div class="collapsible-body">
+            <p style="margin-top:10px;">Musculação: 9 base + até 4 por execução + 2 por progressão + até 7 por esforço (máx 22 pts). Jiu-jitsu: 11 base + até 4 por duração + até 7 por esforço (máx 22 pts). Cardio: 8 base + até 4 por tempo + até 8 por esforço (máx 20 pts). Meta semanal recomendada: <strong>60 pontos</strong>.</p>
+            <div class="rules-foot">
+              <span>META SEMANAL: 60 PTS</span>
+              <span>ESFORÇO 7+ = BÔNUS CHEIO</span>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <footer class="page-footer" style="margin-top:40px;">
+        <span>REP CLUB <span class="footer-dot">·</span> MODO INDIVIDUAL</span>
+        <span>HISTÓRICO LOCAL</span>
+      </footer>
     </main>
-    <dialog class="workout-dialog" id="solo-dialog" aria-labelledby="solo-dialog-title"><form id="solo-form"><div class="dialog-top"><div><p class="eyebrow">REGISTRO INDIVIDUAL</p><h2 id="solo-dialog-title">Novo treino.</h2></div><button class="close-button" id="solo-close" type="button" aria-label="Fechar">×</button></div><label class="form-field"><span>NOME DO TREINO · OPCIONAL</span><input name="name" maxlength="50" placeholder="Ex.: Treino A bem feito" /></label><label class="form-field"><span>COMENTÁRIOS · OPCIONAL</span><textarea name="comments" rows="3" maxlength="500" placeholder="Como foi o treino?"></textarea></label><label class="form-field"><span>DATA DO TREINO</span><input name="date" id="solo-date" type="date" required /></label><div id="solo-fields"></div><p class="points-preview" id="solo-preview"></p><p class="form-error" id="solo-error"></p><div class="dialog-actions"><button class="button button-quiet" id="solo-cancel" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar treino ↗</button></div></form></dialog>
+
+    <!-- MODAL DE REGISTRO DE TREINO SOLO -->
+    <dialog class="workout-dialog" id="solo-dialog" aria-labelledby="solo-dialog-title">
+      <form id="solo-form">
+        <div class="dialog-top">
+          <div>
+            <p class="eyebrow"><span class="live-dot"></span> REGISTRO INDIVIDUAL</p>
+            <h2 id="solo-dialog-title">Novo treino.</h2>
+          </div>
+          <button class="close-button" id="solo-close" type="button" aria-label="Fechar">×</button>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+          <label class="form-field" style="margin:0;">
+            <span>MODALIDADE</span>
+            <select name="category" id="solo-category-select">
+              <option value="strength" selected>Musculação</option>
+              <option value="bjj">Jiu-jitsu</option>
+              <option value="cardio">Cardio</option>
+            </select>
+          </label>
+          <label class="form-field" style="margin:0;">
+            <span>DATA DO TREINO</span>
+            <input name="date" id="solo-date" type="date" required />
+          </label>
+        </div>
+
+        <div id="solo-strength-selectors" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:10px;">
+          <label class="form-field" style="margin:0;">
+            <span>PROGRAMA</span>
+            <select id="solo-dialog-program-select" aria-label="Programa de musculação"></select>
+          </label>
+          <label class="form-field" style="margin:0;">
+            <span>SESSÃO / LETRA</span>
+            <select id="solo-dialog-session-select" aria-label="Sessão"></select>
+          </label>
+        </div>
+
+        <label class="form-field">
+          <span>NOME DO TREINO · OPCIONAL</span>
+          <input name="name" id="solo-workout-name" maxlength="50" placeholder="Ex.: Treino A bem executado" />
+        </label>
+
+        <!-- CAMPOS DINÂMICOS DE EXERCÍCIOS OU DURAÇÃO -->
+        <div id="solo-fields"></div>
+
+        <!-- ANEXAR FOTO DO TREINO -->
+        <div class="form-field" style="margin-top:12px;">
+          <span>FOTO / COMPROVANTE DO TREINO · OPCIONAL</span>
+          <div style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+            <label class="button button-outline" style="cursor:pointer; display:inline-flex; align-items:center; gap:6px; min-height:36px; padding:0 12px; font-size:11px;">
+              <span>📷 Tirar foto / Galeria</span>
+              <input type="file" id="solo-photo-input" accept="image/*" capture="environment" style="display:none;" />
+            </label>
+            <span id="solo-photo-filename" style="font-size:11px; color:#777970; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:180px;">Nenhuma foto anexada</span>
+          </div>
+          <div id="solo-photo-preview-wrap" style="display:none; margin-top:8px; position:relative; width:fit-content;">
+            <img id="solo-photo-preview" src="" alt="Prévia da foto" style="max-height:120px; border-radius:6px; border:1px solid #d0d2c9; display:block;" />
+            <button type="button" id="solo-btn-remove-photo" style="position:absolute; top:-6px; right:-6px; background:#ef4444; color:#fff; border:0; border-radius:50%; width:20px; height:20px; cursor:pointer; font-size:12px; line-height:1;">×</button>
+          </div>
+        </div>
+
+        <!-- COMENTÁRIOS AO FINAL -->
+        <label class="form-field" style="margin-top:10px;">
+          <span>COMENTÁRIOS DO TREINO · OPCIONAL</span>
+          <textarea name="comments" id="solo-workout-comments" rows="2" maxlength="300" placeholder="Sensações, intensidade, ajustes de carga..."></textarea>
+        </label>
+
+        <p class="form-error" id="solo-error"></p>
+
+        <div class="dialog-actions">
+          <button class="button button-quiet" id="solo-cancel" type="button">Cancelar</button>
+          <button class="button button-primary" type="submit">Salvar treino ↗</button>
+        </div>
+      </form>
+    </dialog>
+
+    <!-- MODAL RAIO-X INDIVIDUAL -->
+    <dialog class="setup-dialog raiox-dialog" id="solo-raiox-dialog" aria-labelledby="solo-raiox-title">
+      <div class="dialog-top">
+        <div>
+          <p class="eyebrow"><span class="live-dot"></span> ANÁLISE DE DESEMPENHO</p>
+          <h2 id="solo-raiox-title" style="margin-top:4px;">Meu Raio-X</h2>
+        </div>
+        <button class="close-button" type="button" id="solo-close-raiox-dialog" aria-label="Fechar">×</button>
+      </div>
+
+      <!-- CARD DE VEREDITO / TRASH TALK MOTIVACIONAL DO TATAME -->
+      <div id="solo-raiox-roast-card" class="raiox-roast-card" style="background:#1e201a; border-left:4px solid var(--lime); border-radius:6px; padding:12px 14px; margin: 12px 0 16px; color:#f4f4ee;">
+        <span style="font-size:9px; font-weight:800; letter-spacing:0.1em; color:var(--lime); display:block; margin-bottom:4px;">🔥 VEREDITO DO TATAME</span>
+        <p id="solo-raiox-roast-text" style="font-size:13px; font-weight:600; line-height:1.4; margin:0;">Analisando seu histórico de treinos...</p>
+      </div>
+
+      <!-- DISTRIBUIÇÃO POR MODALIDADE -->
+      <div id="solo-raiox-list" style="display:grid; gap:10px;"></div>
+
+      <div style="margin-top:16px; display:flex; justify-content:flex-end;">
+        <button type="button" class="button button-quiet" id="solo-btn-close-raiox" style="min-height:36px; font-size:11px;">Fechar</button>
+      </div>
+    </dialog>
+
+    <!-- MODAL DE VISUALIZAÇÃO DE FOTO -->
+    <dialog id="solo-photo-viewer-dialog" style="border:none; border-radius:8px; padding:0; background:transparent; max-width:92vw; max-height:90vh; overflow:hidden;">
+      <div style="position:relative; background:#111; padding:6px; border-radius:8px;">
+        <img id="solo-viewer-img" src="" alt="Foto do treino" style="max-width:100%; max-height:82vh; border-radius:4px; display:block;" />
+        <button type="button" id="solo-close-viewer" style="position:absolute; top:12px; right:12px; background:rgba(0,0,0,0.7); color:#fff; border:0; border-radius:50%; width:32px; height:32px; cursor:pointer; font-size:18px;">×</button>
+      </div>
+    </dialog>
   </body>
 </html>

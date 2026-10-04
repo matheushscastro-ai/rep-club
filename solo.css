@@ -1,34 +1,198 @@
 .solo-body { min-height: 100vh; background: #f2f2ed; }
-.solo-header { display: flex; max-width: 960px; align-items: center; justify-content: space-between; margin: 0 auto; padding: 24px 22px; border-bottom: 1px solid #d9dad2; }
+.solo-header { display: flex; max-width: 960px; align-items: center; justify-content: space-between; margin: 0 auto; padding: 20px 22px; border-bottom: 1px solid #d9dad2; }
 .solo-header .brand { margin: 0; }
+.solo-header-actions { display: flex; align-items: center; gap: 8px; }
 .solo-tag { color: #85877e; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
-.solo-main { width: min(960px, calc(100% - 44px)); margin: 0 auto; padding: 38px 0 70px; }
-.solo-hero h1 { margin: 15px 0 10px; font-family: var(--display); font-size: clamp(48px, 7vw, 75px); font-weight: 700; line-height: .9; }
+.solo-main { width: min(960px, calc(100% - 44px)); margin: 0 auto; padding: 30px 0 70px; }
+
+.solo-hero h1 { margin: 12px 0 8px; font-family: var(--display); font-size: clamp(40px, 6vw, 68px); font-weight: 700; line-height: .92; }
 .solo-hero h1 span { color: #777970; }
-.solo-hero p:last-child { margin: 14px 0 0; color: #777970; font-size: 13px; }
-.solo-tabs { display: flex; gap: 5px; margin-top: 36px; border-bottom: 1px solid #d9dad2; }
-.solo-tab { padding: 12px 16px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #85877e; cursor: pointer; font-size: 11px; font-weight: 700; }
-.solo-tab.active { border-bottom-color: #20211d; color: #20211d; }
-.solo-panel { padding-top: 27px; }
-.solo-panel[hidden] { display: none; }
-.solo-heading { display: flex; align-items: end; justify-content: space-between; gap: 20px; }
-.solo-heading h2 { margin: 7px 0 0; font-family: var(--display); font-size: 29px; font-weight: 600; line-height: 1; }
+.solo-hero p:last-child { margin: 10px 0 0; color: #777970; font-size: 13px; }
+
+/* PLACAR SOLO COM META SEMANAL & NÍVEL DE PODER */
+.solo-scoreboard {
+  margin-top: 24px;
+}
+.solo-power-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #1e201a;
+  color: var(--lime);
+  font-family: var(--display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+.solo-scoreboard-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 20px;
+  align-items: center;
+  padding: 16px 20px;
+}
+.solo-user-side {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.solo-progress-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.solo-score-display {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.solo-score-display strong {
+  font-family: var(--display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1;
+}
+.solo-score-display span {
+  font-size: 12px;
+  color: #777970;
+  font-weight: 700;
+}
+.solo-progress-track {
+  width: 100%;
+  height: 14px;
+  background: #e2e4dc;
+  border-radius: 7px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.08);
+}
+.solo-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #bad72f, var(--lime));
+  border-radius: 7px;
+  transition: width 0.4s ease;
+}
+.solo-lead-message {
+  margin: 0;
+  font-size: 11px;
+  color: #62645c;
+  font-weight: 600;
+}
+
+.solo-scoreboard-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 20px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #62645c;
+  border-top: 1px solid #e0e1d8;
+  background: #fafaf5;
+  flex-wrap: wrap;
+}
+.solo-scoreboard-footer strong {
+  color: var(--ink);
+}
+
+/* SEÇÃO DE ESCOLHA DE TREINO */
+.solo-workout-picker {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid #d9dad2;
+  border-radius: 6px;
+  background: #fbfbf8;
+}
+.solo-heading { display: flex; align-items: end; justify-content: space-between; gap: 15px; }
+.solo-heading h2 { margin: 4px 0 0; font-family: var(--display); font-size: 26px; font-weight: 600; line-height: 1; }
 #solo-session-count { color: #85877e; font-size: 9px; font-weight: 700; letter-spacing: .08em; }
-.solo-plan-nav { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 22px; }
-.solo-plan-button { padding: 14px 10px; border: 1px solid #d9dad2; border-radius: 4px; background: #f7f7f2; color: #777970; cursor: pointer; font-family: var(--display); font-size: 18px; font-weight: 600; }
+
+.solo-plan-nav { display: grid; grid-template-columns: repeat(auto-fit, minmax(65px, 1fr)); gap: 8px; margin-top: 16px; }
+.solo-plan-button { padding: 12px 8px; border: 1px solid #d9dad2; border-radius: 4px; background: #f7f7f2; color: #777970; cursor: pointer; font-family: var(--display); font-size: 16px; font-weight: 600; transition: all .15s ease; text-align: center; }
+.solo-plan-button:hover { background: #ebece4; color: #20211d; }
 .solo-plan-button.active { border-color: #20211d; background: #20211d; color: #d7fa52; }
-.solo-plan-title { margin: 14px 0; color: #62645c; font-size: 11px; font-weight: 700; }
-.solo-register { min-height: 45px; }
-.solo-record { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 5px 12px; padding: 14px; border: 1px solid #d9dad2; border-radius: 4px; background: #f7f7f2; }
-.solo-record strong { font-size: 11px; }
-.solo-record span { color: #777970; font-size: 10px; }
-.solo-record .record-points { grid-row: 1 / span 2; grid-column: 2; align-self: center; color: #20211d; font-family: var(--display); font-size: 20px; }
-.solo-delete-btn { grid-row: 1 / span 2; grid-column: 3; display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 1px solid transparent; border-radius: 4px; background: transparent; color: #92948a; cursor: pointer; font-size: 14px; transition: all .16s ease; }
+.solo-plan-title { margin: 12px 0 16px; color: #52544e; font-size: 12px; font-weight: 700; }
+.solo-register { min-height: 48px; width: 100%; font-size: 13px; font-weight: 800; }
+
+/* PILHA DE TÓPICOS RECOLHÍVEIS (MINIMIZADOS POR PADRÃO) */
+.solo-collapsible-stack {
+  margin-top: 24px;
+  display: grid;
+  gap: 16px;
+}
+.solo-collapsible-stack .collapsible-section {
+  padding: 16px;
+  background: #fbfbf8;
+  border: 1px solid #e0e1d8;
+  border-radius: 6px;
+}
+.solo-collapsible-stack .collapsible-section.is-collapsed {
+  padding: 12px 16px;
+}
+
+/* ATIVIDADES SOLO */
+.solo-activity-list { display: grid; gap: 10px; margin-top: 12px; }
+.solo-record {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #e2e4dc;
+  border-radius: 6px;
+  background: #ffffff;
+  transition: transform .12s ease;
+}
+.solo-record:hover { transform: translateY(-1px); }
+.solo-photo-thumb {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #d0d2c9;
+  cursor: pointer;
+  transition: transform .15s ease;
+}
+.solo-photo-thumb:hover { transform: scale(1.08); }
+
+.solo-record-info { display: grid; gap: 3px; min-width: 0; }
+.solo-record-info strong { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.solo-record-info span { color: #777970; font-size: 10px; }
+.solo-record-comments { font-size: 10px; color: #52544e; line-height: 1.35; margin-top: 2px; }
+
+.solo-record .record-points {
+  color: #20211d;
+  font-family: var(--display);
+  font-size: 20px;
+  font-weight: 700;
+  text-align: right;
+  white-space: nowrap;
+}
+.solo-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: #92948a;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all .16s ease;
+}
 .solo-delete-btn:hover { background: #fee2e2; color: #ef4444; border-color: #fca5a5; }
-.solo-fields { display: grid; gap: 8px; }
-.solo-exercise { padding: 10px; border: 1px solid #e0e1d8; border-radius: 3px; background: #f8f8f3; }
-.solo-exercise-title { display: flex; justify-content: space-between; gap: 10px; font-size: 10px; font-weight: 700; }
-.solo-exercise-title span { color: #777970; font-size: 8px; }
+
+/* EXERCÍCIOS NO MODAL */
+.solo-fields { display: grid; gap: 8px; margin-top: 8px; }
+.solo-exercise { padding: 10px; border: 1px solid #e0e1d8; border-radius: 4px; background: #f8f8f3; }
+.solo-exercise-title { display: flex; justify-content: space-between; gap: 10px; font-size: 11px; font-weight: 700; }
+.solo-exercise-title span { color: #777970; font-size: 9px; }
 .solo-exercise-fields { display: grid; grid-template-columns: 92px 1fr; gap: 8px; margin-top: 9px; }
 .solo-exercise-fields label, .solo-set-row label { display: grid; gap: 4px; color: #85877e; font-size: 7px; font-weight: 700; letter-spacing: .05em; }
 .solo-exercise input, .solo-sport input, .solo-sport select, .solo-exercise select { width: 100%; min-height: 32px; padding: 0 7px; border: 1px solid #d2d3ca; border-radius: 3px; background: #fff; color: #20211d; font-size: 11px; }
@@ -39,11 +203,15 @@
 .solo-sport { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .solo-sport label { display: grid; gap: 5px; color: #85877e; font-size: 8px; font-weight: 700; }
 
-@media (max-width: 620px) {
-  .solo-header { padding: 17px 18px; }
-  .solo-main { width: calc(100% - 36px); padding-top: 27px; }
-  .solo-hero h1 { font-size: clamp(45px, 13vw, 60px); }
-  .solo-plan-nav { gap: 5px; }
-  .solo-plan-button { padding: 12px 6px; font-size: 16px; }
+@media (max-width: 680px) {
+  .solo-header { padding: 14px 16px; }
+  .solo-main { width: calc(100% - 24px); padding-top: 20px; }
+  .solo-hero h1 { font-size: clamp(34px, 10vw, 48px); }
+  .solo-scoreboard-body { grid-template-columns: 1fr; gap: 12px; padding: 14px; }
+  .solo-scoreboard-footer { font-size: 8px; gap: 8px; }
+  .solo-workout-picker { padding: 14px; }
+  .solo-plan-nav { gap: 6px; }
+  .solo-plan-button { padding: 10px 4px; font-size: 15px; }
   .solo-sport { grid-template-columns: 1fr; }
+  .solo-record { grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 8px; padding: 10px; }
 }
