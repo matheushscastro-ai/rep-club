@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.6.0" />
+    <link rel="stylesheet" href="styles.css?v=2.7.0" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.6.0" defer></script>
+    <script src="app.js?v=2.7.0" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -67,7 +67,6 @@
             <select id="challenge-select" class="challenge-select" aria-label="Desafio selecionado"></select>
           </div>
           <div class="topbar-right-wrap">
-            <button type="button" class="topbar-btn" id="btn-topbar-new-challenge" title="Criar novo duelo" style="background:var(--lime); color:#000; border-color:var(--lime); font-weight:700;">➕ Novo</button>
             <a href="solo.html" class="topbar-btn topbar-btn-solo" id="topbar-solo-link" title="Abrir Modo Solo (treino individual)">🎯 MS</a>
             <div class="gear-menu-wrap">
               <button type="button" class="topbar-btn topbar-gear-btn" id="btn-gear-menu" title="Configurações e ações do duelo" aria-haspopup="true">⚙️</button>
@@ -92,6 +91,26 @@
           </div>
         </section>
 
+        <!-- ESTADO VAZIO LIMPO (SEM DUELOS OU MODO LIVRE) -->
+        <section class="scoreboard-empty-view" id="scoreboard-empty" style="display:none; text-align:center; padding:48px 20px; background:#fff; border-radius:14px; border:1px solid #d0d2c9; box-shadow:0 4px 20px rgba(0,0,0,0.04); margin:20px auto; max-width:440px;">
+          <div style="width:64px; height:64px; border-radius:50%; background:var(--lime); color:var(--ink); display:inline-flex; align-items:center; justify-content:center; font-size:28px; font-weight:800; margin:0 auto 16px; box-shadow:0 4px 14px rgba(215,250,82,0.4);">⚔️</div>
+          <h2 style="font-size:22px; font-weight:800; margin:0 0 8px; color:var(--ink); font-family:var(--display); letter-spacing:-0.02em;">Sem Duelo Ativo</h2>
+          <p style="font-size:13px; color:#55574f; line-height:1.5; margin:0 auto 24px; max-width:320px;" id="empty-duel-desc">
+            Crie um novo desafio para competir com seus rivais ou treine no Modo Solo.
+          </p>
+          <div style="display:flex; flex-direction:column; gap:10px; max-width:280px; margin:0 auto;">
+            <button type="button" class="button button-primary" id="btn-empty-new-challenge" style="justify-content:center; font-weight:800; font-size:13px; min-height:44px; box-shadow:0 4px 12px rgba(215,250,82,0.35);">
+              ➕ Criar Novo Duelo
+            </button>
+            <a href="solo.html" class="button button-outline" id="btn-empty-solo" style="justify-content:center; font-weight:700; font-size:13px; min-height:42px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">
+              🎯 Abrir Modo Solo
+            </a>
+            <button type="button" class="button" id="btn-empty-auth" style="background:#18181b; color:#fff; justify-content:center; font-weight:700; font-size:12px; min-height:40px; display:none;">
+              👤 Fazer Login
+            </button>
+          </div>
+        </section>
+
         <section class="scoreboard" id="main-scoreboard" aria-labelledby="score-title">
           <div class="scoreboard-topline">
             <div class="scoreboard-period-badge">
@@ -105,20 +124,6 @@
                 <button type="button" class="style-toggle-btn active" id="btn-style-classic" data-style="classic" aria-pressed="true">⚔️ Clássico</button>
                 <button type="button" class="style-toggle-btn" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="false">⚡ Kamehameha</button>
               </div>
-            </div>
-          </div>
-
-          <!-- ESTADO VAZIO (SEM DUELOS OU MODO LIVRE) -->
-          <div class="scoreboard-body scoreboard-empty-view" id="scoreboard-empty" style="display:none; text-align:center; padding:28px 16px; background:#fff; border-radius:12px; border:1px dashed #d0d2c9; margin:10px 0;">
-            <span style="font-size:36px; display:block; margin-bottom:8px;">🎯</span>
-            <h3 style="font-size:17px; margin:0 0 6px; color:#1f2937;">Nenhum duelo ativo</h3>
-            <p style="font-size:12px; color:#6b7280; max-width:360px; margin:0 auto 16px;" id="empty-duel-desc">
-              Você pode usar o app livremente: acesse o <strong>Modo Solo</strong> para registrar treinos individuais ou crie um novo duelo para competir!
-            </p>
-            <div style="display:flex; justify-content:center; gap:8px; flex-wrap:wrap;">
-              <button type="button" class="button button-primary" id="btn-empty-new-challenge" style="font-weight:700;">➕ Criar Novo Duelo</button>
-              <a href="solo.html" class="button button-outline" style="font-weight:700; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">🎯 Abrir Modo Solo</a>
-              <button type="button" class="button" id="btn-empty-auth" style="background:#18181b; color:#fff; font-weight:700; display:none;">👤 Fazer Login</button>
             </div>
           </div>
 

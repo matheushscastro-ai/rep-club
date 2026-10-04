@@ -1023,75 +1023,28 @@ async function resetDuelInFirebase() {
 }
 
 async function syncDuelToFirebase(challenge) {
-  const payload = {
-    id: challenge.id || CANONICAL_DUEL_ID,
-    title: challenge.title || "Duelo 01",
-    player_one_name: challenge.players?.[0]?.name || "Matheus",
-    player_two_name: challenge.players?.[1]?.name || "Rafa",
-    prize: challenge.prize || "",
-    period_start: challenge.period?.start || "",
-    period_end: challenge.period?.end || ""
-  };
-  if (fbDb) {
-    try {
-      await fbDb.ref("rep-club/duel").update(payload);
-      return;
-    } catch (e) {
-      console.warn("Falha ao salvar duelo via SDK:", e);
-    }
-  }
-  try {
-    await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/duel.json", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-  } catch (e) {
-    console.warn("Falha ao salvar duelo via REST:", e);
+  if (challenge && challenge.id) {
+    await syncChallengeToFirebase(challenge);
   }
 }
 
 async function hydrateFromFirebase() {
   try {
     let workoutsData = null;
-    let duelData = null;
 
     if (fbDb) {
       try {
-        const [workoutsSnap, duelSnap] = await Promise.all([
-          fbDb.ref("rep-club/workouts").get(),
-          fbDb.ref("rep-club/duel").get()
-        ]);
+        const workoutsSnap = await fbDb.ref("rep-club/workouts").get();
         workoutsData = workoutsSnap.val();
-        duelData = duelSnap.val();
       } catch (e) {
         console.warn("Firebase SDK get falhou, tentando REST:", e);
       }
     }
 
-    if (!workoutsData && !duelData) {
-      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club.json");
+    if (!workoutsData) {
+      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts.json");
       if (resp.ok) {
-        const root = await resp.json();
-        workoutsData = root?.workouts || null;
-        duelData = root?.duel || null;
-      }
-    }
-
-    if (duelData) {
-      savePlayerConfig([duelData.player_one_name, duelData.player_two_name]);
-      challengePrize = duelData.prize || "";
-      duelPeriod = { start: duelData.period_start, end: duelData.period_end };
-      localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
-      localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
-
-      if (challenges && challenges.length > 0) {
-        if (duelData.title) challenges[0].title = duelData.title;
-        challenges[0].prize = challengePrize;
-        challenges[0].period = duelPeriod;
-        challenges[0].players = PLAYERS;
-        saveChallenges();
-        renderChallengeSelector();
+        workoutsData = await resp.json();
       }
     }
 
@@ -1193,35 +1146,24 @@ const activeDuelPeriod = () => duelPeriod || defaultDuelPeriod();
 
 function loadChallenges() {
   try {
-    const saved = JSON.parse(localStorage.getItem(CHALLENGES_STORAGE_KEY));
-    if (Array.isArray(saved) && saved.length > 0 && saved.every((c) => c.id && c.title)) {
-      return saved;
+    const raw = localStorage.getItem(CHALLENGES_STORAGE_KEY);
+    if (raw !== null) {
+      const saved = JSON.parse(raw);
+      if (Array.isArray(saved)) {
+        return saved.filter((c) => c && c.id && c.title);
+      }
     }
   } catch (error) {
     console.warn("Não foi possível ler os desafios salvos.", error);
   }
 
-  const savedPrize = localStorage.getItem(PRIZE_STORAGE_KEY) || "";
-  const savedPeriod = duelPeriod || defaultDuelPeriod();
-  const savedPlayers = playerConfig || DEFAULT_PLAYERS;
-
-  return [
-    {
-      id: "challenge-1",
-      title: "Duelo 01",
-      prize: savedPrize,
-      period: savedPeriod,
-      players: savedPlayers,
-      activePlayer: savedPlayers[0].id,
-      createdAt: new Date().toISOString(),
-    },
-  ];
+  return [];
 }
 
 let challenges = loadChallenges();
-let activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || challenges[0].id;
+let activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || (challenges[0]?.id || "none");
 if (!challenges.some((c) => c.id === activeChallengeId)) {
-  activeChallengeId = challenges[0].id;
+  activeChallengeId = challenges[0]?.id || "none";
 }
 
 function getActiveChallenge() {
@@ -1295,11 +1237,9 @@ function renderChallengeSelector() {
     if (miniTitle) miniTitle.textContent = "Sem Duelo Ativo";
     if (miniStatus) miniStatus.textContent = "MODO LIVRE";
     if (select) {
-      select.innerHTML = `
-        <option value="none" selected>⚪ Sem duelo ativo</option>
-        <option value="auth">👤 Entrar para ver duelos</option>
-      `;
+      select.innerHTML = '<option value="none" selected>⚪ Sem duelo ativo</option>';
       select.value = "none";
+      select.style.display = "none";
     }
     return;
   }
@@ -1311,11 +1251,14 @@ function renderChallengeSelector() {
     if (miniTitle) miniTitle.textContent = "Sem Duelo Ativo";
     if (miniStatus) miniStatus.textContent = "MODO LIVRE";
     if (select) {
-      select.innerHTML = '<option value="none" selected>⚪ Sem duelo ativo (+ Novo)</option>';
+      select.innerHTML = '<option value="none" selected>⚪ Sem duelo ativo</option>';
       select.value = "none";
+      select.style.display = "none";
     }
     return;
   }
+
+  if (select) select.style.display = "inline-block";
 
   if (activeChallengeId === "none") {
     if (miniTitle) miniTitle.textContent = "Sem Duelo Ativo";
@@ -1583,19 +1526,29 @@ function renderScoreboard() {
   const classicView = byId("scoreboard-classic");
   const kamehamehaView = byId("scoreboard-kamehameha");
 
-  if (!cur || activeChallengeId === "none" || (user && getUserChallenges().length === 0)) {
+  const isNoDuel = !cur || activeChallengeId === "none" || (user && getUserChallenges().length === 0);
+
+  const duelSections = [
+    document.querySelector(".intro-row"),
+    byId("main-scoreboard"),
+    document.querySelector(".roast-banner"),
+    document.querySelector(".action-section"),
+    byId("programa"),
+    document.querySelector(".dashboard-grid"),
+    byId("evolucao")
+  ];
+
+  if (isNoDuel) {
+    duelSections.forEach((el) => { if (el) el.style.display = "none"; });
     if (emptyView) {
       emptyView.style.display = "block";
-      const uNameEl = byId("empty-user-name");
       const emptyAuthBtn = byId("btn-empty-auth");
       const descEl = byId("empty-duel-desc");
 
       if (user) {
-        if (uNameEl) uNameEl.textContent = user.name || user.email || "Atleta";
         if (emptyAuthBtn) emptyAuthBtn.style.display = "none";
-        if (descEl) descEl.innerHTML = `Você está na visão geral sem nenhum duelo ativo. Crie seu duelo para competir ou treine individualmente pelo <strong>Modo Solo</strong>.`;
+        if (descEl) descEl.innerHTML = `Olá, <strong>${escapeHTML(user.name || user.email)}</strong>! Você não possui nenhum duelo ativo no momento. Crie um novo duelo para competir ou treine pelo Modo Solo.`;
       } else {
-        if (uNameEl) uNameEl.textContent = "Visitante";
         if (emptyAuthBtn) {
           emptyAuthBtn.style.display = "inline-flex";
           emptyAuthBtn.onclick = () => openAuthDialog();
@@ -1609,6 +1562,7 @@ function renderScoreboard() {
     if (kamehamehaView) kamehamehaView.hidden = true;
     return;
   } else {
+    duelSections.forEach((el) => { if (el) el.style.display = ""; });
     if (emptyView) emptyView.style.display = "none";
   }
 
@@ -2475,14 +2429,14 @@ byId("setup-players-list")?.addEventListener("click", (event) => {
 let setupMode = "edit";
 let currentSetupChallengeId = null;
 
-async function openSetupDialog(mode = "edit") {
-  const user = getAuthUser();
-  if (!user) {
-    openAuthDialog("Por favor, faça login antes de criar ou editar duelos.");
-    return;
+function openSetupDialog(mode = "edit") {
+  const cur = getActiveChallenge();
+  if (mode !== "create" && (!cur || activeChallengeId === "none")) {
+    mode = "create";
   }
   setupMode = mode;
-  const cur = getActiveChallenge();
+
+  const user = getAuthUser();
   const cancelBtn = byId("cancel-setup-dialog");
   const closeBtn = byId("close-setup-dialog");
   const deleteBtn = byId("delete-challenge-btn");
@@ -2494,9 +2448,6 @@ async function openSetupDialog(mode = "edit") {
 
   currentSetupChallengeId = mode === "create" ? `challenge-${Date.now()}` : (cur?.id || `challenge-${Date.now()}`);
 
-  // Carrega atletas registrados
-  await loadRegisteredUsersDirectory();
-
   if (mode === "create") {
     byId("setup-title").textContent = "Criar novo desafio";
     byId("setup-copy").textContent = "Cadastre o nome, participantes, datas e prêmio da nova disputa.";
@@ -2505,7 +2456,7 @@ async function openSetupDialog(mode = "edit") {
     const defaultPeriod = defaultDuelPeriod();
     byId("setup-period-start").value = defaultPeriod.start;
     byId("setup-period-end").value = defaultPeriod.end;
-    const myName = user?.name || (user?.email ? user.email.split("@")[0] : "Eu");
+    const myName = user?.name || (user?.email ? user.email.split("@")[0] : "Você");
     renderSetupPlayers([myName, "Rival"]);
     if (deleteBtn) deleteBtn.style.display = "none";
   } else {
@@ -2555,7 +2506,13 @@ async function openSetupDialog(mode = "edit") {
     };
   }
 
-  byId("setup-dialog").showModal();
+  byId("setup-dialog")?.showModal();
+
+  // Carrega atletas registrados em segundo plano
+  loadRegisteredUsersDirectory().then(() => {
+    const names = getSetupPlayerNames();
+    if (names.length >= 2) renderSetupPlayers(names);
+  }).catch(() => {});
 }
 
 byId("open-setup-btn")?.addEventListener("click", () => {
@@ -2594,6 +2551,10 @@ byId("delete-challenge-btn")?.addEventListener("click", () => {
     return;
   }
   removeChallengeFromFirebase(cur.id);
+  try {
+    fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/duel.json", { method: "DELETE" });
+  } catch (e) {}
+
   state.workouts = state.workouts.filter((w) => (w.challengeId || "challenge-1") !== cur.id);
   challenges = challenges.filter((c) => c.id !== cur.id);
 
@@ -2690,6 +2651,18 @@ byId("setup-form").addEventListener("submit", async (event) => {
   const authUser = getAuthUser();
   if (setupMode === "create") {
     const newId = currentSetupChallengeId || `challenge-${Date.now()}`;
+    let creatorId = authUser?.id || authUser?.uid || null;
+    let creatorEmail = authUser?.email || null;
+    if (!authUser) {
+      const p1 = configuredPlayers[0];
+      setAuthUser({
+        id: p1.id,
+        name: p1.name,
+        email: ""
+      });
+      creatorId = p1.id;
+    }
+
     const newChallenge = {
       id: newId,
       title: challengeTitle,
@@ -2697,8 +2670,8 @@ byId("setup-form").addEventListener("submit", async (event) => {
       period: { start: periodStart, end: periodEnd },
       players: configuredPlayers,
       activePlayer: configuredPlayers[0].id,
-      createdBy: authUser?.id || authUser?.uid || null,
-      creatorEmail: authUser?.email || null,
+      createdBy: creatorId,
+      creatorEmail: creatorEmail,
       createdAt: new Date().toISOString(),
     };
     challenges.push(newChallenge);
@@ -2995,22 +2968,6 @@ function setupFirebaseSync() {
         }
       });
 
-      fbDb.ref("rep-club/duel").on("value", (snapshot) => {
-        const duelData = snapshot.val();
-        if (duelData) {
-          savePlayerConfig([duelData.player_one_name, duelData.player_two_name]);
-          challengePrize = duelData.prize || "";
-          duelPeriod = { start: duelData.period_start, end: duelData.period_end };
-          localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
-          localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
-          if (duelData.title && challenges && challenges.length > 0) {
-            challenges[0].title = duelData.title;
-            saveChallenges();
-            renderChallengeSelector();
-          }
-          render();
-        }
-      });
 
       fbDb.ref("rep-club/challenges").on("value", (snapshot) => {
         const val = snapshot.val();
@@ -3081,7 +3038,7 @@ byId("btn-pwa-install")?.addEventListener("click", async () => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.4.0").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.0").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
@@ -3688,11 +3645,15 @@ document.addEventListener("click", (e) => {
   }
 });
 
-byId("gear-new-challenge")?.addEventListener("click", () => {
+byId("gear-new-challenge")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
   closeGearMenu();
   openSetupDialog("create");
 });
-byId("gear-edit-challenge")?.addEventListener("click", () => {
+byId("gear-edit-challenge")?.addEventListener("click", (e) => {
+  e.preventDefault();
+  e.stopPropagation();
   closeGearMenu();
   const cur = getActiveChallenge();
   if (!cur || activeChallengeId === "none") {
