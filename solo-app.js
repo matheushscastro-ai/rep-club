@@ -56,6 +56,56 @@ const DEFAULT_PROGRAM = {
   ]
 };
 
+const PREGNANCY_PROGRAM = {
+  id: "program-gravida",
+  name: "Grávida - nem parada nem correndo",
+  structure: "ABC",
+  sessions: [
+    {
+      id: "A",
+      day: "DIA 1",
+      title: "Pernas e Estabilidade Pélvica (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1 },
+        { name: "Sentar e Levantar do Banco/Cadeira", sets: 3, min: 10, max: 12, factor: 1 },
+        { name: "Elevação Pélvica com as Costas no Banco (Hip Thrust)", sets: 3, min: 10, max: 12, factor: 1 },
+        { name: "Remada Baixa no Cabo / Elástico Sentada", sets: 3, min: 12, max: 12, factor: 1 },
+        { name: "Respiração Diafragmática com Ativação Transversa", sets: 3, min: 8, max: 10, unit: "ciclos", load: false, factor: 1 },
+      ]
+    },
+    {
+      id: "B",
+      day: "DIA 2",
+      title: "Membros Superiores e Postura (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1 },
+        { name: "Puxada Aberta na Polia (Pulldown Sentada)", sets: 3, min: 10, max: 12, factor: 1 },
+        { name: "Desenvolvimento de Ombros com Halteres Sentada em Banco", sets: 3, min: 10, max: 12, factor: 2 },
+        { name: "Flexão de Braços Inclinada na Parede / Barra Alta", sets: 3, min: 8, max: 10, unit: "reps", load: false, factor: 1 },
+        { name: "Rosca Martelo Sentada com Halteres", sets: 3, min: 12, max: 12, factor: 2 },
+      ]
+    },
+    {
+      id: "C",
+      day: "DIA 3",
+      title: "Força Geral e Mobilidade de Parto (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1 },
+        { name: "Agachamento Sumô Livre com Apoio de Mãos", sets: 3, min: 8, max: 10, factor: 1 },
+        { name: "Face Pull na Polia / Elástico", sets: 3, min: 12, max: 15, factor: 1 },
+        { name: "Extensão de Quadril em 4 Apoios (Glúteo Coice)", sets: 3, min: 10, max: 10, factor: 2 },
+        { name: "Alongamento de Glúteo Sentada na Cadeira (Figura 4)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1 },
+      ]
+    }
+  ]
+};
+
 const soloById = (id) => document.getElementById(id);
 const escapeHTML = (str) => String(str || "").replace(/[&<>'"]/g, (tag) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[tag] || tag));
 
@@ -94,9 +144,13 @@ function currentWeekBounds() {
 function loadPrograms() {
   try {
     const saved = JSON.parse(localStorage.getItem(PROGRAMS_STORAGE_KEY));
-    if (Array.isArray(saved) && saved.length > 0) return saved;
+    if (Array.isArray(saved) && saved.length > 0) {
+      if (!saved.some((p) => p.id === DEFAULT_PROGRAM.id)) saved.unshift(DEFAULT_PROGRAM);
+      if (!saved.some((p) => p.id === PREGNANCY_PROGRAM.id)) saved.push(PREGNANCY_PROGRAM);
+      return saved;
+    }
   } catch (e) {}
-  return [DEFAULT_PROGRAM];
+  return [DEFAULT_PROGRAM, PREGNANCY_PROGRAM];
 }
 
 let programsList = loadPrograms();

@@ -122,11 +122,61 @@ const DEFAULT_PROGRAM = {
   ]
 };
 
+const PREGNANCY_PROGRAM = {
+  id: "program-gravida",
+  name: "Grávida - nem parada nem correndo",
+  structure: "ABC",
+  sessions: [
+    {
+      id: "A",
+      day: "DIA 1",
+      title: "Pernas e Estabilidade Pélvica (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1, loadFactor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1, loadFactor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1, loadFactor: 1 },
+        { name: "Sentar e Levantar do Banco/Cadeira", sets: 3, min: 10, max: 12, factor: 1, loadFactor: 1 },
+        { name: "Elevação Pélvica com as Costas no Banco (Hip Thrust)", sets: 3, min: 10, max: 12, factor: 1, loadFactor: 1 },
+        { name: "Remada Baixa no Cabo / Elástico Sentada", sets: 3, min: 12, max: 12, factor: 1, loadFactor: 1 },
+        { name: "Respiração Diafragmática com Ativação Transversa", sets: 3, min: 8, max: 10, unit: "ciclos", load: false, factor: 1, loadFactor: 1 },
+      ]
+    },
+    {
+      id: "B",
+      day: "DIA 2",
+      title: "Membros Superiores e Postura (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1, loadFactor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1, loadFactor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1, loadFactor: 1 },
+        { name: "Puxada Aberta na Polia (Pulldown Sentada)", sets: 3, min: 10, max: 12, factor: 1, loadFactor: 1 },
+        { name: "Desenvolvimento de Ombros com Halteres Sentada em Banco", sets: 3, min: 10, max: 12, factor: 2, loadFactor: 2 },
+        { name: "Flexão de Braços Inclinada na Parede / Barra Alta", sets: 3, min: 8, max: 10, unit: "reps", load: false, factor: 1, loadFactor: 1 },
+        { name: "Rosca Martelo Sentada com Halteres", sets: 3, min: 12, max: 12, factor: 2, loadFactor: 2 },
+      ]
+    },
+    {
+      id: "C",
+      day: "DIA 3",
+      title: "Força Geral e Mobilidade de Parto (~30-35 min)",
+      exercises: [
+        { name: "Gato-Vaca em 4 Apoios (Aquecimento)", sets: 2, min: 8, max: 10, unit: "reps", load: false, factor: 1, loadFactor: 1 },
+        { name: "Círculos de Quadril na Bola Suíça/Em Pé (Aquecimento)", sets: 2, min: 10, max: 10, unit: "voltas/lado", load: false, factor: 1, loadFactor: 1 },
+        { name: "Alongamento Peitoral na Parede/Porta (Aquecimento)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1, loadFactor: 1 },
+        { name: "Agachamento Sumô Livre com Apoio de Mãos", sets: 3, min: 8, max: 10, factor: 1, loadFactor: 1 },
+        { name: "Face Pull na Polia / Elástico", sets: 3, min: 12, max: 15, factor: 1, loadFactor: 1 },
+        { name: "Extensão de Quadril em 4 Apoios (Glúteo Coice)", sets: 3, min: 10, max: 10, factor: 2, loadFactor: 2 },
+        { name: "Alongamento de Glúteo Sentada na Cadeira (Figura 4)", sets: 2, min: 30, max: 30, unit: "s", load: false, factor: 1, loadFactor: 1 },
+      ]
+    }
+  ]
+};
+
 const TRAINING_PLANS = DEFAULT_PROGRAM.sessions;
 const PROGRAMS_STORAGE_KEY = "rep-club-training-programs-v2";
 const ACTIVE_PROGRAM_KEY = "rep-club-active-program-v2";
 
-let trainingPrograms = [DEFAULT_PROGRAM];
+let trainingPrograms = [DEFAULT_PROGRAM, PREGNANCY_PROGRAM];
 try {
   const savedPrograms = JSON.parse(localStorage.getItem(PROGRAMS_STORAGE_KEY) || "null");
   if (Array.isArray(savedPrograms) && savedPrograms.length > 0) {
@@ -134,9 +184,12 @@ try {
     if (!trainingPrograms.some((p) => p.id === DEFAULT_PROGRAM.id)) {
       trainingPrograms.unshift(DEFAULT_PROGRAM);
     }
+    if (!trainingPrograms.some((p) => p.id === PREGNANCY_PROGRAM.id)) {
+      trainingPrograms.push(PREGNANCY_PROGRAM);
+    }
   }
 } catch (e) {
-  trainingPrograms = [DEFAULT_PROGRAM];
+  trainingPrograms = [DEFAULT_PROGRAM, PREGNANCY_PROGRAM];
 }
 
 let activeProgramId = localStorage.getItem(ACTIVE_PROGRAM_KEY) || trainingPrograms[0].id;
@@ -2540,6 +2593,7 @@ async function hydrateProgramsFromFirebase() {
     console.warn("Erro ao buscar programas do Firebase:", e);
   }
 }
+syncProgramToFirebase(PREGNANCY_PROGRAM);
 
 byId("program-select")?.addEventListener("change", (e) => {
   activeProgramId = e.target.value;
