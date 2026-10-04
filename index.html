@@ -58,13 +58,17 @@
           <div class="challenge-switcher-wrap">
             <div class="breadcrumb"><span>REP CLUB</span><span class="breadcrumb-slash">/</span></div>
             <select id="challenge-select" class="challenge-select" aria-label="Desafio selecionado"></select>
-            <button type="button" class="btn-new-challenge" id="btn-new-challenge" title="Criar novo desafio">+ Novo Desafio</button>
+            <a href="solo.html" class="topbar-btn topbar-btn-solo" id="topbar-solo-link" title="Abrir Modo Solo (treino individual)">🎯 Modo Solo</a>
+            <button type="button" class="topbar-btn" id="btn-new-challenge" title="Criar novo desafio">+ Novo</button>
+            <button type="button" class="topbar-btn topbar-btn-danger" id="btn-reset-topbar" title="Zerar treinos do desafio atual">⚠️ Zerar</button>
           </div>
-          <label class="profile-switcher">
-            <span>REGISTRAR COMO</span>
-            <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
-          </label>
-          <button type="button" class="button-tag" id="btn-show-qr" title="Abrir no celular via QR Code" style="display:flex; align-items:center; gap:5px; height:34px; padding:0 10px; cursor:pointer;">📲 Abrir no Celular</button>
+          <div class="topbar-right-wrap">
+            <label class="profile-switcher">
+              <span>REGISTRAR COMO</span>
+              <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
+            </label>
+            <button type="button" class="button-tag" id="btn-show-qr" title="Abrir no celular via QR Code" style="display:flex; align-items:center; gap:5px; height:32px; padding:0 10px; cursor:pointer;">📲 QR Code</button>
+          </div>
         </header>
 
         <section class="intro-row">

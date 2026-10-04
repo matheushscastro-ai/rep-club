@@ -61,6 +61,52 @@ a { color: inherit; text-decoration: none; }
 .breadcrumb > span:first-child { color: var(--ink); }
 .breadcrumb-slash { margin: 0 8px; color: #b3b4ab; }
 .challenge-select { padding: 6px 28px 6px 10px; border: 1px solid var(--line); border-radius: 4px; background-color: transparent; color: var(--ink); font-family: var(--display); font-size: 16px; font-weight: 700; cursor: pointer; }
+.topbar-right-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.topbar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 32px;
+  padding: 0 11px;
+  border: 1px solid #d0d2c9;
+  border-radius: 4px;
+  background: #ffffff;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: all .16s ease;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+.topbar-btn:hover {
+  background: var(--lime);
+  border-color: #b8dc37;
+  color: #111827;
+  transform: translateY(-1px);
+}
+.topbar-btn-solo {
+  background: #1e201a;
+  color: #f4f4ee;
+  border-color: #32342b;
+}
+.topbar-btn-solo:hover {
+  background: var(--lime);
+  color: #111827;
+  border-color: #b8dc37;
+}
+.topbar-btn-danger {
+  color: #dc2626;
+  border-color: #fecaca;
+  background: #fff;
+}
+.topbar-btn-danger:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
 .btn-new-challenge { padding: 5px 10px; border: 1px solid #d2d4cb; border-radius: 3px; background: #fff; color: var(--ink); font-size: 10px; font-weight: 700; cursor: pointer; transition: all .16s ease; }
 .btn-new-challenge:hover { background: var(--lime); border-color: var(--lime); }
 .reset-challenge-btn { color: #dc2626 !important; font-size: 8px; margin-top: 4px; }
@@ -506,7 +552,12 @@ a { color: inherit; text-decoration: none; }
   .week-section { grid-area: week; }
   .rules-section { grid-area: rules; }
   .activity-section { grid-area: activity; }
-  .topbar { min-height: 54px; }
+  .topbar { min-height: auto; padding: 12px 0 10px; gap: 10px; flex-direction: column; align-items: stretch; }
+  .challenge-switcher-wrap { width: 100%; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .challenge-select { flex: 1 1 120px; height: 32px; font-size: 14px; padding: 4px 20px 4px 8px; }
+  .topbar-btn { height: 32px; padding: 0 8px; font-size: 10px; }
+  .topbar-btn-solo { font-weight: 800; }
+  .topbar-right-wrap { width: 100%; justify-content: space-between; }
   .breadcrumb { font-size: 8px; }
   .profile-switcher { gap: 5px; }
   .profile-switcher > span { display: none; }

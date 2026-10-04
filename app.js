@@ -368,7 +368,12 @@ let state = loadState();
 let toastTimer;
 let restTimerInterval = null;
 let restSecondsRemaining = 0;
+const CANONICAL_DUEL_ID = "a3026d38-17fe-48a1-92d3-d5e8df833147";
 let remoteDuelId = localStorage.getItem("rep-club-remote-duel-id");
+if (!remoteDuelId || remoteDuelId === "eb2bd8e3-d7d1-47ed-8a33-d037b65fd6a7" || remoteDuelId === "8ccacbe4-c067-48b4-b116-ca1d26743ad7") {
+  remoteDuelId = CANONICAL_DUEL_ID;
+  localStorage.setItem("rep-club-remote-duel-id", CANONICAL_DUEL_ID);
+}
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -433,10 +438,27 @@ async function resetDuelInSupabase(duelId) {
 async function hydrateFromSupabase() {
   if (!supabaseClient) return;
   try {
-    let duelQuery = supabaseClient.from("duels").select("*").order("created_at", { ascending: false }).limit(1);
-    if (remoteDuelId) duelQuery = supabaseClient.from("duels").select("*").eq("id", remoteDuelId).limit(1);
-    const { data: duels, error: duelError } = await duelQuery;
-    if (duelError || !duels?.[0]) return;
+    const targetDuelId = remoteDuelId || CANONICAL_DUEL_ID;
+    let { data: duels, error: duelError } = await supabaseClient
+      .from("duels")
+      .select("*")
+      .eq("id", targetDuelId)
+      .limit(1);
+
+    if (duelError || !duels?.[0]) {
+      if (targetDuelId !== CANONICAL_DUEL_ID) {
+        remoteDuelId = CANONICAL_DUEL_ID;
+        localStorage.setItem("rep-club-remote-duel-id", CANONICAL_DUEL_ID);
+        const fallback = await supabaseClient.from("duels").select("*").eq("id", CANONICAL_DUEL_ID).limit(1);
+        if (fallback.data?.[0]) {
+          duels = fallback.data;
+        } else {
+          return;
+        }
+      } else {
+        return;
+      }
+    }
 
     const duel = duels[0];
     remoteDuelId = duel.id;
@@ -447,12 +469,25 @@ async function hydrateFromSupabase() {
     localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
     localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
 
-    const { data: remoteWorkouts, error: workoutsError } = await supabaseClient.from("workouts").select("*").eq("duel_id", remoteDuelId).order("created_at", { ascending: false });
+    if (challenges && challenges.length > 0) {
+      challenges[0].prize = challengePrize;
+      challenges[0].period = duelPeriod;
+      challenges[0].players = PLAYERS;
+      saveChallenges();
+    }
+
+    const { data: remoteWorkouts, error: workoutsError } = await supabaseClient
+      .from("workouts")
+      .select("*")
+      .eq("duel_id", remoteDuelId)
+      .order("created_at", { ascending: false });
+
     if (!workoutsError && remoteWorkouts) {
       // Mantenha quaisquer treinos locais que ainda não foram sincronizados
       const pendingLocal = state.workouts.filter((lw) => !remoteWorkouts.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
       const syncedRemote = remoteWorkouts.map((workout) => ({
         id: workout.id,
+        challengeId: activeChallengeId || "challenge-1",
         owner: workout.player_id,
         category: workout.category,
         date: workout.workout_date,
@@ -1628,7 +1663,7 @@ byId("delete-challenge-btn")?.addEventListener("click", () => {
   showToast(`Desafio "${cur.title}" excluído com sucesso.`);
 });
 
-byId("reset-current-challenge")?.addEventListener("click", () => {
+function handleResetChallenge() {
   const cur = getActiveChallenge();
   const curWorkouts = currentChallengeWorkouts();
   const confirmMsg = curWorkouts.length > 0
@@ -1644,7 +1679,10 @@ byId("reset-current-challenge")?.addEventListener("click", () => {
   }
   render();
   showToast(`Desafio "${cur.title}" foi zerado com sucesso!`);
-});
+}
+
+byId("reset-current-challenge")?.addEventListener("click", handleResetChallenge);
+byId("btn-reset-topbar")?.addEventListener("click", handleResetChallenge);
 
 byId("activity-list")?.addEventListener("click", (event) => {
   const deleteBtn = event.target.closest("[data-delete-workout]");
