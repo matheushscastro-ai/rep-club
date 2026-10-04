@@ -71,51 +71,88 @@ let playerConfig = loadPlayerConfig();
 let PLAYERS = playerConfig || DEFAULT_PLAYERS;
 let challengePrize = localStorage.getItem(PRIZE_STORAGE_KEY);
 let scoreboardStyle = localStorage.getItem(SCOREBOARD_STYLE_KEY) || "kamehameha";
-const TRAINING_PLANS = [
-  {
-    id: "A", day: "SEGUNDA", title: "Costas, Bíceps e Posterior de Coxa", exercises: [
-      { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10 },
-      { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10 },
-      { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Cadeira Flexora", sets: 3, min: 12, max: 15 },
-      { name: "Rosca Martelo Sentado", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Dead Hang na Barra Fixa", sets: 3, min: 30, max: 40, unit: "s", load: false },
-    ],
-  },
-  {
-    id: "B", day: "TERÇA", title: "Peito, Tríceps e Quadríceps", exercises: [
-      { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12 },
-      { name: "Leg Press 45º", sets: 4, min: 8, max: 10, alternatives: ["Leg Press 45º", "Agachamento Goblet"] },
-      { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, alternatives: ["Afundo com Halteres", "Cadeira Extensora"], note: "por perna", loadFactor: 4 },
-      { name: "Tríceps Corda na Polia", sets: 3, min: 12, max: 15 },
-      { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, note: "por lado" },
-    ],
-  },
-  {
-    id: "C", day: "QUARTA", title: "Leve: Cardio e Core", cardioBlock: { min: 30, max: 40, label: "Cardio contínuo · esteira, bike ou elíptico" }, exercises: [
-      { name: "Abdominal Infra na Paralela", sets: 3, min: 15, max: 20, load: false },
-      { name: "Prancha Abdominal", sets: 3, min: 45, max: 45, unit: "s", load: false },
-    ],
-  },
-  {
-    id: "D", day: "QUINTA", title: "Ombros, Costas Superior e Glúteos", exercises: [
-      { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 },
-      { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, note: "por lado", loadFactor: 2 },
-      { name: "Remada Alta na Polia", sets: 3, min: 12, max: 15 },
-      { name: "Elevação Pélvica na Máquina", sets: 4, min: 10, max: 12, alternatives: ["Elevação Pélvica na Máquina", "Elevação Pélvica no Smith"] },
-    ],
-  },
-  {
-    id: "E", day: "SEXTA", title: "Leve: Cardio e Prevenção", cardioBlock: { min: 20, max: 30, label: "Cardio · aquecimento ativo" }, exercises: [
-      { name: "Face Pull na Polia", sets: 3, min: 15, max: 20 },
-      { name: "Rotação Externa de Ombro na Polia", sets: 3, min: 15, max: 15 },
-      { name: "Encolhimento de Ombros com Halteres", sets: 3, min: 12, max: 15, loadFactor: 2 },
-      { name: "Extensão Lombar no Banco (Cadeira Romana)", sets: 3, min: 15, max: 15, load: false },
-    ],
-  },
-];
+const DEFAULT_PROGRAM = {
+  id: "program-jiu-cardio",
+  name: "Treino Jiu + Cardio",
+  structure: "ABCDE",
+  sessions: [
+    {
+      id: "A", day: "SEGUNDA", title: "Costas, Bíceps e Posterior de Coxa", exercises: [
+        { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10 },
+        { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10 },
+        { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+        { name: "Cadeira Flexora", sets: 3, min: 12, max: 15 },
+        { name: "Rosca Martelo Sentado", sets: 3, min: 10, max: 12, loadFactor: 2 },
+        { name: "Dead Hang na Barra Fixa", sets: 3, min: 30, max: 40, unit: "s", load: false },
+      ],
+    },
+    {
+      id: "B", day: "TERÇA", title: "Peito, Tríceps e Quadríceps", exercises: [
+        { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+        { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12 },
+        { name: "Leg Press 45º", sets: 4, min: 8, max: 10, alternatives: ["Leg Press 45º", "Agachamento Goblet"] },
+        { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, alternatives: ["Afundo com Halteres", "Cadeira Extensora"], note: "por perna", loadFactor: 4 },
+        { name: "Tríceps Corda na Polia", sets: 3, min: 12, max: 15 },
+        { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, note: "por lado" },
+      ],
+    },
+    {
+      id: "C", day: "QUARTA", title: "Leve: Cardio e Core", cardioBlock: { min: 30, max: 40, label: "Cardio contínuo · esteira, bike ou elíptico" }, exercises: [
+        { name: "Abdominal Infra na Paralela", sets: 3, min: 15, max: 20, load: false },
+        { name: "Prancha Abdominal", sets: 3, min: 45, max: 45, unit: "s", load: false },
+      ],
+    },
+    {
+      id: "D", day: "QUINTA", title: "Ombros, Costas Superior e Glúteos", exercises: [
+        { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2 },
+        { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 },
+        { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, note: "por lado", loadFactor: 2 },
+        { name: "Remada Alta na Polia", sets: 3, min: 12, max: 15 },
+        { name: "Elevação Pélvica na Máquina", sets: 4, min: 10, max: 12, alternatives: ["Elevação Pélvica na Máquina", "Elevação Pélvica no Smith"] },
+      ],
+    },
+    {
+      id: "E", day: "SEXTA", title: "Leve: Cardio e Prevenção", cardioBlock: { min: 20, max: 30, label: "Cardio · aquecimento ativo" }, exercises: [
+        { name: "Face Pull na Polia", sets: 3, min: 15, max: 20 },
+        { name: "Rotação Externa de Ombro na Polia", sets: 3, min: 15, max: 15 },
+        { name: "Encolhimento de Ombros com Halteres", sets: 3, min: 12, max: 15, loadFactor: 2 },
+        { name: "Extensão Lombar no Banco (Cadeira Romana)", sets: 3, min: 15, max: 15, load: false },
+      ],
+    },
+  ]
+};
+
+const TRAINING_PLANS = DEFAULT_PROGRAM.sessions;
+const PROGRAMS_STORAGE_KEY = "rep-club-training-programs-v2";
+const ACTIVE_PROGRAM_KEY = "rep-club-active-program-v2";
+
+let trainingPrograms = [DEFAULT_PROGRAM];
+try {
+  const savedPrograms = JSON.parse(localStorage.getItem(PROGRAMS_STORAGE_KEY) || "null");
+  if (Array.isArray(savedPrograms) && savedPrograms.length > 0) {
+    trainingPrograms = savedPrograms;
+    if (!trainingPrograms.some((p) => p.id === DEFAULT_PROGRAM.id)) {
+      trainingPrograms.unshift(DEFAULT_PROGRAM);
+    }
+  }
+} catch (e) {
+  trainingPrograms = [DEFAULT_PROGRAM];
+}
+
+let activeProgramId = localStorage.getItem(ACTIVE_PROGRAM_KEY) || trainingPrograms[0].id;
+if (!trainingPrograms.some((p) => p.id === activeProgramId)) {
+  activeProgramId = trainingPrograms[0].id;
+}
+
+function getActiveProgram() {
+  return trainingPrograms.find((p) => p.id === activeProgramId) || trainingPrograms[0];
+}
+
+function saveTrainingPrograms() {
+  localStorage.setItem(PROGRAMS_STORAGE_KEY, JSON.stringify(trainingPrograms));
+  localStorage.setItem(ACTIVE_PROGRAM_KEY, activeProgramId);
+}
+
 const CUSTOM_PLANS_KEY = "rep-club-custom-plans-v1";
 const EXERCISE_DATA_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
 const EXERCISE_MEDIA_RAW = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
@@ -154,7 +191,8 @@ function exerciseMediaUrl(path, base = EXERCISE_MEDIA_RAW) {
 }
 
 function allTrainingPlans() {
-  return [...TRAINING_PLANS, ...customTrainingPlans];
+  const currentProg = getActiveProgram();
+  return currentProg?.sessions || DEFAULT_PROGRAM.sessions;
 }
 
 function cloneTrainingPlan(plan) {
@@ -167,7 +205,14 @@ function newCustomPlan() {
 
 function planForId(planId) {
   if (planId === "custom-new") return newCustomPlan();
-  return cloneTrainingPlan(allTrainingPlans().find((plan) => plan.id === planId) || TRAINING_PLANS[0]);
+  const currentProg = getActiveProgram();
+  const foundInActive = currentProg?.sessions?.find((s) => s.id === planId);
+  if (foundInActive) return cloneTrainingPlan(foundInActive);
+  for (const prog of trainingPrograms) {
+    const f = prog.sessions?.find((s) => s.id === planId);
+    if (f) return cloneTrainingPlan(f);
+  }
+  return cloneTrainingPlan(DEFAULT_PROGRAM.sessions[0]);
 }
 
 function exerciseCatalogImage(exercise) {
@@ -403,6 +448,7 @@ function firebaseWorkoutPayload(workout) {
     workout_date: workout.date,
     name: workout.name,
     comments: workout.comments || null,
+    photo: workout.photo || null,
     points: pointsForWorkout(workout),
     effort: workout.effort || null,
     duration: workout.duration || null,
@@ -557,6 +603,7 @@ async function hydrateFromFirebase() {
       date: workout.workout_date,
       name: workout.name || MODALITIES[workout.category]?.label || workout.category,
       comments: workout.comments || "",
+      photo: workout.photo || null,
       points: workout.points || 0,
       effort: workout.effort,
       duration: workout.duration || 0,
@@ -568,6 +615,7 @@ async function hydrateFromFirebase() {
     state.activePlayer = PLAYERS[0].id;
     saveState();
     render();
+    hydrateProgramsFromFirebase();
     if (byId("setup-dialog")?.open) byId("setup-dialog").close();
     const ind = byId("sync-status-indicator");
     if (ind) {
@@ -800,6 +848,8 @@ DBZ_ASSETS.cellBeam.src = "assets/dbz/cell_beam.png";
 let currentClashRatio = 50;
 let targetClashRatio = 50;
 let kamehamehaAnimId = null;
+let gokuFighterPoints = 0;
+let cellFighterPoints = 0;
 
 function startKamehamehaLoop() {
   if (kamehamehaAnimId) return;
@@ -824,6 +874,28 @@ function startKamehamehaLoop() {
         // Tremor sutil de alta frequência arcade
         const shakeX = (Math.random() - 0.5) * 1.5;
         const shakeY = (Math.random() - 0.5) * 1.5;
+
+        // Tiers de transformação (Tier 1: Base/SSJ, Tier 2: SSJ2 / 100%, Tier 3: SSJ Blue / Gold)
+        const gokuTier = gokuFighterPoints >= 100 ? 3 : gokuFighterPoints >= 50 ? 2 : 1;
+        const cellTier = cellFighterPoints >= 100 ? 3 : cellFighterPoints >= 50 ? 2 : 1;
+
+        // AURA PULSANTE DO GOKU (Tier 2 e 3)
+        if (gokuTier >= 2) {
+          const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
+          ctx.fillStyle = gokuTier === 3 ? `rgba(56, 189, 248, ${pulse})` : `rgba(250, 204, 21, ${pulse})`;
+          ctx.beginPath();
+          ctx.arc(33, 90, gokuTier === 3 ? 46 : 38, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // AURA PULSANTE DO CELL (Tier 2 e 3)
+        if (cellTier >= 2) {
+          const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
+          ctx.fillStyle = cellTier === 3 ? `rgba(234, 179, 8, ${pulse})` : `rgba(168, 85, 247, ${pulse})`;
+          ctx.beginPath();
+          ctx.arc(553, 85, cellTier === 3 ? 50 : 44, 0, Math.PI * 2);
+          ctx.fill();
+        }
 
         // 1. FEIXE HORIZONTAL DO GOKU (x=142 até clashX - 35, y=62, altura 27)
         if (DBZ_ASSETS.gokuBeam.complete && clashX > 142) {
@@ -859,6 +931,32 @@ function startKamehamehaLoop() {
         // 6. ESFERA DE ORIGEM DO CELL (x=450, y=42, tamanho 75x68)
         if (DBZ_ASSETS.cellBlast.complete) {
           ctx.drawImage(DBZ_ASSETS.cellBlast, 450 + shakeX * 0.4, 42 + shakeY * 0.4);
+        }
+
+        // DESCARGAS ELÉTRICAS RETRO 16-BIT (GOKU TIER 2 & 3)
+        if (gokuTier >= 2 && Math.random() < 0.75) {
+          ctx.strokeStyle = gokuTier === 3 ? "#7dd3fc" : "#fef08a";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          let lx = 12 + Math.random() * 42;
+          let ly = 48 + Math.random() * 26;
+          ctx.moveTo(lx, ly);
+          lx += (Math.random() - 0.5) * 16; ly += 12; ctx.lineTo(lx, ly);
+          lx += (Math.random() - 0.5) * 16; ly += 12; ctx.lineTo(lx, ly);
+          ctx.stroke();
+        }
+
+        // DESCARGAS ELÉTRICAS RETRO 16-BIT (CELL TIER 2 & 3)
+        if (cellTier >= 2 && Math.random() < 0.75) {
+          ctx.strokeStyle = cellTier === 3 ? "#fef08a" : "#c084fc";
+          ctx.lineWidth = 1.8;
+          ctx.beginPath();
+          let cx = 525 + Math.random() * 50;
+          let cy = 34 + Math.random() * 35;
+          ctx.moveTo(cx, cy);
+          cx += (Math.random() - 0.5) * 16; cy += 14; ctx.lineTo(cx, cy);
+          cx += (Math.random() - 0.5) * 16; cy += 14; ctx.lineTo(cx, cy);
+          ctx.stroke();
         }
 
         // 7. EPICENTRO DA COLISÃO (centralizado em clashX, y=76 -> canto superior esquerdo clashX - 53, y=20)
@@ -934,6 +1032,17 @@ function renderScoreboard() {
   }
 
   // MODO KAMEHAMEHA DRAGON BALL (GOKU SSJ VS CELL - STRICT AXIS CANVAS)
+  gokuFighterPoints = f1Points;
+  cellFighterPoints = f2Points;
+
+  const gokuTierName = f1Points >= 100 ? "🔥 GOKU SSJ BLUE" : f1Points >= 50 ? "⚡ GOKU SSJ2" : "GOKU SSJ";
+  const cellTierName = f2Points >= 100 ? "🔥 CELL DOURADO" : f2Points >= 50 ? "⚡ CELL 100% POWER" : "PERFECT CELL";
+
+  const gokuTag = byId("goku-fighter-tag");
+  if (gokuTag) gokuTag.textContent = gokuTierName;
+  const cellTag = byId("cell-fighter-tag");
+  if (cellTag) cellTag.textContent = cellTierName;
+
   const gokuName = byId("goku-player-name");
   const cellName = byId("cell-player-name");
   if (gokuName && cellName) {
@@ -956,17 +1065,20 @@ function renderScoreboard() {
 
     const commentary = byId("kamehameha-commentary");
     if (commentary) {
+      const gokuTransformNote = f1Points >= 100 ? " [MODO SSJ BLUE DIVINO]" : f1Points >= 50 ? " [MODO SSJ2 ATIVO]" : "";
+      const cellTransformNote = f2Points >= 100 ? " [MODO CELL DOURADO]" : f2Points >= 50 ? " [MODO 100% POWER]" : "";
+
       if (lead === 0) {
-        commentary.textContent = "⚡ CHOQUE DE KAMEHAMEHA EM EQUILÍBRIO TOTAL! QUEM TREINAR PRIMEIRO DESEMPATA!";
+        commentary.textContent = `⚡ CHOQUE DE KAMEHAMEHA EM EQUILÍBRIO TOTAL! QUEM TREINAR PRIMEIRO DESEMPATA!${gokuTransformNote || cellTransformNote}`;
       } else if (f1Points > f2Points) {
         commentary.textContent = lead >= 15
-          ? `💥 GOKU SSJ ESTÁ ESMAGANDO COM O KAMEHAMEHA DOURADO! ${fighter1.player.name} ABRIU ${lead} PTS DE VANTAGEM!`
-          : `🔥 GOKU SSJ ESTÁ AVANÇANDO O FEIXE DOURADO! ${fighter1.player.name} LIDERA POR ${lead} PTS!`;
+          ? `💥 ${gokuTierName} ESTÁ ESMAGANDO COM O KAMEHAMEHA DOURADO! ${fighter1.player.name} ABRIU ${lead} PTS DE VANTAGEM!${gokuTransformNote}`
+          : `🔥 ${gokuTierName} ESTÁ AVANÇANDO O FEIXE DOURADO! ${fighter1.player.name} LIDERA POR ${lead} PTS!${gokuTransformNote}`;
       } else {
         const adv = f2Points - f1Points;
         commentary.textContent = adv >= 15
-          ? `⚡ CELL LIBEROU TODO O PODER DO KAMEHAMEHA SOLAR! ${fighter2.player.name} TEM ${adv} PTS DE VANTAGEM!`
-          : `✨ CELL ESTÁ EMPURRANDO O FEIXE DE ENERGIA! ${fighter2.player.name} AVANÇA COM ${adv} PTS!`;
+          ? `⚡ ${cellTierName} LIBEROU TODO O PODER DO KAMEHAMEHA SOLAR! ${fighter2.player.name} TEM ${adv} PTS DE VANTAGEM!${cellTransformNote}`
+          : `✨ ${cellTierName} ESTÁ EMPURRANDO O FEIXE DE ENERGIA! ${fighter2.player.name} AVANÇA COM ${adv} PTS!${cellTransformNote}`;
       }
     }
   }
@@ -1052,6 +1164,7 @@ function renderActivity() {
           <span>${details}${isMe ? " · você" : ""}</span>
           ${comment}
         </span>
+        ${workout.photo ? `<a href="${workout.photo}" target="_blank" rel="noreferrer" title="Ver foto em tamanho real"><img class="activity-photo-thumb" src="${workout.photo}" alt="Foto" /></a>` : ""}
         <span class="activity-date">${formatShortDate(workout.date)}</span>
         <strong class="activity-points">+${pointsForWorkout(workout)} pts</strong>
         <button type="button" class="activity-delete-btn" data-delete-workout="${escapeHTML(workout.id)}" title="Excluir este treino" aria-label="Excluir treino">✕</button>
@@ -1120,10 +1233,25 @@ function formatPrescription(exercise) {
   return `${exercise.sets} × ${range} ${unit}${exercise.note ? ` ${exercise.note}` : ""}`;
 }
 
+function renderProgramSelector() {
+  const select = byId("program-select");
+  const progTitle = byId("program-title");
+  const activeProg = getActiveProgram();
+  if (progTitle) {
+    progTitle.textContent = activeProg.name || "Treino Jiu + Cardio";
+  }
+  if (!select) return;
+  select.innerHTML = trainingPrograms.map((p) => `
+    <option value="${escapeHTML(p.id)}" ${p.id === activeProg.id ? "selected" : ""}>${escapeHTML(p.name)}</option>
+  `).join("");
+}
+
 function renderTrainingPlan() {
-  byId("program-list").innerHTML = allTrainingPlans().map((plan) => `
+  const currentProg = getActiveProgram();
+  const sessions = currentProg?.sessions || DEFAULT_PROGRAM.sessions;
+  byId("program-list").innerHTML = sessions.map((plan) => `
     <article class="program-card">
-      <div class="program-card-meta"><span>${plan.day || "PERSONALIZADO"}</span><span>${plan.id.startsWith("custom-") ? "MINHA FICHA" : `TREINO ${plan.id}`}${plan.id === "C" ? " · LEVE" : ""}</span></div>
+      <div class="program-card-meta"><span>${plan.day || "TREINO"}</span><span>TREINO ${plan.id}${plan.id === "C" && plan.cardioBlock ? " · LEVE" : ""}</span></div>
       <h3>${plan.title}</h3>
       ${plan.cardioBlock ? `<p class="program-card-cardio">${plan.cardioBlock.label} · ${plan.cardioBlock.min}–${plan.cardioBlock.max} min</p>` : ""}
       <details class="program-details">
@@ -1131,7 +1259,7 @@ function renderTrainingPlan() {
         <ul>${plan.exercises.map((exercise) => `<li><span>${exercise.name}</span><strong>${formatPrescription(exercise)}</strong></li>`).join("")}</ul>
       </details>
       <button class="program-action" type="button" data-start-template="${escapeHTML(plan.id)}">Registrar treino <span>↗</span></button>
-    </article>`).join("") + `<article class="program-card custom-plan-card"><div class="program-card-meta"><span>FICHA LIVRE</span><span>DO ZERO</span></div><h3>Monte seu próprio treino.</h3><p class="program-card-cardio">Escolha os movimentos no catálogo e salve a ficha para repetir.</p><button class="program-action" type="button" data-start-template="custom-new">Criar treino <span>↗</span></button></article>`;
+    </article>`).join("");
 }
 
 function normalizeExerciseSearch(value) {
@@ -1327,21 +1455,35 @@ function modalityQuality(category, duration, effort) {
 function renderWorkoutFields(templateId = null, planOverride = null) {
   const category = byId("workout-category").value;
   const fields = byId("workout-fields");
+  const strengthSelectors = byId("strength-program-selectors");
+
   if (category === "strength") {
-    const selectedId = templateId || byId("template-select")?.value || activeStrengthPlan?.id || "A";
-    activeStrengthPlan = planOverride
-      ? cloneTrainingPlan(planOverride)
-      : planForId(selectedId);
+    if (strengthSelectors) strengthSelectors.style.display = "grid";
+    const progSelect = byId("workout-plan-program");
+    const sessSelect = byId("workout-plan-session");
+
+    const curProgId = progSelect?.value || activeProgramId;
+    if (progSelect) {
+      progSelect.innerHTML = trainingPrograms.map((p) => `
+        <option value="${escapeHTML(p.id)}" ${p.id === curProgId ? "selected" : ""}>${escapeHTML(p.name)}</option>
+      `).join("");
+    }
+
+    const currentProg = trainingPrograms.find((p) => p.id === curProgId) || getActiveProgram();
+    const sessions = currentProg.sessions || DEFAULT_PROGRAM.sessions;
+    const curSessId = templateId || (sessions.some(s => s.id === sessSelect?.value) ? sessSelect.value : sessions[0]?.id || "A");
+
+    if (sessSelect) {
+      sessSelect.innerHTML = sessions.map((s) => `
+        <option value="${escapeHTML(s.id)}" ${s.id === curSessId ? "selected" : ""}>${escapeHTML(s.id)} - ${escapeHTML(s.title)}</option>
+      `).join("");
+    }
+
+    const selectedSession = sessions.find((s) => s.id === curSessId) || sessions[0];
+    activeStrengthPlan = planOverride ? cloneTrainingPlan(planOverride) : cloneTrainingPlan(selectedSession);
     const plan = activeStrengthPlan;
-    const isCustomPlan = plan.id === "custom-new" || plan.id.startsWith("custom-");
-    const planOptions = [
-      ...TRAINING_PLANS.map((item) => `<option value="${item.id}" ${item.id === plan.id ? "selected" : ""}>Treino ${item.id} · ${item.title}</option>`),
-      ...customTrainingPlans.map((item) => `<option value="${escapeHTML(item.id)}" ${item.id === plan.id ? "selected" : ""}>Minha ficha · ${escapeHTML(item.title)}</option>`),
-      `<option value="custom-new" ${plan.id === "custom-new" ? "selected" : ""}>Criar treino do zero…</option>`,
-    ].join("");
+
     fields.innerHTML = `
-      <label class="form-field"><span>FICHA</span><select id="template-select" name="templateId">${planOptions}</select></label>
-      ${isCustomPlan ? `<label class="form-field"><span>NOME DA FICHA</span><input name="customPlanTitle" maxlength="50" value="${escapeHTML(plan.title)}" /></label>` : ""}
       ${plan.cardioBlock ? `<label class="form-field cardio-block-field"><span>${plan.cardioBlock.label.toUpperCase()} · MINUTOS</span><input name="cardioMinutes" type="number" min="${plan.cardioBlock.min}" max="${plan.cardioBlock.max}" value="${plan.cardioBlock.min}" required /><small>Este cardio faz parte do treino ${plan.id}; o registro continua como Musculação.</small></label>` : ""}
       <p class="effort-hint log-instruction">Marque as séries e anote reps e kg por série. O seletor define como a carga entra no volume.</p>
       ${plan.exercises.length ? `<div class="exercise-log-list">${plan.exercises.map((exercise, index) => `
@@ -1366,6 +1508,7 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
       <p class="effort-hint">Volume externo do treino: <strong id="strength-volume">0 kg·reps</strong>. Halteres: kg por mão; o cálculo considera os dois halteres e os lados indicados.</p>`;
     if (exercisePickerPanelOpen) renderExercisePickerResults(byId("exercise-picker-search").value);
   } else {
+    if (strengthSelectors) strengthSelectors.style.display = "none";
     const isBjj = category === "bjj";
     const target = MODALITIES[category].targetMinutes;
     fields.innerHTML = `
@@ -1547,6 +1690,7 @@ function render() {
   renderProfileSelect();
   renderScoreboard();
   renderToday();
+  renderProgramSelector();
   renderTrainingPlan();
   renderActivity();
   renderWeekChart();
@@ -2005,6 +2149,7 @@ byId("workout-form").addEventListener("submit", async (event) => {
   if (customName) workout.name = customName;
   const comments = String(form.get("comments") || "").trim();
   if (comments) workout.comments = comments;
+  if (currentWorkoutPhoto) workout.photo = currentWorkoutPhoto;
   workout.id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
   workout.owner = state.activePlayer;
   workout.challengeId = getActiveChallenge().id;
@@ -2020,6 +2165,7 @@ byId("workout-form").addEventListener("submit", async (event) => {
     activeStrengthPlan = cloneTrainingPlan(customPlanToSave);
   }
   saveState();
+  clearWorkoutPhoto();
   try {
     await syncWorkoutToFirebase(workout);
   } catch (error) {
@@ -2093,6 +2239,7 @@ function setupFirebaseSync() {
           date: workout.workout_date,
           name: workout.name || MODALITIES[workout.category]?.label || workout.category,
           comments: workout.comments || "",
+          photo: workout.photo || null,
           points: workout.points || 0,
           effort: workout.effort,
           duration: workout.duration || 0,
@@ -2106,6 +2253,21 @@ function setupFirebaseSync() {
         if (ind) {
           ind.textContent = "● Google Firebase Ao Vivo";
           ind.style.color = "var(--lime)";
+        }
+      });
+
+      fbDb.ref("rep-club/training-programs").on("value", (snapshot) => {
+        const val = snapshot.val();
+        if (val) {
+          const remoteList = Object.values(val);
+          remoteList.forEach((rp) => {
+            const idx = trainingPrograms.findIndex((p) => p.id === rp.id);
+            if (idx >= 0) trainingPrograms[idx] = rp;
+            else trainingPrograms.push(rp);
+          });
+          saveTrainingPrograms();
+          renderProgramSelector();
+          renderTrainingPlan();
         }
       });
 
@@ -2318,3 +2480,382 @@ byId("btn-google-login")?.addEventListener("click", async () => {
 });
 
 renderAuthUI();
+
+// PROGRAMAS DE TREINO - SINCRONIZAÇÃO FIREBASE E BUILDER
+async function syncProgramToFirebase(program) {
+  if (fbDb) {
+    try {
+      await fbDb.ref(`rep-club/training-programs/${program.id}`).set(program);
+      return;
+    } catch (e) {
+      console.warn("Falha Firebase SDK programas:", e);
+    }
+  }
+  try {
+    await fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/training-programs/${program.id}.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(program)
+    });
+  } catch (e) {
+    console.warn("Falha REST programas:", e);
+  }
+}
+
+async function hydrateProgramsFromFirebase() {
+  try {
+    let programsData = null;
+    if (fbDb) {
+      try {
+        const snap = await fbDb.ref("rep-club/training-programs").get();
+        programsData = snap.val();
+      } catch (e) {}
+    }
+    if (!programsData) {
+      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/training-programs.json");
+      if (resp.ok) programsData = await resp.json();
+    }
+    if (programsData) {
+      const remotePrograms = Object.values(programsData);
+      remotePrograms.forEach((rp) => {
+        const idx = trainingPrograms.findIndex((p) => p.id === rp.id);
+        if (idx >= 0) trainingPrograms[idx] = rp;
+        else trainingPrograms.push(rp);
+      });
+      saveTrainingPrograms();
+      renderProgramSelector();
+      renderTrainingPlan();
+    }
+  } catch (e) {
+    console.warn("Erro ao buscar programas do Firebase:", e);
+  }
+}
+
+byId("program-select")?.addEventListener("change", (e) => {
+  activeProgramId = e.target.value;
+  saveTrainingPrograms();
+  renderProgramSelector();
+  renderTrainingPlan();
+  showToast(`Programa "${getActiveProgram().name}" selecionado.`);
+});
+
+function openProgramBuilder() {
+  const nameInput = byId("builder-program-name");
+  const structSelect = byId("builder-structure-select");
+  if (nameInput) nameInput.value = "";
+  if (structSelect) structSelect.value = "ABC";
+  renderBuilderSessions("ABC");
+  byId("program-builder-dialog")?.showModal();
+}
+
+function renderBuilderSessions(structure = "ABC") {
+  const letters = structure.split("");
+  const container = byId("builder-sessions-container");
+  if (!container) return;
+
+  const defaultTitles = {
+    A: "Costas e Bíceps",
+    B: "Peito e Tríceps",
+    C: "Pernas e Ombros",
+    D: "Braços e Abdômen",
+    E: "Cardio e Mobilidade"
+  };
+
+  container.innerHTML = letters.map((letter) => `
+    <div class="builder-session-card" data-session-id="${letter}" style="background:#f4f5ee; border:1px solid #d5d7cd; border-radius:6px; padding:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
+        <strong style="font-size:13px; color:var(--ink); font-family:var(--display); min-width:60px;">Treino ${letter}</strong>
+        <input type="text" class="builder-session-title" value="${defaultTitles[letter] || `Foco do Treino ${letter}`}" placeholder="Foco da sessão (ex: Costas e Bíceps)" style="font-size:12px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; flex:1;" required />
+      </div>
+      <div class="builder-exercises-list" style="display:grid; gap:6px;">
+        <div class="builder-exercise-row" style="display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;">
+          <input type="text" class="builder-ex-name" value="Exercício 1" placeholder="Nome" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="builder-ex-sets" value="4" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="builder-ex-min" value="8" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+          <button type="button" class="btn-remove-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+        </div>
+      </div>
+      <button type="button" class="button button-outline btn-add-builder-ex" style="margin-top:8px; font-size:10px; height:26px; padding:0 8px;">+ Adicionar Exercício</button>
+    </div>
+  `).join("");
+}
+
+byId("builder-structure-select")?.addEventListener("change", (e) => {
+  renderBuilderSessions(e.target.value);
+});
+
+byId("builder-sessions-container")?.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-remove-builder-ex")) {
+    const row = e.target.closest(".builder-exercise-row");
+    const list = row?.parentElement;
+    if (list && list.children.length > 1) {
+      row.remove();
+    } else {
+      alert("A sessão precisa ter pelo menos um exercício.");
+    }
+  } else if (e.target.classList.contains("btn-add-builder-ex")) {
+    const card = e.target.closest(".builder-session-card");
+    const list = card?.querySelector(".builder-exercises-list");
+    if (list) {
+      const newRow = document.createElement("div");
+      newRow.className = "builder-exercise-row";
+      newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
+      newRow.innerHTML = `
+        <input type="text" class="builder-ex-name" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-sets" value="3" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-min" value="10" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+        <button type="button" class="btn-remove-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+      `;
+      list.appendChild(newRow);
+      newRow.querySelector(".builder-ex-name")?.focus();
+    }
+  }
+});
+
+byId("btn-open-program-builder")?.addEventListener("click", () => openProgramBuilder());
+byId("close-builder-dialog")?.addEventListener("click", () => byId("program-builder-dialog")?.close());
+byId("cancel-builder-dialog")?.addEventListener("click", () => byId("program-builder-dialog")?.close());
+
+byId("save-builder-program")?.addEventListener("click", async () => {
+  const name = byId("builder-program-name")?.value.trim();
+  if (!name) {
+    alert("Informe o nome do programa (ex: Hipertrofia Yuri, Auxílio Jiu).");
+    return;
+  }
+  const structure = byId("builder-structure-select")?.value || "ABC";
+  const sessionCards = Array.from(document.querySelectorAll(".builder-session-card"));
+  const sessions = sessionCards.map((card) => {
+    const id = card.dataset.sessionId;
+    const title = card.querySelector(".builder-session-title")?.value.trim() || `Treino ${id}`;
+    const exRows = Array.from(card.querySelectorAll(".builder-exercise-row"));
+    const exercises = exRows.map((row) => ({
+      name: row.querySelector(".builder-ex-name")?.value.trim() || "Exercício",
+      sets: Number(row.querySelector(".builder-ex-sets")?.value || 4),
+      min: Number(row.querySelector(".builder-ex-min")?.value || 8),
+      max: Number(row.querySelector(".builder-ex-max")?.value || 12),
+      loadFactor: 1
+    }));
+    return { id, day: id, title, exercises };
+  });
+
+  const newProg = {
+    id: `program-${Date.now()}`,
+    name,
+    structure,
+    sessions
+  };
+
+  trainingPrograms.push(newProg);
+  activeProgramId = newProg.id;
+  saveTrainingPrograms();
+  renderProgramSelector();
+  renderTrainingPlan();
+
+  try {
+    await syncProgramToFirebase(newProg);
+  } catch (e) {
+    console.warn("Programa salvo localmente; falha Firebase:", e);
+  }
+
+  byId("program-builder-dialog")?.close();
+  showToast(`Programa "${name}" cadastrado e sincronizado entre dispositivos!`);
+});
+
+// SELECTORS DE PROGRAMA / LETRA NO REGISTRO DE TREINO
+byId("workout-plan-program")?.addEventListener("change", (e) => {
+  activeProgramId = e.target.value;
+  saveTrainingPrograms();
+  renderWorkoutFields();
+});
+
+byId("workout-plan-session")?.addEventListener("change", (e) => {
+  renderWorkoutFields(e.target.value);
+});
+
+// ANEXO DE FOTO NO REGISTRO DE TREINO
+let currentWorkoutPhoto = null;
+const photoInput = byId("workout-photo-input");
+const photoPreviewWrap = byId("workout-photo-preview-wrap");
+const photoPreview = byId("workout-photo-preview");
+const photoFilename = byId("photo-filename");
+const btnRemovePhoto = byId("btn-remove-photo");
+
+photoInput?.addEventListener("change", (e) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  if (photoFilename) photoFilename.textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 480;
+      let width = img.width;
+      let height = img.height;
+      if (width > height && width > maxDim) {
+        height = Math.round((height * maxDim) / width);
+        width = maxDim;
+      } else if (height > maxDim) {
+        width = Math.round((width * maxDim) / height);
+        height = maxDim;
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, width, height);
+      currentWorkoutPhoto = canvas.toDataURL("image/jpeg", 0.72);
+      if (photoPreview) photoPreview.src = currentWorkoutPhoto;
+      if (photoPreviewWrap) photoPreviewWrap.style.display = "block";
+    };
+    img.src = event.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+btnRemovePhoto?.addEventListener("click", () => {
+  clearWorkoutPhoto();
+});
+
+function clearWorkoutPhoto() {
+  currentWorkoutPhoto = null;
+  if (photoInput) photoInput.value = "";
+  if (photoFilename) photoFilename.textContent = "Nenhuma foto anexada";
+  if (photoPreview) photoPreview.src = "";
+  if (photoPreviewWrap) photoPreviewWrap.style.display = "none";
+}
+
+byId("cancel-dialog")?.addEventListener("click", () => clearWorkoutPhoto());
+byId("close-dialog")?.addEventListener("click", () => clearWorkoutPhoto());
+
+// MODO RAIO-X
+function openRaioXDialog() {
+  const p1 = PLAYERS[0] || { name: "Jogador 1", short: "1", color: "var(--lime)" };
+  const p2 = PLAYERS[1] || { name: "Jogador 2", short: "2", color: "var(--blue)" };
+  const p1Workouts = duelWorkouts(p1.id);
+  const p2Workouts = duelWorkouts(p2.id);
+
+  const getStats = (wList, cat) => {
+    const list = wList.filter(w => w.category === cat);
+    const pts = list.reduce((sum, w) => sum + pointsForWorkout(w), 0);
+    return { count: list.length, pts };
+  };
+
+  const p1Str = getStats(p1Workouts, "strength");
+  const p2Str = getStats(p2Workouts, "strength");
+  const p1Bjj = getStats(p1Workouts, "bjj");
+  const p2Bjj = getStats(p2Workouts, "bjj");
+  const p1Cardio = getStats(p1Workouts, "cardio");
+  const p2Cardio = getStats(p2Workouts, "cardio");
+
+  const p1TotalPts = p1Workouts.reduce((s, w) => s + pointsForWorkout(w), 0);
+  const p2TotalPts = p2Workouts.reduce((s, w) => s + pointsForWorkout(w), 0);
+
+  let roast = "";
+  if (p1TotalPts === 0 && p2TotalPts === 0) {
+    roast = "Nenhum dos dois treinou ainda! O tatame está acumulando poeira e as anilhas estão frias. Quem vai ter a vergonha na cara de começar?";
+  } else if (Math.abs(p1TotalPts - p2TotalPts) <= 3) {
+    roast = `Equilíbrio tenso entre ${p1.name} (${p1TotalPts} pts) e ${p2.name} (${p2TotalPts} pts)! A rivalidade está afiada e qualquer treino ou rola a mais vira liderança isolada.`;
+  } else if (p1TotalPts > p2TotalPts) {
+    const diff = p1TotalPts - p2TotalPts;
+    if (p1Bjj.pts > p2Bjj.pts + 10) {
+      roast = `🔥 ${p1.name} está amarrando ${p2.name} no tatame! ${p2.name} precisa parar de assistir e bater ponto nos treinos de Jiu. Vantagem de ${diff} pts!`;
+    } else if (p1Str.pts > p2Str.pts + 10) {
+      roast = `💪 ${p1.name} está empilhando anilhas enquanto ${p2.name} finge que descanso de 5 minutos é hipertrofia. Vantagem de ${diff} pts!`;
+    } else {
+      roast = `🏆 ${p1.name} lidera com folga (+${diff} pts). ${p2.name}, o troféu de vice já está sendo polido com seu nome!`;
+    }
+  } else {
+    const diff = p2TotalPts - p1TotalPts;
+    if (p2Bjj.pts > p1Bjj.pts + 10) {
+      roast = `🔥 ${p2.name} está finalizando geral! ${p1.name} ficou para trás na contagem de pontos do tatame (+${diff} pts de desvantagem).`;
+    } else if (p2Str.pts > p1Str.pts + 10) {
+      roast = `💪 ${p2.name} assumiu a maromba com autoridade! ${p1.name} está ${diff} pontos atrás e atualizando as desculpas.`;
+    } else {
+      roast = `🏆 ${p2.name} na liderança absoluta (+${diff} pts)! ${p1.name}, ou treina hoje ou já pode ir encomendando o prêmio combinado.`;
+    }
+  }
+
+  const roastEl = byId("raiox-roast-text");
+  if (roastEl) roastEl.textContent = roast;
+
+  const renderRow = (label, icon, s1, s2) => {
+    const totalPts = Math.max(1, s1.pts + s2.pts);
+    const p1Pct = Math.round((s1.pts / totalPts) * 100);
+    const p2Pct = 100 - p1Pct;
+    return `
+      <div class="raiox-comparison-row">
+        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; font-weight:700; margin-bottom:4px;">
+          <span>${icon} ${label}</span>
+          <span style="font-size:11px; color:#666;">${s1.count}t (${s1.pts} pts) vs ${s2.count}t (${s2.pts} pts)</span>
+        </div>
+        <div class="raiox-bar-track">
+          <div class="raiox-bar-fill-p1" style="width:${p1Pct}%; background:${p1.color};" title="${p1.name}: ${s1.pts} pts (${p1Pct}%)"></div>
+          <div class="raiox-bar-fill-p2" style="width:${p2Pct}%; background:${p2.color};" title="${p2.name}: ${s2.pts} pts (${p2Pct}%)"></div>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:10px; font-weight:800; color:#555; margin-top:2px;">
+          <span style="color:${p1.color};">${p1.name}: ${s1.pts} pts (${p1Pct}%)</span>
+          <span style="color:${p2.color};">${p2.name}: ${s2.pts} pts (${p2Pct}%)</span>
+        </div>
+      </div>
+    `;
+  };
+
+  const listContainer = byId("raiox-comparison-list");
+  if (listContainer) {
+    listContainer.innerHTML = [
+      renderRow("Musculação", "🏋️", p1Str, p2Str),
+      renderRow("Jiu-jitsu", "🥋", p1Bjj, p2Bjj),
+      renderRow("Cardio", "🏃", p1Cardio, p2Cardio),
+      renderRow("Pontuação Geral", "🏆", { count: p1Workouts.length, pts: p1TotalPts }, { count: p2Workouts.length, pts: p2TotalPts }),
+    ].join("");
+  }
+
+  byId("raiox-dialog")?.showModal();
+}
+
+byId("btn-open-raiox")?.addEventListener("click", () => openRaioXDialog());
+byId("close-raiox-dialog")?.addEventListener("click", () => byId("raiox-dialog")?.close());
+byId("btn-close-raiox")?.addEventListener("click", () => byId("raiox-dialog")?.close());
+
+// MENU DA ENGRENAGEM (DROPDOWN NO TOPO)
+const btnGear = byId("btn-gear-menu");
+const gearDropdown = byId("gear-dropdown");
+function toggleGearMenu() {
+  if (!gearDropdown) return;
+  gearDropdown.hidden = !gearDropdown.hidden;
+}
+function closeGearMenu() {
+  if (gearDropdown) gearDropdown.hidden = true;
+}
+btnGear?.addEventListener("click", (e) => {
+  e.stopPropagation();
+  toggleGearMenu();
+});
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".gear-menu-wrap")) {
+    closeGearMenu();
+  }
+});
+
+byId("gear-new-challenge")?.addEventListener("click", () => {
+  closeGearMenu();
+  openSetupDialog("create");
+});
+byId("gear-edit-challenge")?.addEventListener("click", () => {
+  closeGearMenu();
+  openSetupDialog("edit");
+});
+byId("gear-delete-challenge")?.addEventListener("click", () => {
+  closeGearMenu();
+  byId("delete-challenge-btn")?.click();
+});
+byId("gear-reset-challenge")?.addEventListener("click", () => {
+  closeGearMenu();
+  handleResetChallenge();
+});
+byId("gear-open-qr")?.addEventListener("click", () => {
+  closeGearMenu();
+  byId("qr-dialog")?.showModal();
+});
