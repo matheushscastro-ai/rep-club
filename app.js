@@ -2479,6 +2479,10 @@ byId("btn-google-login")?.addEventListener("click", async () => {
     console.warn("Google Auth error:", err);
     if (err.code === "auth/configuration-not-found" || err.code === "auth/operation-not-allowed") {
       if (errorEl) errorEl.textContent = "Provedor Google ainda não ativado no Firebase Console. Você pode clicar no seu nome abaixo para vincular seu perfil diretamente neste aparelho!";
+    } else if (err.code === "auth/unauthorized-domain") {
+      if (errorEl) {
+        errorEl.innerHTML = `<strong>Domínio não autorizado no Google Auth:</strong> adicione <code>matheushscastro-ai.github.io</code> em Firebase Console > Authentication > Configurações > Domínios autorizados.<br><br>👉 <strong>Ou mais simples:</strong> basta clicar no seu nome logo abaixo para vincular este celular diretamente sem precisar do Google!`;
+      }
     } else {
       if (errorEl) errorEl.textContent = err.message || "Não foi possível autenticar com o Google. Escolha seu perfil abaixo.";
     }
