@@ -2,16 +2,23 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f2f2ed" />
-    <meta name="description" content="Desafie um amigo a manter a consistência nos treinos." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#191a16" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Rep Club" />
+    <meta name="description" content="Desafie um amigo a manter a consistência nos treinos com duelo Kamehameha em tempo real." />
     <title>Rep Club | Duelo</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="assets/icons/icon-192.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=challenge-period-1" />
+    <link rel="stylesheet" href="styles.css?v=dbz-canvas-1" />
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="app.js?v=supabase-2" defer></script>
+    <script src="app.js?v=dbz-canvas-1" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -28,22 +35,31 @@
           <a class="nav-link" href="#atividade"><span class="nav-mark">03</span>Atividade</a>
           <a class="nav-link" href="#evolucao"><span class="nav-mark">04</span>Evolução</a>
           <a class="nav-link" href="#regras"><span class="nav-mark">05</span>Regras do duelo</a>
+          <a class="nav-link" href="solo.html" title="Abrir treino individual"><span class="nav-mark">🎯</span>Modo Solo</a>
+          <button type="button" class="nav-link pwa-install-nav-btn" id="btn-pwa-install" style="display: none; width: 100%; border: 0; background: transparent; text-align: left; cursor: pointer; color: var(--lime); font-weight: 700;">
+            <span class="nav-mark">📲</span>Instalar App
+          </button>
         </nav>
 
         <div class="sidebar-bottom">
           <div class="challenge-mini">
             <span class="live-dot"></span>
-            <span>DESAFIO ATIVO</span>
-            <strong>Até domingo</strong>
+            <span id="challenge-mini-status">DESAFIO ATIVO</span>
+            <strong id="challenge-mini-title">Duelo 01</strong>
           </div>
+          <button class="text-button reset-challenge-btn" id="reset-current-challenge" type="button">⚠️ Zerar desafio atual</button>
           <button class="text-button reset-button" id="reset-demo" type="button">Reiniciar demonstração</button>
-          <p class="sidebar-note">MODO DEMO · DADOS NESTE NAVEGADOR</p>
+          <p class="sidebar-note">DADOS SALVOS NESTE NAVEGADOR</p>
         </div>
       </aside>
 
       <main id="inicio" class="main-content">
         <header class="topbar">
-          <div class="breadcrumb"><span>REP CLUB</span><span class="breadcrumb-slash">/</span> DUELO 01</div>
+          <div class="challenge-switcher-wrap">
+            <div class="breadcrumb"><span>REP CLUB</span><span class="breadcrumb-slash">/</span></div>
+            <select id="challenge-select" class="challenge-select" aria-label="Desafio selecionado"></select>
+            <button type="button" class="btn-new-challenge" id="btn-new-challenge" title="Criar novo desafio">+ Novo Desafio</button>
+          </div>
           <label class="profile-switcher">
             <span>REGISTRAR COMO</span>
             <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
@@ -58,21 +74,70 @@
           </div>
         </section>
 
-        <section class="scoreboard" aria-labelledby="score-title">
-          <div class="scoreboard-topline"><span id="score-title">PERÍODO DO DUELO</span><span id="days-remaining">FALTAM 0 DIAS</span></div>
-          <div class="scoreboard-body">
+        <section class="scoreboard" id="main-scoreboard" aria-labelledby="score-title">
+          <div class="scoreboard-topline">
+            <div class="scoreboard-period-badge">
+              <span id="score-title">PERÍODO DO DUELO</span>
+              <span id="days-remaining">FALTAM 0 DIAS</span>
+            </div>
+            <div class="scoreboard-top-actions">
+              <button class="button-tag" id="open-setup-btn" type="button" title="Gerenciar participantes do duelo">👥 Participantes</button>
+              <div class="score-style-toggle" role="radiogroup" aria-label="Estilo visual do placar">
+                <button type="button" class="style-toggle-btn" id="btn-style-classic" data-style="classic" aria-pressed="false">⚔️ Clássico</button>
+                <button type="button" class="style-toggle-btn active" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="true">⚡ Kamehameha</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- MODO CLÁSSICO -->
+          <div class="scoreboard-body scoreboard-classic-view" id="scoreboard-classic" hidden>
             <div class="competitor competitor-you">
               <div class="avatar avatar-lime" id="you-avatar">M</div>
-              <div class="competitor-copy"><span class="competitor-label">SEU LADO</span><strong id="you-name">Matheus</strong></div>
+              <div class="competitor-copy"><span class="competitor-label" id="you-label">SEU LADO</span><strong id="you-name">Matheus</strong></div>
               <div class="competitor-score"><strong id="you-score">00</strong><span>PTS</span></div>
             </div>
-            <div class="versus"><span>VS</span><div class="score-track"><div class="score-track-me" id="score-track-me"></div><div class="score-track-rival" id="score-track-rival"></div></div><p id="score-message">A disputa está aberta</p></div>
+            <div class="versus">
+              <span id="versus-tag">VS</span>
+              <div class="score-track"><div class="score-track-me" id="score-track-me"></div><div class="score-track-rival" id="score-track-rival"></div></div>
+              <p id="score-message">A disputa está aberta</p>
+            </div>
             <div class="competitor competitor-rival">
               <div class="competitor-score"><strong id="rival-score">00</strong><span>PTS</span></div>
-              <div class="competitor-copy"><span class="competitor-label">ADVERSÁRIO</span><strong id="rival-name">Rafa</strong></div>
+              <div class="competitor-copy"><span class="competitor-label" id="rival-label">ADVERSÁRIO</span><strong id="rival-name">Rafa</strong></div>
               <div class="avatar avatar-blue" id="rival-avatar">R</div>
             </div>
           </div>
+
+          <!-- MODO KAMEHAMEHA DRAGON BALL (GOKU SSJ VS PERFECT CELL - 16-BIT RETRO ARCADE) -->
+          <div class="scoreboard-body scoreboard-kamehameha-view" id="scoreboard-kamehameha">
+            <div class="kamehameha-card">
+              <!-- Top Fighters Bar -->
+              <div class="kamehameha-fighters-header">
+                <div class="fighter-tag-card fighter-tag-goku">
+                  <span class="fighter-role">GOKU SSJ · 1º LUGAR</span>
+                  <strong class="fighter-name" id="goku-player-name">Matheus</strong>
+                  <span class="fighter-pts"><strong id="goku-player-score">00</strong> PTS</span>
+                </div>
+                <div class="kamehameha-badge-wrap">
+                  <span class="clash-badge" id="clash-percentage">50% · EMPATE</span>
+                </div>
+                <div class="fighter-tag-card fighter-tag-cell">
+                  <span class="fighter-role">PERFECT CELL · 2º LUGAR</span>
+                  <strong class="fighter-name" id="cell-player-name">Yuri</strong>
+                  <span class="fighter-pts"><strong id="cell-player-score">00</strong> PTS</span>
+                </div>
+              </div>
+
+              <!-- Pixel-Perfect 16-bit Battle Canvas (Strictly locked to exact horizontal axis) -->
+              <div class="kamehameha-canvas-wrap">
+                <canvas id="kamehameha-canvas" width="602" height="174" aria-label="Batalha de Kamehameha Goku vs Cell"></canvas>
+              </div>
+
+              <!-- Battle Commentary -->
+              <p class="kamehameha-commentary" id="kamehameha-commentary">Choque de Kamehameha em equilíbrio total! Quem treinar primeiro desempata!</p>
+            </div>
+          </div>
+
           <div class="scoreboard-footer"><span id="weekly-lead">A liderança muda a cada treino.</span><span>SESSÃO + EXECUÇÃO + ESFORÇO · ATÉ <strong>22 PTS</strong></span></div>
           <div class="scoreboard-prize"><span>PRÊMIO DO DUELO</span><strong id="prize-display">Não definido</strong></div>
           <div class="scoreboard-period"><span>DATAS</span><strong id="period-display">Segunda – domingo</strong></div>
@@ -80,7 +145,7 @@
 
         <section class="roast-banner" aria-label="Provocação do duelo">
           <span class="roast-label">RECADO DO PLACAR</span>
-          <p id="loser-roast">O empate está poupando os dois de passar vergonha.</p>
+          <p id="loser-roast">O empate está poupando os participantes de passar vergonha.</p>
         </section>
 
         <section class="action-section" aria-label="Registrar atividade">
@@ -90,8 +155,8 @@
 
         <section class="program-section" id="programa" aria-labelledby="program-title">
           <div class="section-heading program-heading">
-            <div><p class="eyebrow">PLANO DE MUSCULAÇÃO</p><h2 id="program-title">Quatro dias. Mesmo programa.</h2></div>
-            <span class="program-note">SEG · TER · QUI · SEX</span>
+            <div><p class="eyebrow">PLANO DE MUSCULAÇÃO</p><h2 id="program-title">Cinco dias. Programa completo.</h2></div>
+            <span class="program-note">SEG · TER · QUA · QUI · SEX</span>
           </div>
           <div class="program-list" id="program-list"></div>
         </section>
@@ -143,19 +208,38 @@
 
     <dialog class="setup-dialog" id="setup-dialog" aria-labelledby="setup-title">
       <form id="setup-form">
-        <a class="brand setup-brand" href="#inicio" aria-label="Rep Club">
-          <span class="brand-mark">R<span>+</span></span>
-          <span class="brand-name">REP<span>CLUB</span></span>
-        </a>
-        <p class="eyebrow">CONFIGURAÇÃO INICIAL</p>
-        <h1 id="setup-title">Quem entra no duelo?</h1>
-        <p class="setup-copy" id="setup-copy">Cadastre os dois nomes, o período e, se quiser, o prêmio.</p>
-        <label class="form-field"><span>JOGADOR 1</span><input name="playerOne" type="text" maxlength="24" placeholder="Seu nome" autocomplete="name" required autofocus /></label>
-        <label class="form-field"><span>JOGADOR 2</span><input name="playerTwo" type="text" maxlength="24" placeholder="Nome do amigo" required /></label>
-        <label class="form-field"><span>PRÊMIO DO DUELO · OPCIONAL</span><input name="prize" type="text" maxlength="80" placeholder="Ex.: o perdedor paga o açaí" /></label>
-        <fieldset class="period-fields"><legend>PERÍODO DO DUELO</legend><label class="form-field"><span>INÍCIO</span><input name="periodStart" type="date" required /></label><label class="form-field"><span>FIM</span><input name="periodEnd" type="date" required /></label></fieldset>
+        <div class="dialog-top setup-dialog-top">
+          <a class="brand setup-brand" href="#inicio" aria-label="Rep Club">
+            <span class="brand-mark">R<span>+</span></span>
+            <span class="brand-name">REP<span>CLUB</span></span>
+          </a>
+          <button class="close-button" type="button" id="close-setup-dialog" aria-label="Fechar" style="display: none;">×</button>
+        </div>
+        <p class="eyebrow">CONFIGURAÇÃO DO DUELO</p>
+        <h1 id="setup-title">Quem entra na disputa?</h1>
+        <p class="setup-copy" id="setup-copy">Cadastre os participantes, o período do desafio e o prêmio.</p>
+        
+        <label class="form-field"><span>NOME DO DESAFIO</span><input name="challengeTitle" id="setup-challenge-title" type="text" maxlength="40" placeholder="Ex.: Duelo 01, Liga de Outubro" value="Duelo 01" required /></label>
+
+        <div class="setup-players-section">
+          <div class="setup-players-header">
+            <span>PARTICIPANTES</span>
+            <small>Mínimo 2 jogadores</small>
+          </div>
+          <div class="setup-players-list" id="setup-players-list">
+            <!-- Linhas de jogadores renderizadas dinamicamente via JS -->
+          </div>
+          <button type="button" class="button button-outline setup-add-player-btn" id="setup-add-player-btn">+ Adicionar participante</button>
+        </div>
+
+        <label class="form-field"><span>PRÊMIO DO DUELO · OPCIONAL</span><input name="prize" id="setup-prize" type="text" maxlength="80" placeholder="Ex.: o último colocado paga o açaí" /></label>
+        <fieldset class="period-fields"><legend>PERÍODO DO DUELO</legend><label class="form-field"><span>INÍCIO</span><input name="periodStart" id="setup-period-start" type="date" required /></label><label class="form-field"><span>FIM</span><input name="periodEnd" id="setup-period-end" type="date" required /></label></fieldset>
         <p class="setup-error" id="setup-error" role="alert"></p>
-        <button class="button button-primary setup-submit" type="submit">Liberar o duelo <span>↗</span></button>
+        <div class="setup-actions">
+          <button class="button button-quiet" type="button" id="cancel-setup-dialog" style="display: none;">Cancelar</button>
+          <button class="button button-danger" type="button" id="delete-challenge-btn" style="display: none;">Excluir desafio</button>
+          <button class="button button-primary setup-submit" type="submit">Salvar e liberar duelo <span>↗</span></button>
+        </div>
         <p class="setup-storage-note">Nomes, período, prêmio e treinos ficam salvos neste navegador.</p>
       </form>
     </dialog>

@@ -1,0 +1,25 @@
+{
+  "name": "Rep Club · Duelo Fitness",
+  "short_name": "Rep Club",
+  "description": "App de duelo fitness com Kamehameha e acompanhamento de treinos",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#191a16",
+  "theme_color": "#191a16",
+  "icons": [
+    {
+      "src": "assets/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

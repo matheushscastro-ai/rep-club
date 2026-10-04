@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#191a16" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>Rep Club | Meu treino</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+    <link rel="icon" type="image/png" href="assets/icons/icon-192.png" />
+    <link rel="stylesheet" href="styles.css?v=challenge-period-1" />
+    <link rel="stylesheet" href="solo.css" />
+    <script src="solo-app.js" defer></script>
+  </head>
+  <body class="solo-body">
+    <header class="solo-header">
+      <a class="brand" href="index.html" aria-label="Rep Club, voltar ao duelo"><span class="brand-mark">R<span>+</span></span><span class="brand-name">REP<span>CLUB</span></span></a>
+      <div style="display:flex; align-items:center; gap:12px;">
+        <span class="solo-tag">MODO INDIVIDUAL</span>
+        <a href="index.html" class="button button-outline" style="min-height:30px; font-size:10px; padding:0 10px;">⚔️ Voltar ao Duelo</a>
+      </div>
+    </header>
+    <main class="solo-main">
+      <section class="solo-hero"><p class="eyebrow"><span class="live-dot"></span> MEU TREINO</p><h1>Treine. Registre.<br /><span>Veja a evolução.</span></h1><p>Seu histórico fica salvo neste celular, sem duelo e sem outro participante.</p></section>
+      <nav class="solo-tabs" aria-label="Seções"><button class="solo-tab active" data-tab="workouts">Treinos</button><button class="solo-tab" data-tab="history">Histórico</button></nav>
+      <section id="solo-workouts" class="solo-panel">
+        <div class="solo-heading"><div><p class="eyebrow">PROGRAMA</p><h2>Escolha sua sessão.</h2></div><span id="solo-session-count"></span></div>
+        <div class="solo-plan-nav" id="solo-plan-nav"></div>
+        <div class="solo-plan-title" id="solo-plan-title"></div>
+        <button class="button button-primary solo-register" id="solo-register" type="button">+ Registrar treino selecionado</button>
+        <div class="solo-activity" id="solo-activity"></div>
+      </section>
+      <section id="solo-history" class="solo-panel" hidden>
+        <div class="solo-heading"><div><p class="eyebrow">PROGRESSÃO</p><h2>Evolução por exercício.</h2></div><select id="solo-history-exercise" aria-label="Exercício do histórico"></select></div>
+        <p class="history-profile">Carga, reps ou tempo dos seus registros.</p>
+        <div class="history-chart-wrap"><canvas id="solo-history-chart"></canvas><p id="solo-history-empty" class="history-empty" hidden></p></div>
+      </section>
+    </main>
+    <dialog class="workout-dialog" id="solo-dialog" aria-labelledby="solo-dialog-title"><form id="solo-form"><div class="dialog-top"><div><p class="eyebrow">REGISTRO INDIVIDUAL</p><h2 id="solo-dialog-title">Novo treino.</h2></div><button class="close-button" id="solo-close" type="button" aria-label="Fechar">×</button></div><label class="form-field"><span>NOME DO TREINO · OPCIONAL</span><input name="name" maxlength="50" placeholder="Ex.: Treino A bem feito" /></label><label class="form-field"><span>COMENTÁRIOS · OPCIONAL</span><textarea name="comments" rows="3" maxlength="500" placeholder="Como foi o treino?"></textarea></label><label class="form-field"><span>DATA DO TREINO</span><input name="date" id="solo-date" type="date" required /></label><div id="solo-fields"></div><p class="points-preview" id="solo-preview"></p><p class="form-error" id="solo-error"></p><div class="dialog-actions"><button class="button button-quiet" id="solo-cancel" type="button">Cancelar</button><button class="button button-primary" type="submit">Salvar treino ↗</button></div></form></dialog>
+  </body>
+</html>
