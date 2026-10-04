@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.7.1" />
+    <link rel="stylesheet" href="styles.css?v=2.7.2" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.7.1" defer></script>
+    <script src="app.js?v=2.7.2" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -71,8 +71,8 @@
             <div class="gear-menu-wrap">
               <button type="button" class="topbar-btn topbar-gear-btn" id="btn-gear-menu" title="Configurações e ações do duelo" aria-haspopup="true">⚙️</button>
               <div class="gear-dropdown" id="gear-dropdown" hidden>
-                <button type="button" class="gear-item" id="gear-new-challenge"><span>➕</span> Novo Duelo</button>
-                <button type="button" class="gear-item" id="gear-edit-challenge"><span>✏️</span> Editar Duelo Atual</button>
+                <button type="button" class="gear-item" id="gear-new-challenge" onclick="closeGearMenu(); if(window.openSetupDialog) window.openSetupDialog('create');"><span>➕</span> Novo Duelo</button>
+                <button type="button" class="gear-item" id="gear-edit-challenge" onclick="closeGearMenu(); if(window.openSetupDialog) window.openSetupDialog('edit');"><span>✏️</span> Editar Duelo Atual</button>
                 <button type="button" class="gear-item" id="gear-delete-challenge"><span>🗑️</span> Excluir Duelo</button>
                 <div class="gear-divider"></div>
                 <button type="button" class="gear-item gear-danger" id="gear-reset-challenge"><span>⚠️</span> Zerar Duelo Atual</button>
@@ -99,7 +99,7 @@
             Crie um novo desafio para competir com seus rivais ou treine no Modo Solo.
           </p>
           <div style="display:flex; flex-direction:column; gap:10px; max-width:280px; margin:0 auto;">
-            <button type="button" class="button button-primary" id="btn-empty-new-challenge" style="justify-content:center; font-weight:800; font-size:13px; min-height:44px; box-shadow:0 4px 12px rgba(215,250,82,0.35);">
+            <button type="button" class="button button-primary" id="btn-empty-new-challenge" onclick="if(window.openSetupDialog) window.openSetupDialog('create');" style="justify-content:center; font-weight:800; font-size:13px; min-height:44px; box-shadow:0 4px 12px rgba(215,250,82,0.35); cursor:pointer;">
               ➕ Criar Novo Duelo
             </button>
             <a href="solo.html" class="button button-outline" id="btn-empty-solo" style="justify-content:center; font-weight:700; font-size:13px; min-height:42px; text-decoration:none; display:inline-flex; align-items:center; gap:6px;">

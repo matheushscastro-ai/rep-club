@@ -710,20 +710,71 @@ async function checkInviteLinkParam() {
   const joinChallenge = (ch) => {
     if (!ch) return;
     const myName = user.name || (user.email ? user.email.split("@")[0] : "Atleta");
-    if (!userParticipatesInChallenge(ch, user)) {
-      if (!Array.isArray(ch.players)) ch.players = [];
-      const newP = {
-        id: `player-${ch.players.length + 1}`,
-        name: myName,
-        email: user.email || "",
-        short: myName.charAt(0).toUpperCase(),
-        side: ch.players.length === 1 ? "rival" : `other-${ch.players.length + 1}`,
-        color: PLAYER_PALETTE[ch.players.length % PLAYER_PALETTE.length].color,
-        textColor: PLAYER_PALETTE[ch.players.length % PLAYER_PALETTE.length].text
-      };
-      ch.players.push(newP);
+    if (!Array.isArray(ch.players)) ch.players = [];
+
+    const uId = String(user.id || user.uid || "").trim().toLowerCase();
+    const uEmail = String(user.email || "").trim().toLowerCase();
+    const uName = String(myName).trim().toLowerCase();
+
+    // 1. Procura se o usuário já participa do desafio
+    let targetIdx = ch.players.findIndex((p) => {
+      if (!p) return false;
+      const pId = String(p.id || p.uid || "").trim().toLowerCase();
+      const pEmail = String(p.email || "").trim().toLowerCase();
+      const pName = String(p.name || "").trim().toLowerCase();
+      if (uId && pId && (pId === uId || pId === `player-${uId}`)) return true;
+      if (uEmail && pEmail && pEmail === uEmail) return true;
+      if (uName && pName && (pName === uName || (pName.length >= 3 && uName.startsWith(pName)))) return true;
+      return false;
+    });
+
+    if (targetIdx >= 0) {
+      // Já está no duelo: vincula email, nome e uid atualizados
+      ch.players[targetIdx].name = myName;
+      if (user.email) ch.players[targetIdx].email = user.email;
+      if (user.id || user.uid) ch.players[targetIdx].uid = user.id || user.uid;
+      ch.players[targetIdx].short = myName.charAt(0).toUpperCase();
       syncChallengeToFirebase(ch);
+    } else {
+      // 2. Não participa ainda. Verifica se há um slot vago/placeholder (ex: Rival, Jogador 2, Convidado)
+      const placeholderIdx = ch.players.findIndex((p, idx) => {
+        if (idx === 0) return false; // Nunca substitui o criador (Player 1)
+        if (p.email || p.uid) return false; // Já pertence a uma conta autenticada
+        const pName = String(p.name || "").toLowerCase().trim();
+        return (
+          pName === "rival" ||
+          pName === "jogador 2" ||
+          pName === "convidado" ||
+          pName === "amigo" ||
+          pName === "atleta" ||
+          pName === ""
+        );
+      });
+
+      if (placeholderIdx >= 0) {
+        // Assume o slot vago existente (ex: slot do Rival)
+        ch.players[placeholderIdx].name = myName;
+        ch.players[placeholderIdx].short = myName.charAt(0).toUpperCase();
+        ch.players[placeholderIdx].email = user.email || "";
+        ch.players[placeholderIdx].uid = user.id || user.uid || "";
+        syncChallengeToFirebase(ch);
+      } else {
+        // Cria um novo competidor se não havia placeholder vago
+        const newP = {
+          id: `player-${ch.players.length + 1}`,
+          name: myName,
+          email: user.email || "",
+          uid: user.id || user.uid || "",
+          short: myName.charAt(0).toUpperCase(),
+          side: ch.players.length === 1 ? "rival" : `other-${ch.players.length + 1}`,
+          color: PLAYER_PALETTE[ch.players.length % PLAYER_PALETTE.length].color,
+          textColor: PLAYER_PALETTE[ch.players.length % PLAYER_PALETTE.length].text
+        };
+        ch.players.push(newP);
+        syncChallengeToFirebase(ch);
+      }
     }
+
     activeChallengeId = ch.id;
     saveChallenges();
     syncActiveChallengeGlobals();
@@ -2358,6 +2409,35 @@ byId("profile-select")?.addEventListener("change", (event) => {
   showToast(`Perfil de ${playerFor(state.activePlayer).name} selecionado.`);
 });
 
+function showModalSafely(dialog) {
+  if (!dialog) return;
+  try {
+    if (typeof dialog.showModal === "function") {
+      if (!dialog.open) dialog.showModal();
+    } else {
+      dialog.setAttribute("open", "");
+      dialog.style.display = "block";
+    }
+  } catch (err) {
+    console.warn("showModalSafely fallback:", err);
+    try {
+      dialog.setAttribute("open", "");
+      dialog.style.display = "block";
+    } catch (e) {}
+  }
+}
+
+function closeModalSafely(dialog) {
+  if (!dialog) return;
+  try {
+    if (typeof dialog.close === "function" && dialog.open) {
+      dialog.close();
+    }
+  } catch (err) {}
+  dialog.removeAttribute("open");
+  dialog.style.display = "none";
+}
+
 function renderSetupPlayers(namesList = null) {
   const container = byId("setup-players-list");
   if (!container) return;
@@ -2376,11 +2456,11 @@ function renderSetupPlayers(namesList = null) {
           <input class="setup-player-input" type="text" name="playerNames" value="${escapeHTML(name)}" placeholder="Nome do participante ${index + 1}${isOwner ? ' (Você)' : ''}" maxlength="24" required style="width:100%; box-sizing:border-box;" />
           <select class="setup-player-select" data-select-index="${index}" style="font-size:11px; padding:4px 6px; background:#f4f4ee; border:1px solid #d0d2c9; border-radius:4px; color:#374151; width:100%; cursor:pointer;">
             <option value="">👤 Selecionar atleta já cadastrado / autenticado...</option>
-            ${registered.map((u) => `
-              <option value="${escapeHTML(u.name)}" ${u.name.toLowerCase() === name.toLowerCase() ? "selected" : ""}>
+            ${registered.length > 0 ? registered.map((u) => `
+              <option value="${escapeHTML(u.name)}" ${String(u.name).toLowerCase() === String(name).toLowerCase() ? "selected" : ""}>
                 ${escapeHTML(u.name)}${u.email ? ` (${escapeHTML(u.email)})` : ""}
               </option>
-            `).join("")}
+            `).join("") : `<option value="" disabled>Nenhum outro atleta cadastrado ainda — digite o nome acima e use o link de convite.</option>`}
           </select>
         </div>
         ${list.length > 2 ? `<button type="button" class="setup-player-remove" data-remove-player="${index}" title="Remover participante" style="margin-top:6px;">×</button>` : ""}
@@ -2486,13 +2566,19 @@ function openSetupDialog(mode = "edit") {
     const btnCopy = byId("btn-copy-invite-link");
     if (btnCopy) {
       btnCopy.onclick = () => {
-        navigator.clipboard.writeText(inviteUrl).then(() => {
-          showToast("Link de convite copiado! Envie para o seu rival.");
-        }).catch(() => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(inviteUrl).then(() => {
+            showToast("Link de convite copiado! Envie para o seu rival.");
+          }).catch(() => {
+            previewInput?.select();
+            document.execCommand("copy");
+            showToast("Link de convite copiado!");
+          });
+        } else {
           previewInput?.select();
           document.execCommand("copy");
           showToast("Link de convite copiado!");
-        });
+        }
       };
     }
 
@@ -2514,10 +2600,7 @@ function openSetupDialog(mode = "edit") {
       };
     }
 
-    const dialog = byId("setup-dialog");
-    if (dialog && !dialog.open) {
-      dialog.showModal();
-    }
+    showModalSafely(byId("setup-dialog"));
 
     // Carrega atletas registrados em segundo plano
     loadRegisteredUsersDirectory().then(() => {
@@ -2526,9 +2609,7 @@ function openSetupDialog(mode = "edit") {
     }).catch(() => {});
   } catch (err) {
     console.error("Erro ao abrir setup dialog:", err);
-    try {
-      byId("setup-dialog")?.showModal();
-    } catch (e) {}
+    showModalSafely(byId("setup-dialog"));
   }
 }
 
@@ -2552,13 +2633,13 @@ byId("challenge-select")?.addEventListener("click", () => {
   }
 });
 
-byId("close-setup-dialog")?.addEventListener("click", () => byId("setup-dialog").close());
-byId("cancel-setup-dialog")?.addEventListener("click", () => byId("setup-dialog").close());
+byId("close-setup-dialog")?.addEventListener("click", () => closeModalSafely(byId("setup-dialog")));
+byId("cancel-setup-dialog")?.addEventListener("click", () => closeModalSafely(byId("setup-dialog")));
 
 byId("btn-style-classic")?.addEventListener("click", () => setScoreboardStyle("classic"));
 byId("btn-style-kamehameha")?.addEventListener("click", () => setScoreboardStyle("kamehameha"));
 
-byId("setup-dialog").addEventListener("cancel", (event) => {
+byId("setup-dialog")?.addEventListener("cancel", (event) => {
   if (!playerConfig && challenges.length > 0) event.preventDefault();
 });
 
@@ -2699,7 +2780,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     saveState();
     syncChallengeToFirebase(newChallenge);
     render();
-    byId("setup-dialog").close();
+    closeModalSafely(byId("setup-dialog"));
     showToast(`Novo desafio "${challengeTitle}" criado com sucesso!`);
   } else {
     const cur = getActiveChallenge();
@@ -2720,7 +2801,7 @@ byId("setup-form").addEventListener("submit", async (event) => {
     syncDuelToFirebase(cur);
     syncChallengeToFirebase(cur);
     render();
-    byId("setup-dialog").close();
+    closeModalSafely(byId("setup-dialog"));
     showToast(`Desafio "${challengeTitle}" atualizado com sucesso!`);
   }
 });
@@ -3055,8 +3136,17 @@ byId("btn-pwa-install")?.addEventListener("click", async () => {
 });
 
 if ("serviceWorker" in navigator) {
+  let isRefreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      console.log("Novo ServiceWorker ativado: recarregando para aplicar versão mais recente.");
+      window.location.reload();
+    }
+  });
+
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.1").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.2").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
@@ -3695,5 +3785,17 @@ byId("gear-reset-challenge")?.addEventListener("click", () => {
 });
 byId("gear-open-qr")?.addEventListener("click", () => {
   closeGearMenu();
-  byId("qr-dialog")?.showModal();
+  showModalSafely(byId("qr-dialog"));
+});
+
+// EXPOSIÇÃO GLOBAL PARA MANIPULADORES MOBILE E EVENTOS NATIVOS
+window.openSetupDialog = openSetupDialog;
+window.closeGearMenu = closeGearMenu;
+window.toggleGearMenu = toggleGearMenu;
+window.showModalSafely = showModalSafely;
+window.closeModalSafely = closeModalSafely;
+
+// Capturador de erros para depuração amigável no celular
+window.addEventListener("error", (event) => {
+  console.error("Global Error:", event.error || event.message);
 });
