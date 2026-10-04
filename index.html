@@ -64,6 +64,7 @@
             <span>REGISTRAR COMO</span>
             <select id="profile-select" aria-label="Perfil usado para registrar treinos"></select>
           </label>
+          <button type="button" class="button-tag" id="btn-show-qr" title="Abrir no celular via QR Code" style="display:flex; align-items:center; gap:5px; height:34px; padding:0 10px; cursor:pointer;">📲 Abrir no Celular</button>
         </header>
 
         <section class="intro-row">
@@ -264,6 +265,20 @@
       <button type="button" class="timer-button" data-rest-seconds="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
       <button type="button" class="timer-reset" id="timer-reset" aria-label="Zerar cronômetro">×</button>
     </div>
+    <dialog class="setup-dialog qr-dialog" id="qr-dialog" aria-labelledby="qr-title">
+      <div class="dialog-top">
+        <strong id="qr-title" style="font-family: var(--display); font-size: 20px; color: var(--ink);">📲 ABRIR NO CELULAR</strong>
+        <button class="close-button" type="button" id="close-qr-dialog" aria-label="Fechar">×</button>
+      </div>
+      <div style="text-align: center; padding: 10px 0 16px;">
+        <p style="font-size: 13px; margin: 0 0 14px; color: #55574f;">Aponte a câmera do seu celular para escanear e abrir o aplicativo:</p>
+        <img src="assets/app-qrcode.png" alt="QR Code Rep Club" style="width: 200px; height: 200px; border-radius: 8px; border: 3px solid var(--lime); display: block; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.15);" />
+        <div style="margin-top: 14px; padding: 10px; background: #f0f1eb; border-radius: 4px;">
+          <span style="font-size: 10px; color: #777970; font-weight: 700; display: block; margin-bottom: 4px;">LINK DIRETO DO APLICATIVO:</span>
+          <a href="https://matheushscastro-ai.github.io/rep-club/" target="_blank" style="color: #2563eb; font-weight: 700; font-size: 12px; word-break: break-all;">https://matheushscastro-ai.github.io/rep-club/</a>
+        </div>
+      </div>
+    </dialog>
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </body>
 </html>

@@ -2038,3 +2038,11 @@ if ("serviceWorker" in navigator) {
     });
   });
 }
+
+// MODAL QR CODE PARA CELULAR
+byId("btn-show-qr")?.addEventListener("click", () => {
+  byId("qr-dialog")?.showModal();
+});
+byId("close-qr-dialog")?.addEventListener("click", () => {
+  byId("qr-dialog")?.close();
+});
