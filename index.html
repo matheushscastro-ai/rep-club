@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.7.0" />
+    <link rel="stylesheet" href="styles.css?v=2.7.1" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.7.0" defer></script>
+    <script src="app.js?v=2.7.1" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -304,6 +304,8 @@
         </div>
 
         <fieldset class="period-fields"><legend>PERÍODO DO DUELO</legend><label class="form-field"><span>INÍCIO</span><input name="periodStart" id="setup-period-start" type="date" required /></label><label class="form-field"><span>FIM</span><input name="periodEnd" id="setup-period-end" type="date" required /></label></fieldset>
+
+        <label class="form-field" style="margin-top:8px;"><span>PRÊMIO DO DUELO · OPCIONAL</span><input name="prize" id="setup-prize" type="text" maxlength="60" placeholder="Ex.: Rodízio de pizza, açaí, troféu" /></label>
 
         <!-- CONVITE / LINK INVITE DO DUELO -->
         <div class="form-field" style="margin-top:10px; padding:10px 12px; background:#f9fafb; border:1px solid #d0d2c9; border-radius:6px;">

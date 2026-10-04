@@ -2430,89 +2430,106 @@ let setupMode = "edit";
 let currentSetupChallengeId = null;
 
 function openSetupDialog(mode = "edit") {
-  const cur = getActiveChallenge();
-  if (mode !== "create" && (!cur || activeChallengeId === "none")) {
-    mode = "create";
+  try {
+    const cur = getActiveChallenge();
+    if (mode !== "create" && (!cur || activeChallengeId === "none")) {
+      mode = "create";
+    }
+    setupMode = mode;
+
+    const user = getAuthUser();
+    const cancelBtn = byId("cancel-setup-dialog");
+    const closeBtn = byId("close-setup-dialog");
+    const deleteBtn = byId("delete-challenge-btn");
+    const error = byId("setup-error");
+    if (error) error.textContent = "";
+
+    if (cancelBtn) cancelBtn.style.display = "inline-flex";
+    if (closeBtn) closeBtn.style.display = "block";
+
+    currentSetupChallengeId = mode === "create" ? `challenge-${Date.now()}` : (cur?.id || `challenge-${Date.now()}`);
+
+    const titleEl = byId("setup-title");
+    const copyEl = byId("setup-copy");
+    const challengeTitleInput = byId("setup-challenge-title");
+    const prizeInput = byId("setup-prize");
+    const periodStartInput = byId("setup-period-start");
+    const periodEndInput = byId("setup-period-end");
+
+    if (mode === "create") {
+      if (titleEl) titleEl.textContent = "Criar novo desafio";
+      if (copyEl) copyEl.textContent = "Cadastre o nome, participantes, datas e prêmio da nova disputa.";
+      if (challengeTitleInput) challengeTitleInput.value = `Duelo ${String(challenges.length + 1).padStart(2, "0")}`;
+      if (prizeInput) prizeInput.value = "";
+      const defaultPeriod = defaultDuelPeriod();
+      if (periodStartInput) periodStartInput.value = defaultPeriod.start;
+      if (periodEndInput) periodEndInput.value = defaultPeriod.end;
+      const myName = user?.name || (user?.email ? user.email.split("@")[0] : "Você");
+      renderSetupPlayers([myName, "Rival"]);
+      if (deleteBtn) deleteBtn.style.display = "none";
+    } else {
+      if (titleEl) titleEl.textContent = "Configuração do duelo";
+      if (copyEl) copyEl.textContent = "Edite o nome, participantes, período do desafio e prêmio.";
+      if (challengeTitleInput) challengeTitleInput.value = cur?.title || "Duelo 01";
+      if (prizeInput) prizeInput.value = cur?.prize || "";
+      if (periodStartInput) periodStartInput.value = cur?.period?.start || activeDuelPeriod().start;
+      if (periodEndInput) periodEndInput.value = cur?.period?.end || activeDuelPeriod().end;
+      renderSetupPlayers(PLAYERS.map((p) => p.name));
+      if (deleteBtn) deleteBtn.style.display = "inline-flex";
+    }
+
+    // Configura link de convite
+    const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(currentSetupChallengeId)}`;
+    const previewInput = byId("setup-invite-link-preview");
+    if (previewInput) previewInput.value = inviteUrl;
+
+    const btnCopy = byId("btn-copy-invite-link");
+    if (btnCopy) {
+      btnCopy.onclick = () => {
+        navigator.clipboard.writeText(inviteUrl).then(() => {
+          showToast("Link de convite copiado! Envie para o seu rival.");
+        }).catch(() => {
+          previewInput?.select();
+          document.execCommand("copy");
+          showToast("Link de convite copiado!");
+        });
+      };
+    }
+
+    const btnShare = byId("btn-share-invite-link");
+    if (btnShare) {
+      btnShare.onclick = async () => {
+        const title = challengeTitleInput?.value || "Duelo Rep Club";
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: `Convite para Duelo: ${title}`,
+              text: `Vem pro duelo "${title}" no Rep Club! Clique no link para entrar na disputa:`,
+              url: inviteUrl
+            });
+          } catch (e) {}
+        } else {
+          btnCopy?.click();
+        }
+      };
+    }
+
+    const dialog = byId("setup-dialog");
+    if (dialog && !dialog.open) {
+      dialog.showModal();
+    }
+
+    // Carrega atletas registrados em segundo plano
+    loadRegisteredUsersDirectory().then(() => {
+      const names = getSetupPlayerNames();
+      if (names.length >= 2) renderSetupPlayers(names);
+    }).catch(() => {});
+  } catch (err) {
+    console.error("Erro ao abrir setup dialog:", err);
+    try {
+      byId("setup-dialog")?.showModal();
+    } catch (e) {}
   }
-  setupMode = mode;
-
-  const user = getAuthUser();
-  const cancelBtn = byId("cancel-setup-dialog");
-  const closeBtn = byId("close-setup-dialog");
-  const deleteBtn = byId("delete-challenge-btn");
-  const error = byId("setup-error");
-  if (error) error.textContent = "";
-
-  if (cancelBtn) cancelBtn.style.display = "inline-flex";
-  if (closeBtn) closeBtn.style.display = "block";
-
-  currentSetupChallengeId = mode === "create" ? `challenge-${Date.now()}` : (cur?.id || `challenge-${Date.now()}`);
-
-  if (mode === "create") {
-    byId("setup-title").textContent = "Criar novo desafio";
-    byId("setup-copy").textContent = "Cadastre o nome, participantes, datas e prêmio da nova disputa.";
-    byId("setup-challenge-title").value = `Duelo ${String(challenges.length + 1).padStart(2, "0")}`;
-    byId("setup-prize").value = "";
-    const defaultPeriod = defaultDuelPeriod();
-    byId("setup-period-start").value = defaultPeriod.start;
-    byId("setup-period-end").value = defaultPeriod.end;
-    const myName = user?.name || (user?.email ? user.email.split("@")[0] : "Você");
-    renderSetupPlayers([myName, "Rival"]);
-    if (deleteBtn) deleteBtn.style.display = "none";
-  } else {
-    byId("setup-title").textContent = "Configuração do duelo";
-    byId("setup-copy").textContent = "Edite o nome, participantes, período do desafio e prêmio.";
-    byId("setup-challenge-title").value = cur?.title || "Duelo 01";
-    byId("setup-prize").value = cur?.prize || "";
-    byId("setup-period-start").value = cur?.period?.start || activeDuelPeriod().start;
-    byId("setup-period-end").value = cur?.period?.end || activeDuelPeriod().end;
-    renderSetupPlayers(PLAYERS.map((p) => p.name));
-    if (deleteBtn) deleteBtn.style.display = "inline-flex";
-  }
-
-  // Configura link de convite
-  const inviteUrl = `${window.location.origin}${window.location.pathname}?invite=${encodeURIComponent(currentSetupChallengeId)}`;
-  const previewInput = byId("setup-invite-link-preview");
-  if (previewInput) previewInput.value = inviteUrl;
-
-  const btnCopy = byId("btn-copy-invite-link");
-  if (btnCopy) {
-    btnCopy.onclick = () => {
-      navigator.clipboard.writeText(inviteUrl).then(() => {
-        showToast("Link de convite copiado! Envie para o seu rival.");
-      }).catch(() => {
-        previewInput?.select();
-        document.execCommand("copy");
-        showToast("Link de convite copiado!");
-      });
-    };
-  }
-
-  const btnShare = byId("btn-share-invite-link");
-  if (btnShare) {
-    btnShare.onclick = async () => {
-      const title = byId("setup-challenge-title")?.value || "Duelo Rep Club";
-      if (navigator.share) {
-        try {
-          await navigator.share({
-            title: `Convite para Duelo: ${title}`,
-            text: `Vem pro duelo "${title}" no Rep Club! Clique no link para entrar na disputa:`,
-            url: inviteUrl
-          });
-        } catch (e) {}
-      } else {
-        btnCopy?.click();
-      }
-    };
-  }
-
-  byId("setup-dialog")?.showModal();
-
-  // Carrega atletas registrados em segundo plano
-  loadRegisteredUsersDirectory().then(() => {
-    const names = getSetupPlayerNames();
-    if (names.length >= 2) renderSetupPlayers(names);
-  }).catch(() => {});
 }
 
 byId("open-setup-btn")?.addEventListener("click", () => {
@@ -2525,6 +2542,7 @@ byId("open-setup-btn")?.addEventListener("click", () => {
 });
 byId("btn-new-challenge")?.addEventListener("click", () => openSetupDialog("create"));
 byId("btn-topbar-new-challenge")?.addEventListener("click", () => openSetupDialog("create"));
+byId("btn-empty-new-challenge")?.addEventListener("click", () => openSetupDialog("create"));
 byId("challenge-select")?.addEventListener("change", (event) => {
   switchChallenge(event.target.value);
 });
@@ -3038,7 +3056,7 @@ byId("btn-pwa-install")?.addEventListener("click", async () => {
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.0").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.1").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
