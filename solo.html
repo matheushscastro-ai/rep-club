@@ -14,9 +14,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.3.0" />
-    <link rel="stylesheet" href="solo.css?v=2.3.0" />
-    <script src="solo-app.js?v=2.3.0" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2.4.0" />
+    <link rel="stylesheet" href="solo.css?v=2.4.0" />
+    <script src="solo-app.js?v=2.4.0" defer></script>
   </head>
   <body class="solo-body">
     <header class="solo-header">
@@ -25,8 +25,8 @@
         <span class="brand-name">REP<span>CLUB</span></span>
       </a>
       <div class="solo-header-actions">
-        <button type="button" class="button-tag" id="btn-open-solo-raiox" title="Abrir Raio-X individual">🔍 Meu Raio-X</button>
-        <a href="index.html" class="button button-outline" style="min-height:30px; font-size:10px; padding:0 10px;">⚔️ Voltar ao Duelo</a>
+        <button type="button" class="topbar-btn" id="btn-open-solo-raiox" title="Abrir Raio-X individual">🔍 Meu Raio-X</button>
+        <a href="index.html" class="topbar-btn" style="text-decoration:none;">⚔️ Voltar ao Duelo</a>
       </div>
     </header>
 
@@ -98,7 +98,7 @@
       <!-- TÓPICOS MINIMIZADOS POR PADRÃO -->
       <div class="solo-collapsible-stack">
         <!-- TÓPICO 1: MEUS ÚLTIMOS TREINOS -->
-        <section class="activity-section collapsible-section is-collapsed" id="solo-section-activity" aria-labelledby="solo-activity-title">
+        <section class="solo-card-activity collapsible-section is-collapsed" id="solo-section-activity" aria-labelledby="solo-activity-title">
           <div class="section-heading activity-heading collapsible-header" role="button" tabindex="0" aria-expanded="false">
             <div>
               <p class="eyebrow">SEMANA EM MOVIMENTO</p>
@@ -115,7 +115,7 @@
         </section>
 
         <!-- TÓPICO 2: EVOLUÇÃO POR EXERCÍCIO -->
-        <section class="history-section collapsible-section is-collapsed" id="solo-section-history" aria-labelledby="solo-history-title">
+        <section class="solo-card-history collapsible-section is-collapsed" id="solo-section-history" aria-labelledby="solo-history-title">
           <div class="section-heading history-heading collapsible-header" role="button" tabindex="0" aria-expanded="false">
             <div>
               <p class="eyebrow">PROGRESSÃO INDIVIDUAL</p>
@@ -139,7 +139,7 @@
         </section>
 
         <!-- TÓPICO 3: REGRAS E PONTUAÇÃO SOLO -->
-        <section class="rules-section collapsible-section is-collapsed" id="solo-section-rules" aria-labelledby="solo-rules-title">
+        <section class="solo-card-rules collapsible-section is-collapsed" id="solo-section-rules" aria-labelledby="solo-rules-title">
           <div class="rules-header collapsible-header" role="button" tabindex="0" aria-expanded="false" style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:8px;">
               <span class="rules-icon">↗</span>

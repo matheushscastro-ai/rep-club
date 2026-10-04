@@ -1,5 +1,14 @@
 const SOLO_KEY = "rep-club-solo-workouts-v2";
 const PROGRAMS_STORAGE_KEY = "rep-club-training-programs-v2";
+const AUTH_USER_KEY = "rep-club-auth-user-v2";
+
+function getSoloUser() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
+    if (saved && (saved.name || saved.email || saved.id)) return saved;
+  } catch (e) {}
+  return null;
+}
 
 const DEFAULT_PROGRAM = {
   id: "program-jiu-cardio",
@@ -237,6 +246,14 @@ function renderSoloScoreboard() {
   if (soloById("solo-week-pct")) soloById("solo-week-pct").textContent = `${pct}%`;
   if (soloById("solo-progress-fill")) soloById("solo-progress-fill").style.width = `${pct}%`;
   if (soloById("solo-lead-message")) soloById("solo-lead-message").textContent = leadMsg;
+
+  const user = getSoloUser();
+  if (soloById("solo-user-name")) {
+    soloById("solo-user-name").textContent = user?.name || user?.email || "Treino Solo";
+  }
+  if (soloById("solo-avatar") && user?.name) {
+    soloById("solo-avatar").textContent = user.name.charAt(0).toUpperCase();
+  }
 
   if (soloById("solo-streak-count")) soloById("solo-streak-count").textContent = streak;
   if (soloById("solo-week-volume")) soloById("solo-week-volume").textContent = `${Math.round(weekVolume).toLocaleString("pt-BR")} kg`;
