@@ -322,6 +322,9 @@ function initExerciseAutocomplete(widgetEl, onSelect) {
     }
 
     dropdown.style.display = "block";
+    try {
+      dropdown.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch (e) {}
   }
 
   input.addEventListener("focus", () => {
@@ -336,10 +339,10 @@ function initExerciseAutocomplete(widgetEl, onSelect) {
     const item = e.target.closest(".autocomplete-item");
     if (item && item.dataset.exName) {
       const name = item.dataset.exName;
-      onSelect(name);
       input.value = "";
       dropdown.style.display = "none";
       if (clearBtn) clearBtn.style.display = "none";
+      onSelect(name);
     }
   });
 
@@ -350,10 +353,10 @@ function initExerciseAutocomplete(widgetEl, onSelect) {
       if (!promptVal || !promptVal.trim()) return;
       name = promptVal.trim();
     }
-    onSelect(name);
     input.value = "";
     dropdown.style.display = "none";
     if (clearBtn) clearBtn.style.display = "none";
+    onSelect(name);
   });
 
   clearBtn?.addEventListener("click", () => {
@@ -1396,6 +1399,30 @@ function openSoloProgramBuilder() {
   dialog.showModal();
 }
 
+function addExerciseRowToSoloBuilderSession(card, exName) {
+  if (!card || !exName) return;
+  let found = null;
+  STANDARD_EXERCISES_CATALOG.forEach((g) => {
+    const f = g.exercises.find((ex) => ex.name === exName);
+    if (f) found = f;
+  });
+  const list = card.querySelector(".solo-builder-exercises-list");
+  if (!list) return;
+
+  const newRow = document.createElement("div");
+  newRow.className = "solo-builder-exercise-row";
+  newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
+  newRow.innerHTML = `
+    <input type="text" list="solo-builder-exercise-datalist" class="solo-builder-ex-name" value="${escapeHTML(exName)}" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+    <input type="number" class="solo-builder-ex-sets" value="${found?.sets || 3}" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+    <input type="number" class="solo-builder-ex-min" value="${found?.min || 8}" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+    <input type="number" class="solo-builder-ex-max" value="${found?.max || 12}" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+    <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+  `;
+  list.appendChild(newRow);
+  showToast(`"${exName}" adicionado ao Treino ${card.dataset.sessionId}!`);
+}
+
 function renderSoloBuilderSessions(structure = "ABC") {
   const letters = structure.split("");
   const container = soloById("solo-builder-sessions-container");
@@ -1411,13 +1438,12 @@ function renderSoloBuilderSessions(structure = "ABC") {
 
   const allExNames = getAllStandardExerciseNames();
   const datalistHtml = `<datalist id="solo-builder-exercise-datalist">${allExNames.map((n) => `<option value="${escapeHTML(n)}"></option>`).join("")}</datalist>`;
-  const catalogSelectOpts = buildExerciseCatalogSelectOptions();
 
   container.innerHTML = datalistHtml + letters.map((letter) => `
-    <div class="solo-builder-session-card" data-session-id="${letter}" style="background:#f4f5ee; border:1px solid #d5d7cd; border-radius:6px; padding:10px;">
+    <div class="solo-builder-session-card" data-session-id="${letter}" style="background:#f4f5ee; border:1px solid #d5d7cd; border-radius:6px; padding:12px; margin-bottom:12px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
-        <strong style="font-size:13px; color:var(--ink); font-family:var(--display); min-width:60px;">Treino ${letter}</strong>
-        <input type="text" class="solo-builder-session-title" value="${defaultTitles[letter] || `Foco do Treino ${letter}`}" placeholder="Foco da sessão (ex: Costas e Bíceps)" style="font-size:12px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; flex:1;" required />
+        <strong style="font-size:14px; color:var(--ink); font-family:var(--display); min-width:60px;">Treino ${letter}</strong>
+        <input type="text" class="solo-builder-session-title" value="${defaultTitles[letter] || `Foco do Treino ${letter}`}" placeholder="Foco da sessão (ex: Costas e Bíceps)" style="font-size:12px; padding:6px 10px; border:1px solid #ccc; border-radius:4px; flex:1;" required />
       </div>
       <div class="solo-builder-exercises-list" style="display:grid; gap:6px;">
         <div class="solo-builder-exercise-row" style="display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;">
@@ -1428,15 +1454,36 @@ function renderSoloBuilderSessions(structure = "ABC") {
           <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
         </div>
       </div>
-      <div style="display:flex; gap:6px; align-items:center; margin-top:8px; flex-wrap:wrap;">
-        <select class="solo-builder-quick-catalog" style="font-size:11px; height:28px; border:1px solid #c8cac0; border-radius:4px; max-width:240px; background:#fff; padding:0 6px;">
-          <option value="">+ Escolher do Catálogo...</option>
-          ${catalogSelectOpts}
-        </select>
-        <button type="button" class="button button-outline btn-add-solo-builder-ex" style="font-size:10px; height:28px; padding:0 8px;">+ Digitar Novo</button>
+      <div class="solo-builder-add-exercise-block" style="margin-top:10px; padding:10px; background:#e9ecde; border:1px solid #d6d9ce; border-radius:6px;">
+        <span style="display:block; font-size:10px; font-weight:700; color:#4a4d44; margin-bottom:6px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO ${letter} (COM FOTOS)</span>
+        <div class="exercise-autocomplete-widget solo-builder-autocomplete-widget" data-session-id="${letter}">
+          <div class="autocomplete-input-wrap">
+            <span class="autocomplete-icon">🔍</span>
+            <input type="text" class="autocomplete-input" placeholder="Buscar exercício por nome ou grupo para Treino ${letter}..." autocomplete="off" />
+            <button type="button" class="autocomplete-clear-btn" style="display:none;" title="Limpar">✕</button>
+          </div>
+          <div class="autocomplete-dropdown" style="display:none;">
+            <div class="autocomplete-items-list"></div>
+            <div class="autocomplete-custom-action">
+              <span>✏️ Digitar outro exercício personalizado...</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:6px; display:flex; justify-content:flex-end;">
+          <button type="button" class="btn-add-solo-builder-ex" style="background:transparent; border:none; color:#5c5f55; font-size:10px; font-weight:600; cursor:pointer; text-decoration:underline;">+ Inserir linha em branco para digitar manualmente</button>
+        </div>
       </div>
     </div>
   `).join("");
+
+  container.querySelectorAll(".solo-builder-session-card").forEach((card) => {
+    const widget = card.querySelector(".solo-builder-autocomplete-widget");
+    if (widget) {
+      initExerciseAutocomplete(widget, (exName) => {
+        addExerciseRowToSoloBuilderSession(card, exName);
+      });
+    }
+  });
 }
 
 function saveSoloBuilderProgram() {
@@ -1486,42 +1533,7 @@ soloById("solo-builder-structure-select")?.addEventListener("change", (e) => {
   renderSoloBuilderSessions(e.target.value);
 });
 
-soloById("solo-builder-sessions-container")?.addEventListener("change", (e) => {
-  if (e.target.classList.contains("solo-builder-quick-catalog")) {
-    const val = e.target.value;
-    if (!val) return;
-    let found = null;
-    STANDARD_EXERCISES_CATALOG.forEach((g) => {
-      const f = g.exercises.find((ex) => ex.name === val);
-      if (f) found = f;
-    });
-    let name = val;
-    if (val === "__custom__") {
-      const c = prompt("Nome do exercício personalizado:");
-      if (!c || !c.trim()) {
-        e.target.value = "";
-        return;
-      }
-      name = c.trim();
-    }
-    const card = e.target.closest(".solo-builder-session-card");
-    const list = card?.querySelector(".solo-builder-exercises-list");
-    if (list) {
-      const newRow = document.createElement("div");
-      newRow.className = "solo-builder-exercise-row";
-      newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
-      newRow.innerHTML = `
-        <input type="text" list="solo-builder-exercise-datalist" class="solo-builder-ex-name" value="${escapeHTML(name)}" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
-        <input type="number" class="solo-builder-ex-sets" value="${found?.sets || 3}" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
-        <input type="number" class="solo-builder-ex-min" value="${found?.min || 8}" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
-        <input type="number" class="solo-builder-ex-max" value="${found?.max || 12}" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
-        <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
-      `;
-      list.appendChild(newRow);
-    }
-    e.target.value = "";
-  }
-});
+
 
 soloById("solo-builder-sessions-container")?.addEventListener("click", (e) => {
   if (e.target.classList.contains("btn-remove-solo-builder-ex")) {
@@ -1565,3 +1577,21 @@ renderProgramSelectors();
 renderSoloScoreboard();
 renderActivity();
 populateHistorySelect();
+
+if ("serviceWorker" in navigator) {
+  let isRefreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!isRefreshing) {
+      isRefreshing = true;
+      window.location.reload();
+    }
+  });
+
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.5").then((reg) => {
+      reg.update();
+    }).catch((err) => {
+      console.warn("Falha no registro do ServiceWorker PWA:", err);
+    });
+  });
+}

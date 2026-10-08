@@ -819,6 +819,13 @@ dialog::backdrop {
   position: relative;
   width: 100%;
 }
+.exercise-autocomplete-widget:focus-within {
+  z-index: 1050;
+}
+.solo-builder-session-card, .builder-session-card {
+  position: relative;
+  overflow: visible;
+}
 .autocomplete-input-wrap {
   position: relative;
   display: flex;
