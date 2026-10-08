@@ -208,92 +208,101 @@ function saveTrainingPrograms() {
 
 const CUSTOM_PLANS_KEY = "rep-club-custom-plans-v1";
 
+const FALLBACK_EXERCISE_SVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 44 44'%3E%3Crect width='44' height='44' rx='6' fill='%23e6e8de'/%3E%3Cpath d='M11 22h22M15 16v12M29 16v12' stroke='%23666' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E";
+
+function getCatalogExerciseImage(ex) {
+  if (ex && ex.folder) {
+    return `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${ex.folder}/0.jpg`;
+  }
+  return FALLBACK_EXERCISE_SVG;
+}
+
 const STANDARD_EXERCISES_CATALOG = [
   {
     category: "Peito",
     exercises: [
-      { name: "Supino Reto com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Supino Inclinado com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Supino Inclinado com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Crucifixo Reto com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Crucifixo Inclinado com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Crossover na Polia Alta", sets: 3, min: 12, max: 15, loadFactor: 2 },
-      { name: "Peck Deck / Voador", sets: 3, min: 12, max: 15, loadFactor: 1 },
-      { name: "Flexão de Braço no Chão", sets: 3, min: 12, max: 20, load: false }
+      { name: "Supino Reto com Barra", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Barbell_Bench_Press_-_Medium_Grip" },
+      { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2, folder: "Dumbbell_Bench_Press" },
+      { name: "Supino Inclinado com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2, folder: "Incline_Dumbbell_Press" },
+      { name: "Supino Inclinado com Barra", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Barbell_Incline_Bench_Press_-_Medium_Grip" },
+      { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Leverage_Chest_Press" },
+      { name: "Crucifixo Reto com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Dumbbell_Flyes" },
+      { name: "Crucifixo Inclinado com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Incline_Dumbbell_Flyes" },
+      { name: "Crossover na Polia Alta", sets: 3, min: 12, max: 15, loadFactor: 2, folder: "Cable_Crossover" },
+      { name: "Peck Deck / Voador", sets: 3, min: 12, max: 15, loadFactor: 1, folder: "Butterfly" },
+      { name: "Flexão de Braço no Chão", sets: 3, min: 12, max: 20, load: false, folder: "Pushups" }
     ]
   },
   {
     category: "Costas",
     exercises: [
-      { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Puxada com Pegada Triângulo", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Remada Curvada com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Remada Cavalinho (Barra T)", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Barra Fixa (Pronada ou Supinada)", sets: 3, min: 6, max: 12, load: false },
-      { name: "Pullover com Halter ou Cabo", sets: 3, min: 12, max: 15, loadFactor: 1 },
-      { name: "Face Pull na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
-      { name: "Extensão Lombar (Cadeira Romana)", sets: 3, min: 12, max: 15, load: false }
+      { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Wide-Grip_Lat_Pulldown" },
+      { name: "Puxada com Pegada Triângulo", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Close-Grip_Front_Lat_Pulldown" },
+      { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Seated_Cable_Rows" },
+      { name: "Remada Curvada com Barra", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Bent_Over_Barbell_Row" },
+      { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "One-Arm_Dumbbell_Row" },
+      { name: "Remada Cavalinho (Barra T)", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Lying_T-Bar_Row" },
+      { name: "Barra Fixa (Pronada ou Supinada)", sets: 3, min: 6, max: 12, load: false, folder: "Pullups" },
+      { name: "Pullover com Halter ou Cabo", sets: 3, min: 12, max: 15, loadFactor: 1, folder: "Bent-Arm_Dumbbell_Pullover" },
+      { name: "Face Pull na Polia", sets: 3, min: 12, max: 15, loadFactor: 1, folder: "Face_Pull" },
+      { name: "Extensão Lombar (Cadeira Romana)", sets: 3, min: 12, max: 15, load: false, folder: "Hyperextensions_With_No_Hyperextension_Bench" }
     ]
   },
   {
     category: "Pernas & Glúteos",
     exercises: [
-      { name: "Agachamento Livre com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Agachamento no Smith", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Leg Press 45º", sets: 4, min: 8, max: 12, loadFactor: 1 },
-      { name: "Agachamento Búlgaro", sets: 3, min: 8, max: 10, loadFactor: 2 },
-      { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Cadeira Extensora", sets: 4, min: 10, max: 15, loadFactor: 1 },
-      { name: "Cadeira Flexora", sets: 4, min: 10, max: 15, loadFactor: 1 },
-      { name: "Mesa Flexora", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Stiff com Barra ou Halteres", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Elevação Pélvica com Barra/Máquina", sets: 4, min: 10, max: 12, loadFactor: 1 },
-      { name: "Cadeira Abdutora", sets: 3, min: 15, max: 20, loadFactor: 1 },
-      { name: "Panturrilha em Pé", sets: 4, min: 12, max: 15, loadFactor: 1 },
-      { name: "Panturrilha Sentado (Gêmeos)", sets: 4, min: 12, max: 15, loadFactor: 1 }
+      { name: "Agachamento Livre com Barra", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Barbell_Full_Squat" },
+      { name: "Agachamento no Smith", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Smith_Machine_Squat" },
+      { name: "Leg Press 45º", sets: 4, min: 8, max: 12, loadFactor: 1, folder: "Leg_Press" },
+      { name: "Agachamento Búlgaro", sets: 3, min: 8, max: 10, loadFactor: 2, folder: "Split_Squats" },
+      { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Dumbbell_Lunges" },
+      { name: "Cadeira Extensora", sets: 4, min: 10, max: 15, loadFactor: 1, folder: "Leg_Extensions" },
+      { name: "Cadeira Flexora", sets: 4, min: 10, max: 15, loadFactor: 1, folder: "Seated_Leg_Curl" },
+      { name: "Mesa Flexora", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Lying_Leg_Curls" },
+      { name: "Stiff com Barra ou Halteres", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Stiff-Legged_Barbell_Deadlift" },
+      { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2, folder: "Romanian_Deadlift" },
+      { name: "Elevação Pélvica com Barra/Máquina", sets: 4, min: 10, max: 12, loadFactor: 1, folder: "Barbell_Glute_Bridge" },
+      { name: "Cadeira Abdutora", sets: 3, min: 15, max: 20, loadFactor: 1, folder: "Thigh_Abductor" },
+      { name: "Panturrilha em Pé", sets: 4, min: 12, max: 15, loadFactor: 1, folder: "Standing_Calf_Raises" },
+      { name: "Panturrilha Sentado (Gêmeos)", sets: 4, min: 12, max: 15, loadFactor: 1, folder: "Seated_Calf_Raise" }
     ]
   },
   {
     category: "Ombros & Trapézio",
     exercises: [
-      { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2 },
-      { name: "Desenvolvimento Militar com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 },
-      { name: "Elevação Lateral na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
-      { name: "Elevação Frontal com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Remada Alta na Polia / Barra", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Crucifixo Invertido na Máquina / Halteres", sets: 3, min: 12, max: 15, loadFactor: 2 },
-      { name: "Encolhimento de Ombros com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 }
+      { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2, folder: "Dumbbell_Shoulder_Press" },
+      { name: "Desenvolvimento Militar com Barra", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "Standing_Military_Press" },
+      { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2, folder: "Side_Lateral_Raise" },
+      { name: "Elevação Lateral na Polia", sets: 3, min: 12, max: 15, loadFactor: 1, folder: "Cable_Seated_Lateral_Raise" },
+      { name: "Elevação Frontal com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Front_Dumbbell_Raise" },
+      { name: "Remada Alta na Polia / Barra", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Upright_Barbell_Row" },
+      { name: "Crucifixo Invertido na Máquina / Halteres", sets: 3, min: 12, max: 15, loadFactor: 2, folder: "Reverse_Flyes" },
+      { name: "Encolhimento de Ombros com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2, folder: "Dumbbell_Shrug" }
     ]
   },
   {
     category: "Bíceps & Tríceps",
     exercises: [
-      { name: "Rosca Direta com Barra W", sets: 4, min: 8, max: 10, loadFactor: 1 },
-      { name: "Rosca Martelo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Rosca Scott na Máquina / Banco", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Rosca Inclinada com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
-      { name: "Tríceps Corda na Polia", sets: 4, min: 12, max: 15, loadFactor: 1 },
-      { name: "Tríceps Barra Reta na Polia", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Tríceps Testa com Barra W ou Halteres", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Tríceps Francês com Halter", sets: 3, min: 10, max: 12, loadFactor: 1 },
-      { name: "Mergulho em Paralelas / Banco", sets: 3, min: 8, max: 12, load: false }
+      { name: "Rosca Direta com Barra W", sets: 4, min: 8, max: 10, loadFactor: 1, folder: "EZ-Bar_Curl" },
+      { name: "Rosca Martelo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Hammer_Curls" },
+      { name: "Rosca Scott na Máquina / Banco", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Preacher_Curl" },
+      { name: "Rosca Inclinada com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2, folder: "Incline_Dumbbell_Curl" },
+      { name: "Tríceps Corda na Polia", sets: 4, min: 12, max: 15, loadFactor: 1, folder: "Triceps_Pushdown" },
+      { name: "Tríceps Barra Reta na Polia", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Triceps_Pushdown" },
+      { name: "Tríceps Testa com Barra W ou Halteres", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Lying_Triceps_Press" },
+      { name: "Tríceps Francês com Halter", sets: 3, min: 10, max: 12, loadFactor: 1, folder: "Seated_Triceps_Press" },
+      { name: "Mergulho em Paralelas / Banco", sets: 3, min: 8, max: 12, load: false, folder: "Bench_Dips" }
     ]
   },
   {
     category: "Abdômen & Core",
     exercises: [
-      { name: "Abdominal Supra no Chão", sets: 3, min: 15, max: 20, load: false },
-      { name: "Abdominal Infra na Paralela", sets: 3, min: 12, max: 15, load: false },
-      { name: "Prancha Abdominal", sets: 3, min: 45, max: 60, unit: "s", load: false },
-      { name: "Abdominal na Polia Alta (Cable Crunch)", sets: 3, min: 12, max: 15, loadFactor: 1 },
-      { name: "Roda Abdominal (Ab Wheel)", sets: 3, min: 8, max: 12, load: false },
-      { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, loadFactor: 1 }
+      { name: "Abdominal Supra no Chão", sets: 3, min: 15, max: 20, load: false, folder: "Crunches" },
+      { name: "Abdominal Infra na Paralela", sets: 3, min: 12, max: 15, load: false, folder: "Hanging_Leg_Raise" },
+      { name: "Prancha Abdominal", sets: 3, min: 45, max: 60, unit: "s", load: false, folder: "Plank" },
+      { name: "Abdominal na Polia Alta (Cable Crunch)", sets: 3, min: 12, max: 15, loadFactor: 1, folder: "Cable_Crunch" },
+      { name: "Roda Abdominal (Ab Wheel)", sets: 3, min: 8, max: 12, load: false, folder: "Ab_Roller" },
+      { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, loadFactor: 1, folder: "Cable_Wrist_Curl" }
     ]
   },
   {
@@ -327,6 +336,134 @@ function getAllStandardExerciseNames() {
     g.exercises.forEach((e) => list.push(e.name));
   });
   return list;
+}
+
+function initExerciseAutocomplete(widgetEl, onSelect) {
+  if (!widgetEl) return;
+  const input = widgetEl.querySelector(".autocomplete-input");
+  const dropdown = widgetEl.querySelector(".autocomplete-dropdown");
+  const listEl = widgetEl.querySelector(".autocomplete-items-list");
+  const clearBtn = widgetEl.querySelector(".autocomplete-clear-btn");
+  const customBtn = widgetEl.querySelector(".autocomplete-custom-action");
+
+  if (!input || !dropdown || !listEl) return;
+
+  function renderList(query = "") {
+    const q = (query || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    let html = "";
+    let totalMatches = 0;
+
+    STANDARD_EXERCISES_CATALOG.forEach((group) => {
+      const filtered = group.exercises.filter((ex) => {
+        if (!q) return true;
+        const normName = ex.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const normCat = group.category.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        return normName.includes(q) || normCat.includes(q);
+      });
+
+      if (filtered.length > 0) {
+        totalMatches += filtered.length;
+        html += `<div class="autocomplete-category-header">${escapeHTML(group.category)}</div>`;
+        filtered.forEach((ex) => {
+          const imgUrl = getCatalogExerciseImage(ex);
+          html += `
+            <button type="button" class="autocomplete-item" data-ex-name="${escapeHTML(ex.name)}">
+              <img class="autocomplete-thumb" src="${imgUrl}" alt="" loading="lazy" onerror="this.src='${FALLBACK_EXERCISE_SVG}'" />
+              <div class="autocomplete-info">
+                <strong class="autocomplete-name">${escapeHTML(ex.name)}</strong>
+                <span class="autocomplete-sub">${escapeHTML(group.category)} · ${ex.sets} séries × ${ex.min}–${ex.max} ${ex.unit || 'reps'}${ex.load === false ? ' · Peso corporal' : ''}</span>
+              </div>
+              <span class="autocomplete-badge-add">+ Adicionar</span>
+            </button>
+          `;
+        });
+      }
+    });
+
+    if (totalMatches === 0) {
+      html = `<div class="autocomplete-empty">Nenhum exercício encontrado para "${escapeHTML(query)}".</div>`;
+    }
+
+    listEl.innerHTML = html;
+
+    if (customBtn) {
+      if (q) {
+        customBtn.innerHTML = `<span>➕ Adicionar "<strong>${escapeHTML(query.trim())}</strong>" como exercício personalizado</span>`;
+      } else {
+        customBtn.innerHTML = `<span>✏️ Digitar outro exercício personalizado...</span>`;
+      }
+    }
+
+    if (clearBtn) {
+      clearBtn.style.display = query ? "block" : "none";
+    }
+
+    dropdown.style.display = "block";
+  }
+
+  input.addEventListener("focus", () => {
+    renderList(input.value);
+  });
+
+  input.addEventListener("input", () => {
+    renderList(input.value);
+  });
+
+  listEl.addEventListener("click", (e) => {
+    const item = e.target.closest(".autocomplete-item");
+    if (item && item.dataset.exName) {
+      const name = item.dataset.exName;
+      onSelect(name);
+      input.value = "";
+      dropdown.style.display = "none";
+      if (clearBtn) clearBtn.style.display = "none";
+    }
+  });
+
+  customBtn?.addEventListener("click", () => {
+    let name = input.value.trim();
+    if (!name) {
+      const promptVal = prompt("Digite o nome do exercício personalizado:");
+      if (!promptVal || !promptVal.trim()) return;
+      name = promptVal.trim();
+    }
+    onSelect(name);
+    input.value = "";
+    dropdown.style.display = "none";
+    if (clearBtn) clearBtn.style.display = "none";
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    input.value = "";
+    input.focus();
+    renderList("");
+  });
+
+  document.addEventListener("click", (e) => {
+    if (!widgetEl.contains(e.target)) {
+      dropdown.style.display = "none";
+    }
+  });
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      dropdown.style.display = "none";
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const firstItem = listEl.querySelector(".autocomplete-item");
+      if (firstItem && firstItem.dataset.exName) {
+        onSelect(firstItem.dataset.exName);
+        input.value = "";
+        dropdown.style.display = "none";
+        if (clearBtn) clearBtn.style.display = "none";
+      } else if (input.value.trim()) {
+        onSelect(input.value.trim());
+        input.value = "";
+        dropdown.style.display = "none";
+        if (clearBtn) clearBtn.style.display = "none";
+      }
+    }
+  });
 }
 
 let customTrainingPlans = [];
@@ -2228,12 +2365,19 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
         </article>`).join("")}</div>
       ` : `<p class="custom-plan-empty">Ficha vazia. Adicione seu primeiro exercício pelo catálogo abaixo.</p>`}
       <div class="add-exercise-bar" style="margin: 14px 0 10px; padding: 12px; background: #f4f5ee; border: 1px solid #d5d7cd; border-radius: 6px;">
-        <span style="display:block; font-size:10px; font-weight:700; color:#55574f; margin-bottom:6px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO</span>
-        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-          <select id="workout-add-exercise-select" style="flex:1; min-width:210px; min-height:36px; padding:0 8px; border:1px solid #c8cac0; border-radius:4px; background:#fff; font-size:11px; color:#20211d;">
-            ${buildExerciseCatalogSelectOptions()}
-          </select>
-          <button type="button" class="button button-primary" id="btn-add-exercise-to-workout" style="min-height:36px; padding:0 14px; font-size:11px; font-weight:700; white-space:nowrap;">+ Adicionar</button>
+        <span style="display:block; font-size:10px; font-weight:700; color:#55574f; margin-bottom:8px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO</span>
+        <div class="exercise-autocomplete-widget" id="duel-exercise-autocomplete">
+          <div class="autocomplete-input-wrap">
+            <span class="autocomplete-icon">🔍</span>
+            <input type="text" id="duel-autocomplete-search" class="autocomplete-input" placeholder="Buscar exercício por nome ou grupo muscular (com fotos)..." autocomplete="off" />
+            <button type="button" class="autocomplete-clear-btn" id="duel-autocomplete-clear" style="display:none;" title="Limpar">✕</button>
+          </div>
+          <div class="autocomplete-dropdown" id="duel-autocomplete-dropdown" style="display:none;">
+            <div class="autocomplete-items-list" id="duel-autocomplete-list"></div>
+            <div class="autocomplete-custom-action" id="duel-autocomplete-custom">
+              <span>✏️ Digitar outro exercício personalizado...</span>
+            </div>
+          </div>
         </div>
       </div>
       <p class="effort-hint">Volume externo do treino: <strong id="strength-volume">0 kg·reps</strong>. Halteres: kg por mão; o cálculo considera os dois halteres e os lados indicados.</p>`;
@@ -2252,6 +2396,15 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
     <p class="effort-hint">O esforço conta em todas as modalidades. 7–8 aproxima do máximo; 9–10 completa o bônus. O máximo continua limitado.</p>`);
   updateEffortLabel();
   updatePointsPreview();
+
+  if (category === "strength") {
+    const duelWidget = byId("duel-exercise-autocomplete");
+    if (duelWidget) {
+      initExerciseAutocomplete(duelWidget, (exName) => {
+        handleAddExerciseToCurrentWorkout(exName);
+      });
+    }
+  }
 }
 
 function updateEffortLabel() {
@@ -2982,8 +3135,8 @@ byId("workout-fields").addEventListener("change", (event) => {
     updatePointsPreview();
   }
 });
-function handleAddExerciseToCurrentWorkout(selectEl) {
-  let exName = selectEl?.value;
+function handleAddExerciseToCurrentWorkout(inputOrName) {
+  let exName = typeof inputOrName === "string" ? inputOrName : inputOrName?.value;
   if (!exName) {
     showToast("Selecione um exercício do catálogo primeiro.");
     return;
