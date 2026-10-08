@@ -541,8 +541,8 @@ a { color: inherit; text-decoration: none; }
 .history-select-wrap select { width: 100%; min-height: 36px; padding: 0 9px; border: 1px solid var(--line); border-radius: 3px; background: #f7f7f2; color: var(--ink); font-size: 10px; }
 .history-profile { margin: 13px 0 0; color: #777970; font-size: 9px; }
 .history-chart-wrap { position: relative; min-height: 150px; margin-top: 9px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 4px; background: #f7f7f2; }
-#history-chart { display: block; width: 100%; height: 230px; }
-#history-chart[hidden], .history-empty[hidden] { display: none; }
+#history-chart, #solo-history-chart { display: block; width: 100%; height: 230px; }
+#history-chart[hidden], #solo-history-chart[hidden], .history-empty[hidden], #solo-history-empty[hidden] { display: none; }
 .history-empty { padding: 47px 14px; color: #777970; font-size: 11px; text-align: center; }
 .page-footer { display: flex; justify-content: space-between; margin-top: 37px; padding-top: 14px; border-top: 1px solid var(--line); color: #96988f; font-size: 8px; }
 .footer-dot { padding: 0 5px; color: var(--red); }
@@ -809,7 +809,7 @@ dialog::backdrop {
   .history-heading { align-items: flex-start; flex-direction: column; gap: 14px; }
   .history-select-wrap { width: 100%; }
   .history-chart-wrap { padding: 6px; }
-  #history-chart { height: 210px; }
+  #history-chart, #solo-history-chart { height: 210px; }
   .rest-dock { right: 10px; bottom: 10px; left: 10px; justify-content: space-between; padding-right: 8px; }
   body { padding-bottom: 76px; }
 }

@@ -118,6 +118,140 @@ const PREGNANCY_PROGRAM = {
 const soloById = (id) => document.getElementById(id);
 const escapeHTML = (str) => String(str || "").replace(/[&<>'"]/g, (tag) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" }[tag] || tag));
 
+let soloToastTimer = null;
+function showToast(message) {
+  const toast = soloById("toast");
+  if (!toast) {
+    alert(message);
+    return;
+  }
+  toast.textContent = message;
+  toast.classList.add("visible");
+  clearTimeout(soloToastTimer);
+  soloToastTimer = setTimeout(() => toast.classList.remove("visible"), 2600);
+}
+
+const STANDARD_EXERCISES_CATALOG = [
+  {
+    category: "Peito",
+    exercises: [
+      { name: "Supino Reto com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Supino Inclinado com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Supino Inclinado com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Crucifixo Reto com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Crucifixo Inclinado com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Crossover na Polia Alta", sets: 3, min: 12, max: 15, loadFactor: 2 },
+      { name: "Peck Deck / Voador", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Flexão de Braço no Chão", sets: 3, min: 12, max: 20, load: false }
+    ]
+  },
+  {
+    category: "Costas",
+    exercises: [
+      { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Puxada com Pegada Triângulo", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Curvada com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Remada Cavalinho (Barra T)", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Barra Fixa (Pronada ou Supinada)", sets: 3, min: 6, max: 12, load: false },
+      { name: "Pullover com Halter ou Cabo", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Face Pull na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Extensão Lombar (Cadeira Romana)", sets: 3, min: 12, max: 15, load: false }
+    ]
+  },
+  {
+    category: "Pernas & Glúteos",
+    exercises: [
+      { name: "Agachamento Livre com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Agachamento no Smith", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Leg Press 45º", sets: 4, min: 8, max: 12, loadFactor: 1 },
+      { name: "Agachamento Búlgaro", sets: 3, min: 8, max: 10, loadFactor: 2 },
+      { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Cadeira Extensora", sets: 4, min: 10, max: 15, loadFactor: 1 },
+      { name: "Cadeira Flexora", sets: 4, min: 10, max: 15, loadFactor: 1 },
+      { name: "Mesa Flexora", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Stiff com Barra ou Halteres", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Elevação Pélvica com Barra/Máquina", sets: 4, min: 10, max: 12, loadFactor: 1 },
+      { name: "Cadeira Abdutora", sets: 3, min: 15, max: 20, loadFactor: 1 },
+      { name: "Panturrilha em Pé", sets: 4, min: 12, max: 15, loadFactor: 1 },
+      { name: "Panturrilha Sentado (Gêmeos)", sets: 4, min: 12, max: 15, loadFactor: 1 }
+    ]
+  },
+  {
+    category: "Ombros & Trapézio",
+    exercises: [
+      { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Desenvolvimento Militar com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 },
+      { name: "Elevação Lateral na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Elevação Frontal com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Remada Alta na Polia / Barra", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Crucifixo Invertido na Máquina / Halteres", sets: 3, min: 12, max: 15, loadFactor: 2 },
+      { name: "Encolhimento de Ombros com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 }
+    ]
+  },
+  {
+    category: "Bíceps & Tríceps",
+    exercises: [
+      { name: "Rosca Direta com Barra W", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Rosca Martelo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Rosca Scott na Máquina / Banco", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Rosca Inclinada com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Tríceps Corda na Polia", sets: 4, min: 12, max: 15, loadFactor: 1 },
+      { name: "Tríceps Barra Reta na Polia", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Tríceps Testa com Barra W ou Halteres", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Tríceps Francês com Halter", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Mergulho em Paralelas / Banco", sets: 3, min: 8, max: 12, load: false }
+    ]
+  },
+  {
+    category: "Abdômen & Core",
+    exercises: [
+      { name: "Abdominal Supra no Chão", sets: 3, min: 15, max: 20, load: false },
+      { name: "Abdominal Infra na Paralela", sets: 3, min: 12, max: 15, load: false },
+      { name: "Prancha Abdominal", sets: 3, min: 45, max: 60, unit: "s", load: false },
+      { name: "Abdominal na Polia Alta (Cable Crunch)", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Roda Abdominal (Ab Wheel)", sets: 3, min: 8, max: 12, load: false },
+      { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, loadFactor: 1 }
+    ]
+  },
+  {
+    category: "Cardio & Mobilidade",
+    exercises: [
+      { name: "Esteira / Corrida", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Bicicleta Ergométrica", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Elíptico", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Pular Corda", sets: 3, min: 60, max: 120, unit: "s", load: false },
+      { name: "Gato-Vaca em 4 Apoios", sets: 2, min: 8, max: 10, unit: "reps", load: false },
+      { name: "Círculos de Quadril", sets: 2, min: 10, max: 10, unit: "reps", load: false }
+    ]
+  }
+];
+
+function buildExerciseCatalogSelectOptions() {
+  return `
+    <option value="">➕ Selecionar exercício do catálogo...</option>
+    ${STANDARD_EXERCISES_CATALOG.map((group) => `
+      <optgroup label="${group.category}">
+        ${group.exercises.map((ex) => `<option value="${escapeHTML(ex.name)}" data-factor="${ex.loadFactor || 1}" data-sets="${ex.sets}" data-min="${ex.min}" data-max="${ex.max}" data-unit="${ex.unit || 'reps'}" data-load="${ex.load === false ? 'false' : 'true'}">${escapeHTML(ex.name)}</option>`).join("")}
+      </optgroup>
+    `).join("")}
+    <option value="__custom__">✏️ Outro (digitar nome personalizado)...</option>
+  `;
+}
+
+function getAllStandardExerciseNames() {
+  const list = [];
+  STANDARD_EXERCISES_CATALOG.forEach((g) => {
+    g.exercises.forEach((e) => list.push(e.name));
+  });
+  return list;
+}
+
 const todayKey = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -449,6 +583,15 @@ function renderSoloFields() {
         `;
       }).join("")}
     </div>
+    <div class="solo-add-exercise-bar" style="margin: 12px 0 8px; padding: 12px; background: #eef0e5; border: 1px solid #d5d7cd; border-radius: 6px;">
+      <span style="display:block; font-size:10px; font-weight:700; color:#55574f; margin-bottom:6px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO</span>
+      <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+        <select id="solo-add-exercise-select" style="flex:1; min-width:200px; min-height:36px; padding:0 8px; border:1px solid #c8cac0; border-radius:4px; background:#fff; font-size:11px; color:#20211d;">
+          ${buildExerciseCatalogSelectOptions()}
+        </select>
+        <button type="button" class="button button-primary" id="btn-solo-add-exercise" style="min-height:36px; padding:0 14px; font-size:11px; font-weight:700; white-space:nowrap;">+ Adicionar</button>
+      </div>
+    </div>
     <div style="padding:10px; border-radius:4px; background:#e9ecde; font-size:10px; font-weight:700; display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
       <span>VOLUME TOTAL LEVANTADO:</span>
       <strong id="solo-total-volume" style="font-family:var(--display); font-size:16px;">0 kg</strong>
@@ -460,6 +603,63 @@ function renderSoloFields() {
   `;
 
   setTimeout(updateSoloVolumePreview, 50);
+}
+
+function handleAddExerciseToCurrentSoloWorkout(selectEl) {
+  let exName = selectEl?.value;
+  if (!exName) {
+    showToast("Selecione um exercício do catálogo primeiro.");
+    return;
+  }
+  let foundEx = null;
+  STANDARD_EXERCISES_CATALOG.forEach((g) => {
+    const f = g.exercises.find((e) => e.name === exName);
+    if (f) foundEx = f;
+  });
+
+  if (exName === "__custom__") {
+    const customPrompt = prompt("Digite o nome do exercício personalizado:");
+    if (!customPrompt || !customPrompt.trim()) return;
+    exName = customPrompt.trim();
+  }
+
+  const newExercise = {
+    name: exName,
+    sets: foundEx?.sets || 3,
+    min: foundEx?.min || 8,
+    max: foundEx?.max || 12,
+    unit: foundEx?.unit || "reps",
+    load: foundEx?.load,
+    factor: foundEx?.loadFactor || 1,
+  };
+
+  const sessId = soloById("solo-dialog-session-select")?.value || selectedSessionId;
+  const session = currentProgram.sessions.find((s) => s.id === sessId) || currentProgram.sessions[0];
+  if (!session) return;
+
+  const form = soloById("solo-form");
+  const currentData = form ? new FormData(form) : null;
+
+  session.exercises.push(newExercise);
+  renderSoloFields();
+
+  if (currentData && form) {
+    session.exercises.forEach((ex, idx) => {
+      for (let s = 0; s < ex.sets; s++) {
+        const repsInput = form.querySelector(`[name="reps-${idx}-${s}"]`);
+        const loadInput = form.querySelector(`[name="load-${idx}-${s}"]`);
+        const checkInput = form.querySelector(`[name="done-${idx}"][value="${s}"]`);
+        const valReps = currentData.get(`reps-${idx}-${s}`);
+        const valLoad = currentData.get(`load-${idx}-${s}`);
+        if (repsInput && valReps !== null) repsInput.value = valReps;
+        if (loadInput && valLoad !== null) loadInput.value = valLoad;
+        if (checkInput) checkInput.checked = currentData.getAll(`done-${idx}`).includes(String(s));
+      }
+    });
+    updateSoloVolumePreview();
+  }
+
+  showToast(`Exercício "${exName}" adicionado ao treino!`);
 }
 
 function updateSoloVolumePreview() {
@@ -638,15 +838,79 @@ function openSoloRaioXDialog() {
 // ==========================================
 // GRÁFICO HISTÓRICO SOLO
 // ==========================================
+function populateHistorySelect() {
+  const seen = new Set();
+  const optionsWithHistory = [];
+
+  soloState.forEach((r) => {
+    (r.exercises || []).forEach((ex) => {
+      if (ex && ex.name && !seen.has(ex.name)) {
+        seen.add(ex.name);
+        const hasLoad = Number(ex.meanLoad) > 0;
+        optionsWithHistory.push({ name: ex.name, label: `⭐ ${ex.name}`, unit: hasLoad ? "kg" : "reps" });
+      }
+    });
+  });
+
+  const programOptions = [];
+  programsList.forEach((prog) => {
+    (prog.sessions || []).forEach((s) => {
+      (s.exercises || []).forEach((ex) => {
+        if (ex && ex.name && !seen.has(ex.name)) {
+          seen.add(ex.name);
+          programOptions.push({ name: ex.name, label: `${prog.name} · ${ex.name}`, unit: ex.load !== false ? "kg" : "reps" });
+        }
+      });
+    });
+  });
+
+  STANDARD_EXERCISES_CATALOG.forEach((group) => {
+    group.exercises.forEach((ex) => {
+      if (!seen.has(ex.name)) {
+        seen.add(ex.name);
+        programOptions.push({ name: ex.name, label: `${group.category} · ${ex.name}`, unit: ex.load !== false ? "kg" : "reps" });
+      }
+    });
+  });
+
+  const all = [...optionsWithHistory, ...programOptions];
+  if (!all.length) {
+    all.push({ name: "Supino Reto com Halteres", label: "Supino Reto com Halteres", unit: "kg" });
+  }
+
+  const select = soloById("solo-history-exercise");
+  if (select) {
+    const current = select.value;
+    select.innerHTML = all.map((item) => `<option value="${escapeHTML(item.name)}" data-unit="${item.unit}">${escapeHTML(item.label)}</option>`).join("");
+    if (all.some((item) => item.name === current)) {
+      select.value = current;
+    } else if (all[0]) {
+      select.value = all[0].name;
+    }
+  }
+}
+
 function drawSoloHistory() {
-  const exercise = soloById("solo-history-exercise")?.value;
-  if (!exercise) return;
+  const select = soloById("solo-history-exercise");
+  if (!select) return;
+  const option = select.selectedOptions[0];
+  if (!option) return;
+  const exercise = option.value;
+  const unit = option.dataset.unit || "kg";
 
   const points = soloState
     .filter((r) => r.category === "strength")
     .flatMap((r) => {
       const item = (r.exercises || []).find((ex) => ex.name === exercise);
-      return item && item.meanLoad > 0 ? [{ date: r.date, value: item.meanLoad }] : [];
+      if (!item) return [];
+      const meanLoad = Number(item.meanLoad) || 0;
+      const completedSets = (item.sets || []).filter((s) => s.done);
+      const reps = completedSets.reduce((sum, s) => sum + (Number(s.reps) || 0), 0);
+      const val = unit === "kg" && meanLoad > 0 ? meanLoad : (meanLoad > 0 ? meanLoad : reps);
+      if (val > 0) {
+        return [{ date: r.date, value: val, unit }];
+      }
+      return [];
     })
     .sort((a, b) => a.date.localeCompare(b.date));
 
@@ -654,15 +918,17 @@ function drawSoloHistory() {
   const empty = soloById("solo-history-empty");
   if (!canvas) return;
 
-  canvas.hidden = !points.length;
-  if (empty) empty.hidden = Boolean(points.length);
-  if (!points.length) {
-    if (empty) empty.textContent = `Nenhum treino com carga registrado para "${exercise}".`;
-    return;
+  canvas.hidden = points.length === 0;
+  if (empty) {
+    empty.hidden = points.length > 0;
+    if (points.length === 0) {
+      empty.textContent = `Nenhum treino registrado ainda para "${exercise}". Registre suas séries para acompanhar a evolução.`;
+    }
   }
+  if (points.length === 0) return;
 
-  const width = Math.max(260, canvas.getBoundingClientRect().width || 320);
-  const height = 210;
+  const width = Math.max(260, canvas.getBoundingClientRect().width || canvas.parentElement?.clientWidth || 320);
+  const height = 230;
   const ratio = window.devicePixelRatio || 1;
   canvas.width = Math.round(width * ratio);
   canvas.height = Math.round(height * ratio);
@@ -670,57 +936,65 @@ function drawSoloHistory() {
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   ctx.clearRect(0, 0, width, height);
 
-  const pad = { left: 45, right: 18, top: 20, bottom: 32 };
+  const pad = { left: 48, right: 20, top: 20, bottom: 35 };
   const values = points.map((p) => p.value);
   const minVal = Math.min(...values);
   const maxVal = Math.max(...values);
-  const min = Math.max(0, minVal * 0.85);
-  const max = maxVal === minVal ? maxVal * 1.25 : maxVal * 1.15;
+  const spread = maxVal === minVal ? Math.max(maxVal * 0.15, 1) : maxVal - minVal;
+  const min = Math.max(0, minVal - spread * 0.15);
+  const max = maxVal + spread * 0.15;
 
-  const x = (i) => (points.length === 1 ? width / 2 : pad.left + (i / (points.length - 1)) * (width - pad.left - pad.right));
-  const y = (v) => pad.top + ((max - v) / (max - min)) * (height - pad.top - pad.bottom);
+  const chartWidth = width - pad.left - pad.right;
+  const chartHeight = height - pad.top - pad.bottom;
+  const x = (i) => (points.length === 1 ? pad.left + chartWidth / 2 : pad.left + (i / (points.length - 1)) * chartWidth);
+  const y = (v) => pad.top + ((max - v) / (max - min)) * chartHeight;
 
-  // Linha
+  // Linhas de grade e valores no eixo Y
+  ctx.font = "10px DM Sans, sans-serif";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "middle";
+  for (let i = 0; i <= 4; i++) {
+    const v = max - ((max - min) * i) / 4;
+    const yPos = pad.top + (chartHeight * i) / 4;
+    ctx.strokeStyle = "#dedfd7";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(pad.left, yPos);
+    ctx.lineTo(width - pad.right, yPos);
+    ctx.stroke();
+
+    ctx.fillStyle = "#777970";
+    ctx.fillText(`${v.toFixed(v >= 10 ? 0 : 1)} ${unit}`, pad.left - 8, yPos);
+  }
+
+  // Linha de evolução
   ctx.strokeStyle = "#4664ea";
   ctx.lineWidth = 2.5;
   ctx.beginPath();
   points.forEach((p, i) => (i ? ctx.lineTo(x(i), y(p.value)) : ctx.moveTo(x(i), y(p.value))));
   ctx.stroke();
 
-  // Pontos
+  // Pontos e rótulos
   points.forEach((p, i) => {
+    const px = x(i);
+    const py = y(p.value);
     ctx.beginPath();
-    ctx.arc(x(i), y(p.value), 4, 0, Math.PI * 2);
+    ctx.arc(px, py, 4, 0, Math.PI * 2);
     ctx.fillStyle = "#d7fa52";
     ctx.fill();
     ctx.strokeStyle = "#20211d";
     ctx.lineWidth = 1.5;
     ctx.stroke();
 
-    ctx.fillStyle = "#474940";
-    ctx.font = "bold 9px DM Sans";
+    ctx.fillStyle = "#20211d";
+    ctx.font = "bold 9px DM Sans, sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText(`${p.value.toFixed(1)}kg`, x(i), y(p.value) - 8);
-    ctx.fillText(dateLabel(p.date).slice(0, 5), x(i), height - 10);
-  });
-}
+    ctx.fillText(`${p.value.toFixed(1)}${unit === "kg" ? "kg" : "r"}`, px, py - 8);
 
-function populateHistorySelect() {
-  const allExercises = new Set();
-  programsList.forEach((prog) => {
-    (prog.sessions || []).forEach((s) => {
-      (s.exercises || []).forEach((ex) => {
-        if (ex.load !== false) allExercises.add(ex.name);
-      });
-    });
+    ctx.fillStyle = "#777970";
+    ctx.font = "9px DM Sans, sans-serif";
+    ctx.fillText(dateLabel(p.date).slice(0, 6), px, height - 12);
   });
-
-  const select = soloById("solo-history-exercise");
-  if (select) {
-    const list = Array.from(allExercises);
-    select.innerHTML = list.map((name) => `<option value="${name}">${name}</option>`).join("");
-    drawSoloHistory();
-  }
 }
 
 // ==========================================
@@ -757,6 +1031,18 @@ soloById("solo-dialog-program-select")?.addEventListener("change", (e) => {
 });
 soloById("solo-dialog-session-select")?.addEventListener("change", () => renderSoloFields());
 soloById("solo-fields")?.addEventListener("input", updateSoloVolumePreview);
+soloById("solo-fields")?.addEventListener("click", (e) => {
+  const btn = e.target.closest("#btn-solo-add-exercise");
+  if (btn) {
+    const select = soloById("solo-add-exercise-select");
+    handleAddExerciseToCurrentSoloWorkout(select);
+  }
+});
+soloById("solo-fields")?.addEventListener("change", (e) => {
+  if (e.target.id === "solo-add-exercise-select" && e.target.value === "__custom__") {
+    handleAddExerciseToCurrentSoloWorkout(e.target);
+  }
+});
 
 // RAIO-X SOLO
 soloById("btn-open-solo-raiox")?.addEventListener("click", openSoloRaioXDialog);
@@ -824,6 +1110,7 @@ document.addEventListener("click", (e) => {
   }
 
   if (!isCollapsed && section.id === "solo-section-history") {
+    populateHistorySelect();
     setTimeout(drawSoloHistory, 60);
   }
 });
@@ -941,7 +1228,186 @@ soloById("solo-form")?.addEventListener("submit", (e) => {
   soloById("solo-dialog")?.close();
   e.currentTarget.reset();
   clearSoloPhoto();
+  showToast("Treino registrado com sucesso!");
 });
+
+// ==========================================
+// CRIADOR DE TREINOS MODO SOLO
+// ==========================================
+function openSoloProgramBuilder() {
+  const dialog = soloById("solo-program-builder-dialog");
+  if (!dialog) return;
+  const nameInput = soloById("solo-builder-program-name");
+  const structSelect = soloById("solo-builder-structure-select");
+  if (nameInput) nameInput.value = "";
+  if (structSelect) structSelect.value = "ABC";
+  renderSoloBuilderSessions("ABC");
+  dialog.showModal();
+}
+
+function renderSoloBuilderSessions(structure = "ABC") {
+  const letters = structure.split("");
+  const container = soloById("solo-builder-sessions-container");
+  if (!container) return;
+
+  const defaultTitles = {
+    A: "Costas e Bíceps",
+    B: "Peito e Tríceps",
+    C: "Pernas e Ombros",
+    D: "Braços e Abdômen",
+    E: "Cardio e Mobilidade"
+  };
+
+  const allExNames = getAllStandardExerciseNames();
+  const datalistHtml = `<datalist id="solo-builder-exercise-datalist">${allExNames.map((n) => `<option value="${escapeHTML(n)}"></option>`).join("")}</datalist>`;
+  const catalogSelectOpts = buildExerciseCatalogSelectOptions();
+
+  container.innerHTML = datalistHtml + letters.map((letter) => `
+    <div class="solo-builder-session-card" data-session-id="${letter}" style="background:#f4f5ee; border:1px solid #d5d7cd; border-radius:6px; padding:10px;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
+        <strong style="font-size:13px; color:var(--ink); font-family:var(--display); min-width:60px;">Treino ${letter}</strong>
+        <input type="text" class="solo-builder-session-title" value="${defaultTitles[letter] || `Foco do Treino ${letter}`}" placeholder="Foco da sessão (ex: Costas e Bíceps)" style="font-size:12px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; flex:1;" required />
+      </div>
+      <div class="solo-builder-exercises-list" style="display:grid; gap:6px;">
+        <div class="solo-builder-exercise-row" style="display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;">
+          <input type="text" list="solo-builder-exercise-datalist" class="solo-builder-ex-name" value="${letter === "A" ? "Pulldown na Polia Alta" : letter === "B" ? "Supino Reto com Halteres" : "Agachamento Livre com Barra"}" placeholder="Nome" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="solo-builder-ex-sets" value="4" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="solo-builder-ex-min" value="8" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+          <input type="number" class="solo-builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+          <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+        </div>
+      </div>
+      <div style="display:flex; gap:6px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+        <select class="solo-builder-quick-catalog" style="font-size:11px; height:28px; border:1px solid #c8cac0; border-radius:4px; max-width:240px; background:#fff; padding:0 6px;">
+          <option value="">+ Escolher do Catálogo...</option>
+          ${catalogSelectOpts}
+        </select>
+        <button type="button" class="button button-outline btn-add-solo-builder-ex" style="font-size:10px; height:28px; padding:0 8px;">+ Digitar Novo</button>
+      </div>
+    </div>
+  `).join("");
+}
+
+function saveSoloBuilderProgram() {
+  const name = soloById("solo-builder-program-name")?.value.trim();
+  if (!name) {
+    alert("Informe o nome do programa (ex: Hipertrofia Individual, ABC Força).");
+    return;
+  }
+  const structure = soloById("solo-builder-structure-select")?.value || "ABC";
+  const sessionCards = Array.from(document.querySelectorAll(".solo-builder-session-card"));
+  const sessions = sessionCards.map((card) => {
+    const id = card.dataset.sessionId;
+    const title = card.querySelector(".solo-builder-session-title")?.value.trim() || `Treino ${id}`;
+    const exRows = Array.from(card.querySelectorAll(".solo-builder-exercise-row"));
+    const exercises = exRows.map((row) => ({
+      name: row.querySelector(".solo-builder-ex-name")?.value.trim() || "Exercício",
+      sets: Number(row.querySelector(".solo-builder-ex-sets")?.value || 4),
+      min: Number(row.querySelector(".solo-builder-ex-min")?.value || 8),
+      max: Number(row.querySelector(".solo-builder-ex-max")?.value || 12),
+      factor: 1
+    }));
+    return { id, day: id, title, exercises };
+  });
+
+  const newProg = {
+    id: `program-solo-${Date.now()}`,
+    name,
+    structure,
+    sessions
+  };
+
+  programsList.push(newProg);
+  currentProgram = newProg;
+  selectedSessionId = newProg.sessions[0]?.id || "A";
+  try {
+    localStorage.setItem(PROGRAMS_STORAGE_KEY, JSON.stringify(programsList));
+  } catch (e) {}
+
+  renderProgramSelectors();
+  populateHistorySelect();
+
+  soloById("solo-program-builder-dialog")?.close();
+  showToast(`Programa "${name}" criado com sucesso!`);
+}
+
+soloById("solo-builder-structure-select")?.addEventListener("change", (e) => {
+  renderSoloBuilderSessions(e.target.value);
+});
+
+soloById("solo-builder-sessions-container")?.addEventListener("change", (e) => {
+  if (e.target.classList.contains("solo-builder-quick-catalog")) {
+    const val = e.target.value;
+    if (!val) return;
+    let found = null;
+    STANDARD_EXERCISES_CATALOG.forEach((g) => {
+      const f = g.exercises.find((ex) => ex.name === val);
+      if (f) found = f;
+    });
+    let name = val;
+    if (val === "__custom__") {
+      const c = prompt("Nome do exercício personalizado:");
+      if (!c || !c.trim()) {
+        e.target.value = "";
+        return;
+      }
+      name = c.trim();
+    }
+    const card = e.target.closest(".solo-builder-session-card");
+    const list = card?.querySelector(".solo-builder-exercises-list");
+    if (list) {
+      const newRow = document.createElement("div");
+      newRow.className = "solo-builder-exercise-row";
+      newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
+      newRow.innerHTML = `
+        <input type="text" list="solo-builder-exercise-datalist" class="solo-builder-ex-name" value="${escapeHTML(name)}" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-sets" value="${found?.sets || 3}" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-min" value="${found?.min || 8}" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-max" value="${found?.max || 12}" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+        <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+      `;
+      list.appendChild(newRow);
+    }
+    e.target.value = "";
+  }
+});
+
+soloById("solo-builder-sessions-container")?.addEventListener("click", (e) => {
+  if (e.target.classList.contains("btn-remove-solo-builder-ex")) {
+    const row = e.target.closest(".solo-builder-exercise-row");
+    const list = row?.parentElement;
+    if (list && list.children.length > 1) {
+      row.remove();
+    } else {
+      alert("A sessão precisa ter pelo menos um exercício.");
+    }
+  } else if (e.target.classList.contains("btn-add-solo-builder-ex")) {
+    const card = e.target.closest(".solo-builder-session-card");
+    const list = card?.querySelector(".solo-builder-exercises-list");
+    if (list) {
+      const newRow = document.createElement("div");
+      newRow.className = "solo-builder-exercise-row";
+      newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
+      newRow.innerHTML = `
+        <input type="text" list="solo-builder-exercise-datalist" class="solo-builder-ex-name" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-sets" value="3" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-min" value="10" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="solo-builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+        <button type="button" class="btn-remove-solo-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+      `;
+      list.appendChild(newRow);
+      newRow.querySelector(".solo-builder-ex-name")?.focus();
+    }
+  }
+});
+
+soloById("btn-solo-open-builder")?.addEventListener("click", () => openSoloProgramBuilder());
+soloById("close-solo-builder-dialog")?.addEventListener("click", () => soloById("solo-program-builder-dialog")?.close());
+soloById("cancel-solo-builder-dialog")?.addEventListener("click", () => soloById("solo-program-builder-dialog")?.close());
+soloById("save-solo-builder-program")?.addEventListener("click", () => saveSoloBuilderProgram());
+
+window.openSoloProgramBuilder = openSoloProgramBuilder;
+window.drawSoloHistory = drawSoloHistory;
 
 // INICIALIZAÇÃO
 renderProgramSelectors();

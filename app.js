@@ -207,12 +207,129 @@ function saveTrainingPrograms() {
 }
 
 const CUSTOM_PLANS_KEY = "rep-club-custom-plans-v1";
-const EXERCISE_DATA_URL = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json";
-const EXERCISE_MEDIA_RAW = "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/";
-const EXERCISE_MEDIA_GITHUB = "https://github.com/yuhonas/free-exercise-db/blob/main/exercises/";
+
+const STANDARD_EXERCISES_CATALOG = [
+  {
+    category: "Peito",
+    exercises: [
+      { name: "Supino Reto com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Supino Reto com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Supino Inclinado com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Supino Inclinado com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Supino Vertical na Máquina", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Crucifixo Reto com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Crucifixo Inclinado com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Crossover na Polia Alta", sets: 3, min: 12, max: 15, loadFactor: 2 },
+      { name: "Peck Deck / Voador", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Flexão de Braço no Chão", sets: 3, min: 12, max: 20, load: false }
+    ]
+  },
+  {
+    category: "Costas",
+    exercises: [
+      { name: "Pulldown na Polia Alta", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Puxada com Pegada Triângulo", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Baixa Sentada no Cabo", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Curvada com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Remada Unilateral com Halter (Serrote)", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Remada Cavalinho (Barra T)", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Barra Fixa (Pronada ou Supinada)", sets: 3, min: 6, max: 12, load: false },
+      { name: "Pullover com Halter ou Cabo", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Face Pull na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Extensão Lombar (Cadeira Romana)", sets: 3, min: 12, max: 15, load: false }
+    ]
+  },
+  {
+    category: "Pernas & Glúteos",
+    exercises: [
+      { name: "Agachamento Livre com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Agachamento no Smith", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Leg Press 45º", sets: 4, min: 8, max: 12, loadFactor: 1 },
+      { name: "Agachamento Búlgaro", sets: 3, min: 8, max: 10, loadFactor: 2 },
+      { name: "Afundo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Cadeira Extensora", sets: 4, min: 10, max: 15, loadFactor: 1 },
+      { name: "Cadeira Flexora", sets: 4, min: 10, max: 15, loadFactor: 1 },
+      { name: "Mesa Flexora", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Stiff com Barra ou Halteres", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "RDL com Halteres", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Elevação Pélvica com Barra/Máquina", sets: 4, min: 10, max: 12, loadFactor: 1 },
+      { name: "Cadeira Abdutora", sets: 3, min: 15, max: 20, loadFactor: 1 },
+      { name: "Panturrilha em Pé", sets: 4, min: 12, max: 15, loadFactor: 1 },
+      { name: "Panturrilha Sentado (Gêmeos)", sets: 4, min: 12, max: 15, loadFactor: 1 }
+    ]
+  },
+  {
+    category: "Ombros & Trapézio",
+    exercises: [
+      { name: "Desenvolvimento com Halteres Sentado", sets: 4, min: 8, max: 10, loadFactor: 2 },
+      { name: "Desenvolvimento Militar com Barra", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Elevação Lateral com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 },
+      { name: "Elevação Lateral na Polia", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Elevação Frontal com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Remada Alta na Polia / Barra", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Crucifixo Invertido na Máquina / Halteres", sets: 3, min: 12, max: 15, loadFactor: 2 },
+      { name: "Encolhimento de Ombros com Halteres", sets: 4, min: 12, max: 15, loadFactor: 2 }
+    ]
+  },
+  {
+    category: "Bíceps & Tríceps",
+    exercises: [
+      { name: "Rosca Direta com Barra W", sets: 4, min: 8, max: 10, loadFactor: 1 },
+      { name: "Rosca Martelo com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Rosca Scott na Máquina / Banco", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Rosca Inclinada com Halteres", sets: 3, min: 10, max: 12, loadFactor: 2 },
+      { name: "Tríceps Corda na Polia", sets: 4, min: 12, max: 15, loadFactor: 1 },
+      { name: "Tríceps Barra Reta na Polia", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Tríceps Testa com Barra W ou Halteres", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Tríceps Francês com Halter", sets: 3, min: 10, max: 12, loadFactor: 1 },
+      { name: "Mergulho em Paralelas / Banco", sets: 3, min: 8, max: 12, load: false }
+    ]
+  },
+  {
+    category: "Abdômen & Core",
+    exercises: [
+      { name: "Abdominal Supra no Chão", sets: 3, min: 15, max: 20, load: false },
+      { name: "Abdominal Infra na Paralela", sets: 3, min: 12, max: 15, load: false },
+      { name: "Prancha Abdominal", sets: 3, min: 45, max: 60, unit: "s", load: false },
+      { name: "Abdominal na Polia Alta (Cable Crunch)", sets: 3, min: 12, max: 15, loadFactor: 1 },
+      { name: "Roda Abdominal (Ab Wheel)", sets: 3, min: 8, max: 12, load: false },
+      { name: "Pallof Press no Cabo", sets: 3, min: 12, max: 12, loadFactor: 1 }
+    ]
+  },
+  {
+    category: "Cardio & Mobilidade",
+    exercises: [
+      { name: "Esteira / Corrida", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Bicicleta Ergométrica", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Elíptico", sets: 1, min: 20, max: 30, unit: "min", load: false },
+      { name: "Pular Corda", sets: 3, min: 60, max: 120, unit: "s", load: false },
+      { name: "Gato-Vaca em 4 Apoios", sets: 2, min: 8, max: 10, unit: "reps", load: false },
+      { name: "Círculos de Quadril", sets: 2, min: 10, max: 10, unit: "reps", load: false }
+    ]
+  }
+];
+
+function buildExerciseCatalogSelectOptions() {
+  return `
+    <option value="">➕ Selecionar exercício do catálogo...</option>
+    ${STANDARD_EXERCISES_CATALOG.map((group) => `
+      <optgroup label="${group.category}">
+        ${group.exercises.map((ex) => `<option value="${escapeHTML(ex.name)}" data-factor="${ex.loadFactor || 1}" data-sets="${ex.sets}" data-min="${ex.min}" data-max="${ex.max}" data-unit="${ex.unit || 'reps'}" data-load="${ex.load === false ? 'false' : 'true'}">${escapeHTML(ex.name)}</option>`).join("")}
+      </optgroup>
+    `).join("")}
+    <option value="__custom__">✏️ Outro (digitar nome personalizado)...</option>
+  `;
+}
+
+function getAllStandardExerciseNames() {
+  const list = [];
+  STANDARD_EXERCISES_CATALOG.forEach((g) => {
+    g.exercises.forEach((e) => list.push(e.name));
+  });
+  return list;
+}
+
 let customTrainingPlans = [];
-let exerciseCatalog = null;
-let exerciseCatalogPromise = null;
 let activeStrengthPlan = null;
 let exercisePickerTarget = null;
 let exercisePickerPanelOpen = false;
@@ -221,22 +338,6 @@ try {
   customTrainingPlans = JSON.parse(localStorage.getItem(CUSTOM_PLANS_KEY) || "[]");
 } catch (error) {
   console.warn("Não foi possível carregar os treinos personalizados.", error);
-}
-
-async function loadExerciseCatalog() {
-  if (exerciseCatalog) return exerciseCatalog;
-  if (!exerciseCatalogPromise) {
-    exerciseCatalogPromise = fetch(EXERCISE_DATA_URL)
-      .then((response) => {
-        if (!response.ok) throw new Error(`Catálogo respondeu ${response.status}`);
-        return response.json();
-      })
-      .then((records) => {
-        exerciseCatalog = Array.isArray(records) ? records : [];
-        return exerciseCatalog;
-      });
-  }
-  return exerciseCatalogPromise;
 }
 
 function exerciseMediaUrl(path, base = EXERCISE_MEDIA_RAW) {
@@ -2028,16 +2129,17 @@ function chooseCatalogExercise(exerciseId) {
 }
 
 function exerciseMeanLoad(exercise) {
-  const completedSets = exercise.sets.filter((set) => set.done);
+  if (!exercise) return 0;
+  const completedSets = (exercise.sets || []).filter((set) => set && set.done);
   if (!completedSets.length || !exercise.requiresLoad) return 0;
   return completedSets.reduce((sum, set) => sum + Number(set.load ?? exercise.load ?? 0), 0) / completedSets.length;
 }
 
 function exerciseVolume(exercise) {
-  if (!exercise.requiresLoad) return 0;
+  if (!exercise || !exercise.requiresLoad) return 0;
   const oldAverage = Number(exercise.load || 0);
-  return exercise.sets.filter((set) => set.done).reduce((sum, set) => {
-    return sum + Number(set.load ?? oldAverage) * set.reps * (exercise.loadFactor || 1);
+  return (exercise.sets || []).filter((set) => set && set.done).reduce((sum, set) => {
+    return sum + Number(set.load ?? oldAverage) * (set.reps || 0) * (exercise.loadFactor || 1);
   }, 0);
 }
 
@@ -2125,10 +2227,16 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
             </div>`).join("")}</div>
         </article>`).join("")}</div>
       ` : `<p class="custom-plan-empty">Ficha vazia. Adicione seu primeiro exercício pelo catálogo abaixo.</p>`}
-      <button class="button button-outline add-exercise-button" type="button" data-add-exercise>+ Adicionar exercício do catálogo</button>
-      <details class="exercise-picker" id="exercise-picker" ${exercisePickerPanelOpen ? "open" : ""}><summary>Catálogo de exercícios · Unlicense</summary><label class="form-field"><span>BUSCAR EXERCÍCIO</span><input id="exercise-picker-search" type="search" placeholder="Nome, equipamento ou músculo" autocomplete="off" /></label><div id="exercise-picker-results" class="exercise-picker-results"><p class="exercise-picker-status">Abra este menu para carregar o catálogo.</p></div><p class="exercise-attribution">Catálogo Free Exercise DB · Unlicense · <a href="https://github.com/yuhonas/free-exercise-db" target="_blank" rel="noreferrer">GitHub</a>.</p></details>
+      <div class="add-exercise-bar" style="margin: 14px 0 10px; padding: 12px; background: #f4f5ee; border: 1px solid #d5d7cd; border-radius: 6px;">
+        <span style="display:block; font-size:10px; font-weight:700; color:#55574f; margin-bottom:6px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO</span>
+        <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
+          <select id="workout-add-exercise-select" style="flex:1; min-width:210px; min-height:36px; padding:0 8px; border:1px solid #c8cac0; border-radius:4px; background:#fff; font-size:11px; color:#20211d;">
+            ${buildExerciseCatalogSelectOptions()}
+          </select>
+          <button type="button" class="button button-primary" id="btn-add-exercise-to-workout" style="min-height:36px; padding:0 14px; font-size:11px; font-weight:700; white-space:nowrap;">+ Adicionar</button>
+        </div>
+      </div>
       <p class="effort-hint">Volume externo do treino: <strong id="strength-volume">0 kg·reps</strong>. Halteres: kg por mão; o cálculo considera os dois halteres e os lados indicados.</p>`;
-    if (exercisePickerPanelOpen) renderExercisePickerResults(byId("exercise-picker-search").value);
   } else {
     if (strengthSelectors) strengthSelectors.style.display = "none";
     const isBjj = category === "bjj";
@@ -2187,7 +2295,21 @@ function updatePointsPreview() {
 
 function historyExerciseOptions() {
   const seen = new Set();
-  return allTrainingPlans().flatMap((plan) => plan.exercises.flatMap((exercise) => {
+  const activePlayer = playerFor(state.activePlayer);
+  const playerWorkouts = workoutsFor(activePlayer.id).filter((w) => w && w.category === "strength");
+  const optionsWithHistory = [];
+
+  playerWorkouts.forEach((w) => {
+    (w.exercises || []).forEach((ex) => {
+      if (ex && ex.name && !seen.has(ex.name)) {
+        seen.add(ex.name);
+        const unit = ex.load === false ? (ex.unit === "s" ? "s" : "reps") : "kg";
+        optionsWithHistory.push({ name: ex.name, label: `⭐ ${ex.name}`, unit });
+      }
+    });
+  });
+
+  const programOptions = allTrainingPlans().flatMap((plan) => (plan.exercises || []).flatMap((exercise) => {
     const names = exercise.alternatives || [exercise.name];
     const unit = exercise.load === false ? (exercise.unit === "s" ? "s" : "reps") : "kg";
     return names.map((name) => ({ name, label: `Treino ${plan.id} · ${name}`, unit }));
@@ -2196,48 +2318,67 @@ function historyExerciseOptions() {
     seen.add(item.name);
     return true;
   });
+
+  const all = [...optionsWithHistory, ...programOptions];
+  if (!all.length) {
+    all.push({ name: "Supino Reto com Halteres", label: "Supino Reto com Halteres", unit: "kg" });
+  }
+  return all;
 }
 
 function renderHistorySelect() {
   const select = byId("history-exercise");
+  if (!select) return;
   const current = select.value;
   const options = historyExerciseOptions();
-  select.innerHTML = options.map((item) => `<option value="${item.name}" data-unit="${item.unit}">${item.label}</option>`).join("");
-  select.value = options.some((item) => item.name === current) ? current : options[0].name;
+  select.innerHTML = options.map((item) => `<option value="${escapeHTML(item.name)}" data-unit="${item.unit}">${escapeHTML(item.label)}</option>`).join("");
+  if (options.length > 0) {
+    select.value = options.some((item) => item.name === current) ? current : options[0].name;
+  }
 }
 
 function drawHistoryChart() {
   const select = byId("history-exercise");
+  if (!select) return;
   const option = select.selectedOptions[0];
   if (!option) return;
   const exerciseName = option.value;
-  const unit = option.dataset.unit;
+  const unit = option.dataset.unit || "kg";
   const activePlayer = playerFor(state.activePlayer);
   const measurements = workoutsFor(activePlayer.id)
-    .filter((workout) => workout.category === "strength")
+    .filter((workout) => workout && workout.category === "strength")
     .flatMap((workout) => (workout.exercises || [])
-      .filter((exercise) => exercise.name === exerciseName)
+      .filter((exercise) => exercise && exercise.name === exerciseName)
       .map((exercise) => {
-        const completedSets = exercise.sets.filter((set) => set.done);
-        const reps = completedSets.reduce((sum, set) => sum + set.reps, 0);
+        const completedSets = (exercise.sets || []).filter((set) => set && set.done);
+        const reps = completedSets.reduce((sum, set) => sum + (Number(set.reps) || 0), 0);
+        let dateObj = new Date();
+        try {
+          dateObj = dateFromString(workout.date);
+        } catch (e) {}
         return {
           date: workout.createdAt || `${workout.date}T12:00:00`,
-          label: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(dateFromString(workout.date)),
+          label: new Intl.DateTimeFormat("pt-BR", { day: "2-digit", month: "2-digit" }).format(dateObj),
           value: unit === "kg" ? exerciseMeanLoad(exercise) : reps,
         };
       }))
     .filter((measurement) => measurement.value > 0)
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  byId("history-profile").textContent = `Perfil: ${activePlayer.name} · ${unit === "kg" ? "carga média em kg" : unit === "s" ? "tempo total em segundos" : "repetições concluídas"}`;
+  const profileEl = byId("history-profile");
+  if (profileEl) profileEl.textContent = `Perfil: ${activePlayer.name} · ${unit === "kg" ? "carga média em kg" : unit === "s" ? "tempo total em segundos" : "repetições concluídas"}`;
   const canvas = byId("history-chart");
   const empty = byId("history-empty");
+  if (!canvas) return;
+
   canvas.hidden = measurements.length === 0;
-  empty.hidden = measurements.length > 0;
-  if (measurements.length === 0) {
-    empty.textContent = `Sem histórico para ${exerciseName}. Registre esse exercício em mais sessões para começar a curva.`;
-    return;
+  if (empty) {
+    empty.hidden = measurements.length > 0;
+    if (measurements.length === 0) {
+      empty.textContent = `Sem histórico para ${exerciseName}. Registre esse exercício em seus treinos para acompanhar a evolução.`;
+    }
   }
+  if (measurements.length === 0) return;
 
   const width = Math.max(250, canvas.getBoundingClientRect().width);
   const height = 230;
@@ -2841,17 +2982,73 @@ byId("workout-fields").addEventListener("change", (event) => {
     updatePointsPreview();
   }
 });
+function handleAddExerciseToCurrentWorkout(selectEl) {
+  let exName = selectEl?.value;
+  if (!exName) {
+    showToast("Selecione um exercício do catálogo primeiro.");
+    return;
+  }
+  let foundEx = null;
+  STANDARD_EXERCISES_CATALOG.forEach((g) => {
+    const f = g.exercises.find((e) => e.name === exName);
+    if (f) foundEx = f;
+  });
+
+  if (exName === "__custom__") {
+    const customPrompt = prompt("Digite o nome do exercício personalizado:");
+    if (!customPrompt || !customPrompt.trim()) return;
+    exName = customPrompt.trim();
+  }
+
+  const newExercise = {
+    name: exName,
+    sets: foundEx?.sets || 3,
+    min: foundEx?.min || 8,
+    max: foundEx?.max || 12,
+    unit: foundEx?.unit || "reps",
+    load: foundEx?.load,
+    loadFactor: foundEx?.loadFactor || 1,
+    requiresLoad: foundEx?.load !== false
+  };
+
+  const currentForm = byId("workout-form");
+  const priorLogs = activeStrengthPlan && activeStrengthPlan.exercises ? readExerciseLogs(new FormData(currentForm), activeStrengthPlan) : [];
+  if (!activeStrengthPlan) {
+    activeStrengthPlan = planForId("A");
+  }
+  if (!Array.isArray(activeStrengthPlan.exercises)) activeStrengthPlan.exercises = [];
+  activeStrengthPlan.exercises.push(newExercise);
+  renderWorkoutFields(activeStrengthPlan.id, activeStrengthPlan);
+  preserveSetEntries(priorLogs);
+  showToast(`Exercício "${exName}" adicionado ao treino!`);
+}
+
 byId("workout-fields").addEventListener("click", async (event) => {
+  const addBtn = event.target.closest("#btn-add-exercise-to-workout");
+  if (addBtn) {
+    const select = byId("workout-add-exercise-select");
+    handleAddExerciseToCurrentWorkout(select);
+    return;
+  }
   const replaceButton = event.target.closest("[data-pick-exercise]");
-  const addButton = event.target.closest("[data-add-exercise]");
-  const choiceButton = event.target.closest("[data-catalog-id]");
-  const closePicker = event.target.closest("[data-close-exercise-picker]");
-  if (replaceButton) await openExercisePicker("replace", Number(replaceButton.dataset.pickExercise));
-  else if (addButton) await openExercisePicker("add");
-  else if (choiceButton) chooseCatalogExercise(choiceButton.dataset.catalogId);
-  else if (closePicker) {
-    exercisePickerPanelOpen = false;
-    byId("exercise-picker").open = false;
+  if (replaceButton) {
+    const customPrompt = prompt("Digite o novo nome para este exercício:");
+    if (customPrompt && customPrompt.trim()) {
+      const idx = Number(replaceButton.dataset.pickExercise);
+      if (activeStrengthPlan?.exercises?.[idx]) {
+        activeStrengthPlan.exercises[idx].name = customPrompt.trim();
+        const currentForm = byId("workout-form");
+        const priorLogs = readExerciseLogs(new FormData(currentForm), activeStrengthPlan);
+        renderWorkoutFields(activeStrengthPlan.id, activeStrengthPlan);
+        preserveSetEntries(priorLogs);
+        showToast(`Exercício renomeado para "${customPrompt.trim()}".`);
+      }
+    }
+  }
+});
+byId("workout-fields").addEventListener("change", (event) => {
+  if (event.target.id === "workout-add-exercise-select" && event.target.value === "__custom__") {
+    handleAddExerciseToCurrentWorkout(event.target);
   }
 });
 byId("history-exercise").addEventListener("change", drawHistoryChart);
@@ -3434,7 +3631,11 @@ function renderBuilderSessions(structure = "ABC") {
     E: "Cardio e Mobilidade"
   };
 
-  container.innerHTML = letters.map((letter) => `
+  const allExNames = getAllStandardExerciseNames();
+  const datalistHtml = `<datalist id="builder-exercise-datalist">${allExNames.map((n) => `<option value="${escapeHTML(n)}"></option>`).join("")}</datalist>`;
+  const catalogSelectOpts = buildExerciseCatalogSelectOptions();
+
+  container.innerHTML = datalistHtml + letters.map((letter) => `
     <div class="builder-session-card" data-session-id="${letter}" style="background:#f4f5ee; border:1px solid #d5d7cd; border-radius:6px; padding:10px;">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; gap:8px;">
         <strong style="font-size:13px; color:var(--ink); font-family:var(--display); min-width:60px;">Treino ${letter}</strong>
@@ -3442,20 +3643,63 @@ function renderBuilderSessions(structure = "ABC") {
       </div>
       <div class="builder-exercises-list" style="display:grid; gap:6px;">
         <div class="builder-exercise-row" style="display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;">
-          <input type="text" class="builder-ex-name" value="Exercício 1" placeholder="Nome" style="font-size:11px; padding:4px;" required />
+          <input type="text" list="builder-exercise-datalist" class="builder-ex-name" value="${letter === "A" ? "Pulldown na Polia Alta" : letter === "B" ? "Supino Reto com Halteres" : "Agachamento Livre"}" placeholder="Nome" style="font-size:11px; padding:4px;" required />
           <input type="number" class="builder-ex-sets" value="4" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
           <input type="number" class="builder-ex-min" value="8" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
           <input type="number" class="builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
           <button type="button" class="btn-remove-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
         </div>
       </div>
-      <button type="button" class="button button-outline btn-add-builder-ex" style="margin-top:8px; font-size:10px; height:26px; padding:0 8px;">+ Adicionar Exercício</button>
+      <div style="display:flex; gap:6px; align-items:center; margin-top:8px; flex-wrap:wrap;">
+        <select class="builder-quick-catalog-select" style="font-size:11px; height:28px; border:1px solid #c8cac0; border-radius:4px; max-width:240px; background:#fff; padding:0 6px;">
+          <option value="">+ Escolher do Catálogo...</option>
+          ${catalogSelectOpts}
+        </select>
+        <button type="button" class="button button-outline btn-add-builder-ex" style="font-size:10px; height:28px; padding:0 8px;">+ Digitar Novo</button>
+      </div>
     </div>
   `).join("");
 }
 
 byId("builder-structure-select")?.addEventListener("change", (e) => {
   renderBuilderSessions(e.target.value);
+});
+
+byId("builder-sessions-container")?.addEventListener("change", (e) => {
+  if (e.target.classList.contains("builder-quick-catalog-select")) {
+    const val = e.target.value;
+    if (!val) return;
+    let found = null;
+    STANDARD_EXERCISES_CATALOG.forEach((g) => {
+      const f = g.exercises.find((ex) => ex.name === val);
+      if (f) found = f;
+    });
+    let name = val;
+    if (val === "__custom__") {
+      const c = prompt("Nome do exercício personalizado:");
+      if (!c || !c.trim()) {
+        e.target.value = "";
+        return;
+      }
+      name = c.trim();
+    }
+    const card = e.target.closest(".builder-session-card");
+    const list = card?.querySelector(".builder-exercises-list");
+    if (list) {
+      const newRow = document.createElement("div");
+      newRow.className = "builder-exercise-row";
+      newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
+      newRow.innerHTML = `
+        <input type="text" list="builder-exercise-datalist" class="builder-ex-name" value="${escapeHTML(name)}" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-sets" value="${found?.sets || 3}" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-min" value="${found?.min || 8}" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
+        <input type="number" class="builder-ex-max" value="${found?.max || 12}" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
+        <button type="button" class="btn-remove-builder-ex" style="border:0; background:transparent; color:#ef4444; font-weight:700; cursor:pointer;" title="Remover">✕</button>
+      `;
+      list.appendChild(newRow);
+    }
+    e.target.value = "";
+  }
 });
 
 byId("builder-sessions-container")?.addEventListener("click", (e) => {
@@ -3475,7 +3719,7 @@ byId("builder-sessions-container")?.addEventListener("click", (e) => {
       newRow.className = "builder-exercise-row";
       newRow.style.cssText = "display:grid; grid-template-columns: 1fr 60px 60px 60px 24px; gap:6px; align-items:center;";
       newRow.innerHTML = `
-        <input type="text" class="builder-ex-name" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
+        <input type="text" list="builder-exercise-datalist" class="builder-ex-name" placeholder="Nome do exercício" style="font-size:11px; padding:4px;" required />
         <input type="number" class="builder-ex-sets" value="3" min="1" max="10" title="Séries" placeholder="Séries" style="font-size:11px; padding:4px;" required />
         <input type="number" class="builder-ex-min" value="10" min="1" max="50" title="Reps mín" placeholder="Reps mín" style="font-size:11px; padding:4px;" required />
         <input type="number" class="builder-ex-max" value="12" min="1" max="50" title="Reps máx" placeholder="Reps máx" style="font-size:11px; padding:4px;" required />
@@ -3719,7 +3963,8 @@ document.addEventListener("click", (e) => {
 
   // Se abriu a seção de histórico, redesenhar gráfico com dimensões corretas
   if (!isCollapsed && section.id === "evolucao") {
-    setTimeout(() => renderHistoryChart(), 50);
+    renderHistorySelect();
+    setTimeout(() => drawHistoryChart(), 60);
   }
 });
 
@@ -3794,6 +4039,8 @@ window.closeGearMenu = closeGearMenu;
 window.toggleGearMenu = toggleGearMenu;
 window.showModalSafely = showModalSafely;
 window.closeModalSafely = closeModalSafely;
+window.drawHistoryChart = drawHistoryChart;
+window.renderHistorySelect = renderHistorySelect;
 
 // Capturador de erros para depuração amigável no celular
 window.addEventListener("error", (event) => {
