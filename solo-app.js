@@ -1373,16 +1373,170 @@ soloById("solo-form")?.addEventListener("submit", (e) => {
     };
   }
 
+  // Prepara o registro pendente
+  pendingSoloRecordToSave = record;
+
+  // Verifica se há desafios disponíveis no Rep Club
+  let availableChallenges = [];
+  try {
+    const raw = localStorage.getItem("rep-club-challenges-v2");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) availableChallenges = parsed;
+    }
+  } catch (err) {}
+
+  if (availableChallenges.length > 0) {
+    openSoloChallengesDialog(availableChallenges);
+  } else {
+    finishSoloWorkoutSave([]);
+  }
+});
+
+let pendingSoloRecordToSave = null;
+
+function openSoloChallengesDialog(availableChallenges) {
+  const dialog = soloById("solo-select-challenges-dialog");
+  const listEl = soloById("solo-select-challenges-list");
+  if (!dialog || !listEl) {
+    finishSoloWorkoutSave([]);
+    return;
+  }
+
+  listEl.innerHTML = availableChallenges.map((ch, idx) => {
+    const playersNames = Array.isArray(ch.players) ? ch.players.map((p) => p?.name || p).join(" vs ") : "";
+    const periodText = ch.period?.start && ch.period?.end ? `${ch.period.start} a ${ch.period.end}` : "";
+    const isChecked = idx === 0 || availableChallenges.length === 1;
+
+    return `
+      <label class="challenge-option-card ${isChecked ? "selected" : ""}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:#fff; border:1.5px solid #dcdfd5; border-radius:6px; cursor:pointer; margin-bottom:6px;">
+        <input type="checkbox" class="solo-challenge-target-checkbox" value="${escapeHTML(ch.id)}" ${isChecked ? "checked" : ""} style="width:18px; height:18px; accent-color:var(--lime); cursor:pointer;" />
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <strong style="font-size:13px; color:#181915; font-weight:700;">${escapeHTML(ch.title || "Duelo")}</strong>
+          </div>
+          <div style="font-size:11px; color:#6b7280; margin-top:3px; display:flex; gap:8px; flex-wrap:wrap;">
+            ${playersNames ? `<span>👥 ${escapeHTML(playersNames)}</span>` : ""}
+            ${periodText ? `<span>📅 ${escapeHTML(periodText)}</span>` : ""}
+          </div>
+        </div>
+      </label>
+    `;
+  }).join("");
+
+  listEl.querySelectorAll(".solo-challenge-target-checkbox").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      e.target.closest(".challenge-option-card")?.classList.toggle("selected", e.target.checked);
+    });
+  });
+
+  const toggleBtn = soloById("solo-btn-toggle-all-challenges");
+  if (toggleBtn) {
+    toggleBtn.onclick = () => {
+      const boxes = listEl.querySelectorAll(".solo-challenge-target-checkbox");
+      const anyUnchecked = Array.from(boxes).some((b) => !b.checked);
+      boxes.forEach((b) => {
+        b.checked = anyUnchecked;
+        b.closest(".challenge-option-card")?.classList.toggle("selected", anyUnchecked);
+      });
+      toggleBtn.textContent = anyUnchecked ? "Desmarcar todos" : "Marcar todos";
+    };
+  }
+
+  soloById("solo-dialog")?.close();
+  dialog.showModal();
+}
+
+function finishSoloWorkoutSave(selectedChallengeIds = []) {
+  if (!pendingSoloRecordToSave) return;
+  const record = pendingSoloRecordToSave;
+
+  // 1. Salva no Modo Solo
   soloState.push(record);
   saveSolo();
   renderSoloScoreboard();
   renderActivity();
   populateHistorySelect();
 
-  soloById("solo-dialog")?.close();
-  e.currentTarget.reset();
+  // 2. Se desafios foram selecionados, replica no Rep Club (localStorage e Firebase)
+  if (Array.isArray(selectedChallengeIds) && selectedChallengeIds.length > 0) {
+    try {
+      const repClubRaw = localStorage.getItem("rep-club-state-v2");
+      let repClubState = repClubRaw ? JSON.parse(repClubRaw) : { workouts: [] };
+      if (!Array.isArray(repClubState.workouts)) repClubState.workouts = [];
+
+      selectedChallengeIds.forEach((chId) => {
+        const repWorkout = {
+          id: crypto.randomUUID ? crypto.randomUUID() : `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          duel_id: chId,
+          challenge_id: chId,
+          challengeId: chId,
+          player_id: repClubState.activePlayer || "player-1",
+          owner: repClubState.activePlayer || "player-1",
+          category: record.category,
+          name: record.name,
+          workout_date: record.date,
+          date: record.date,
+          effort: record.effort,
+          points: record.points,
+          basePoints: record.category === "strength" ? 9 : 8,
+          qualityPoints: Math.max(0, record.points - (record.category === "strength" ? 9 : 8)),
+          duration: record.duration || 0,
+          trainingVolume: record.volume || 0,
+          comments: record.comments || "",
+          photo: record.photo || null,
+          created_at: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+        };
+        repClubState.workouts.push(repWorkout);
+
+        // Dispara sync REST para o Firebase com formato normalizado
+        fetch(`https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts/${repWorkout.id}.json`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(repWorkout),
+        }).catch(() => {});
+      });
+
+      localStorage.setItem("rep-club-state-v2", JSON.stringify(repClubState));
+    } catch (e) {
+      console.warn("Erro ao sincronizar treino solo com Rep Club:", e);
+    }
+  }
+
+  const selDiag = soloById("solo-select-challenges-dialog");
+  if (selDiag) {
+    if (typeof selDiag.close === "function" && selDiag.open) selDiag.close();
+    selDiag.removeAttribute("open");
+  }
+  const soloDiag = soloById("solo-dialog");
+  if (soloDiag) {
+    if (typeof soloDiag.close === "function" && soloDiag.open) soloDiag.close();
+    soloDiag.removeAttribute("open");
+  }
+  const form = soloById("solo-form");
+  if (form) form.reset();
   clearSoloPhoto();
-  showToast("Treino registrado com sucesso!");
+  pendingSoloRecordToSave = null;
+
+  if (selectedChallengeIds.length > 0) {
+    showToast(`Treino salvo no Solo e em ${selectedChallengeIds.length} duelo(s)!`);
+  } else {
+    showToast("Treino registrado no Modo Solo com sucesso!");
+  }
+}
+
+soloById("solo-confirm-select-challenges")?.addEventListener("click", () => {
+  const checked = Array.from(document.querySelectorAll(".solo-challenge-target-checkbox:checked")).map((cb) => cb.value);
+  finishSoloWorkoutSave(checked);
+});
+
+soloById("solo-skip-challenges")?.addEventListener("click", () => {
+  finishSoloWorkoutSave([]);
+});
+
+soloById("solo-close-select-challenges")?.addEventListener("click", () => {
+  soloById("solo-select-challenges-dialog")?.close();
 });
 
 // ==========================================
@@ -1588,7 +1742,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.5").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.8").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

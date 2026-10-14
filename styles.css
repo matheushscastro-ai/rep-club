@@ -992,6 +992,38 @@ dialog::backdrop {
   color: #777970;
 }
 
+.challenge-option-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: #ffffff;
+  border: 1.5px solid #dcdfd5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.16s ease;
+  user-select: none;
+}
+.challenge-option-card:hover {
+  border-color: #181915;
+  background: #fbfbf8;
+}
+.challenge-option-card.selected {
+  border-color: #181915;
+  background: #fcfdfa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+.challenge-option-card input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--lime);
+  cursor: pointer;
+}
+
+dialog.select-challenges-dialog {
+  z-index: 100005 !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

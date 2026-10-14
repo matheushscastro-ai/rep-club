@@ -24,6 +24,11 @@ try {
     fbApp = window.firebase.initializeApp(firebaseConfig);
     fbDb = window.firebase.database();
     fbAuth = window.firebase.auth();
+    fbAuth.onAuthStateChanged((user) => {
+      if (!user) {
+        fbAuth.signInAnonymously().catch(() => {});
+      }
+    });
   }
 } catch (e) {
   console.warn("Firebase init error:", e);
@@ -641,8 +646,19 @@ const shiftDate = (days) => {
   date.setDate(date.getDate() + days);
   return localDate(date);
 };
-const pointsForWorkout = (workout) => Number(workout.points ?? 10);
-const playerFor = (id) => PLAYERS.find((player) => player.id === id);
+const pointsForWorkout = (workout) => {
+  if (!workout) return 0;
+  const pts = Number(workout.points);
+  return Number.isFinite(pts) ? pts : 10;
+};
+const playerFor = (id) => {
+  const cur = getActiveChallenge();
+  if (cur && Array.isArray(cur.players)) {
+    const found = cur.players.find((player) => (player?.id || player) === id);
+    if (found) return typeof found === "object" ? found : { id: found, name: found };
+  }
+  return PLAYERS.find((player) => player.id === id) || { id, name: id || "Atleta", short: (id || "A")[0].toUpperCase(), color: "var(--lime)", textColor: "#000" };
+};
 
 // AUTENTICAÇÃO E INDIVIDUALIZAÇÃO DE PERFIL DO ATLETA (POR ETAPAS)
 const AUTH_USER_KEY = "rep-club-auth-user-v2";
@@ -767,11 +783,10 @@ function getUserChallenges() {
   return challenges.filter((c) => userParticipatesInChallenge(c, user));
 }
 
-function getActiveUserPlayer() {
-  const user = getAuthUser();
-  if (!user) return null;
-  const cur = getActiveChallenge();
-  const pool = cur?.players || PLAYERS;
+function getPlayerInChallenge(challenge, user) {
+  if (!challenge) return null;
+  const pool = challenge?.players || PLAYERS;
+  if (!user) return pool[0] || null;
   const uName = String(user.name || "").trim().toLowerCase();
   const uEmail = String(user.email || "").trim().toLowerCase();
   const uId = String(user.id || user.uid || "").trim();
@@ -781,7 +796,7 @@ function getActiveUserPlayer() {
     const pId = String(p.id || p.uid || "").trim();
     const pEmail = String(p.email || "").trim().toLowerCase();
     const pName = String(p.name || "").trim().toLowerCase();
-    if (uId && pId && (pId === uId || pId.toLowerCase() === uId.toLowerCase())) return true;
+    if (uId && pId && (pId === uId || pId.toLowerCase() === uId.toLowerCase() || pId === `player-${uId}`)) return true;
     if (uEmail && pEmail && pEmail === uEmail) return true;
     if (pName && uName) {
       if (pName === uName) return true;
@@ -791,6 +806,13 @@ function getActiveUserPlayer() {
     }
     return false;
   }) || pool[0];
+}
+
+function getActiveUserPlayer() {
+  const user = getAuthUser();
+  if (!user) return null;
+  const cur = getActiveChallenge();
+  return getPlayerInChallenge(cur, user);
 }
 
 async function syncChallengeToFirebase(challenge) {
@@ -1236,7 +1258,8 @@ function saveState() {
 function firebaseWorkoutPayload(workout) {
   return {
     id: workout.id,
-    duel_id: CANONICAL_DUEL_ID,
+    duel_id: workout.challengeId || CANONICAL_DUEL_ID,
+    challenge_id: workout.challengeId || null,
     player_id: workout.owner,
     category: workout.category,
     workout_date: workout.date,
@@ -1334,20 +1357,45 @@ async function hydrateFromFirebase() {
     }
 
     if (!workoutsData) {
-      const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts.json");
-      if (resp.ok) {
-        workoutsData = await resp.json();
-      }
+      try {
+        const resp = await fetch("https://mathub-f08b6-default-rtdb.firebaseio.com/rep-club/workouts.json");
+        if (resp.ok) {
+          workoutsData = await resp.json();
+        }
+      } catch (e) {}
     }
 
-    const remoteWorkoutsList = workoutsData ? Object.values(workoutsData) : [];
-    const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
+    // Se Firebase falhou, retornou erro ou não retornou dados válidos
+    if (!workoutsData || typeof workoutsData !== "object" || workoutsData.error) {
+      console.warn("Firebase workouts inacessíveis ou com erro. Mantendo dados locais.");
+      if (!Array.isArray(state.workouts) || state.workouts.length === 0) {
+        const demo = createDemoState();
+        state.workouts = demo.workouts;
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    const remoteWorkoutsList = Object.values(workoutsData).filter((w) => w && typeof w === "object" && w.id && !w.error);
+    if (remoteWorkoutsList.length === 0) {
+      if (!Array.isArray(state.workouts) || state.workouts.length === 0) {
+        const demo = createDemoState();
+        state.workouts = demo.workouts;
+        saveState();
+        render();
+      }
+      return;
+    }
+
+    // Mantém todos os treinos locais já existentes que não vieram do remoto
+    const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id));
     const syncedRemote = remoteWorkoutsList.map((workout) => ({
       id: workout.id,
-      challengeId: activeChallengeId || "challenge-1",
-      owner: workout.player_id,
+      challengeId: workout.challenge_id || workout.challengeId || workout.duel_id || activeChallengeId || "challenge-1",
+      owner: workout.player_id || workout.owner,
       category: workout.category,
-      date: workout.workout_date,
+      date: workout.workout_date || workout.date,
       name: workout.name || MODALITIES[workout.category]?.label || workout.category,
       comments: workout.comments || "",
       photo: workout.photo || null,
@@ -1361,6 +1409,7 @@ async function hydrateFromFirebase() {
     state.workouts = [...pendingLocal, ...syncedRemote];
     state.activePlayer = PLAYERS[0].id;
     saveState();
+    render();
     hydrateProgramsFromFirebase();
     await hydrateChallengesFromFirebase();
     const ind = byId("sync-status-indicator");
@@ -1370,6 +1419,12 @@ async function hydrateFromFirebase() {
     }
   } catch (error) {
     console.warn("Firebase indisponível; mantendo os dados locais.", error);
+    if (!Array.isArray(state.workouts) || state.workouts.length === 0) {
+      const demo = createDemoState();
+      state.workouts = demo.workouts;
+      saveState();
+      render();
+    }
   }
 }
 
@@ -1441,7 +1496,7 @@ function loadChallenges() {
     const raw = localStorage.getItem(CHALLENGES_STORAGE_KEY);
     if (raw !== null) {
       const saved = JSON.parse(raw);
-      if (Array.isArray(saved)) {
+      if (Array.isArray(saved) && saved.length > 0) {
         return saved.filter((c) => c && c.id && c.title);
       }
     }
@@ -1449,13 +1504,21 @@ function loadChallenges() {
     console.warn("Não foi possível ler os desafios salvos.", error);
   }
 
-  return [];
+  return [{
+    id: "challenge-1",
+    title: "Duelo 01",
+    prize: "",
+    period: defaultDuelPeriod(),
+    players: DEFAULT_PLAYERS,
+    activePlayer: DEFAULT_PLAYERS[0].id,
+    createdAt: new Date().toISOString(),
+  }];
 }
 
 let challenges = loadChallenges();
-let activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || (challenges[0]?.id || "none");
+let activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || (challenges[0]?.id || "challenge-1");
 if (!challenges.some((c) => c.id === activeChallengeId)) {
-  activeChallengeId = challenges[0]?.id || "none";
+  activeChallengeId = challenges[0]?.id || "challenge-1";
 }
 
 function getActiveChallenge() {
@@ -1468,9 +1531,8 @@ function getActiveChallenge() {
       if (found) return found;
       return userChallenges[0];
     }
-    return null;
   }
-  return null;
+  return challenges.find((c) => c.id === activeChallengeId) || challenges[0] || null;
 }
 
 function saveChallenges() {
@@ -2675,11 +2737,7 @@ function openWorkoutDialog(templateId = null) {
     openAuthDialog("Entre com um perfil que participa deste duelo ou crie um novo.");
     return;
   }
-  const me = getActiveUserPlayer();
-  if (!me) {
-    openAuthDialog("Identifique qual atleta você é neste duelo.");
-    return;
-  }
+  const me = getActiveUserPlayer() || playerFor(state.activePlayer) || PLAYERS[0];
   state.activePlayer = me.id;
   cur.activePlayer = me.id;
 
@@ -2693,7 +2751,7 @@ function openWorkoutDialog(templateId = null) {
   byId("dialog-profile-name").textContent = me.name;
   byId("form-error").textContent = "";
   renderWorkoutFields(templateId);
-  byId("workout-dialog").showModal();
+  showModalSafely(byId("workout-dialog"));
 }
 
 byId("profile-select")?.addEventListener("change", (event) => {
@@ -2709,19 +2767,17 @@ byId("profile-select")?.addEventListener("change", (event) => {
 function showModalSafely(dialog) {
   if (!dialog) return;
   try {
+    dialog.style.removeProperty("display");
+    dialog.style.display = "";
     if (typeof dialog.showModal === "function") {
       if (!dialog.open) dialog.showModal();
-    } else {
-      dialog.setAttribute("open", "");
-      dialog.style.display = "block";
+      return;
     }
   } catch (err) {
     console.warn("showModalSafely fallback:", err);
-    try {
-      dialog.setAttribute("open", "");
-      dialog.style.display = "block";
-    } catch (e) {}
   }
+  dialog.setAttribute("open", "");
+  dialog.style.display = "block";
 }
 
 function closeModalSafely(dialog) {
@@ -2732,7 +2788,8 @@ function closeModalSafely(dialog) {
     }
   } catch (err) {}
   dialog.removeAttribute("open");
-  dialog.style.display = "none";
+  dialog.style.removeProperty("display");
+  dialog.style.display = "";
 }
 
 function renderSetupPlayers(namesList = null) {
@@ -3226,11 +3283,6 @@ byId("workout-form").addEventListener("submit", async (event) => {
     byId("form-error").textContent = "Escolha uma data válida, hoje ou anterior.";
     return;
   }
-  const duplicate = workoutsFor(state.activePlayer).some((workout) => workout.date === workoutDate && workout.category === category);
-  if (duplicate) {
-    byId("form-error").textContent = "Esta modalidade já foi registrada para este perfil nessa data.";
-    return;
-  }
 
   let workout;
   let customPlanToSave = null;
@@ -3317,32 +3369,212 @@ byId("workout-form").addEventListener("submit", async (event) => {
   const comments = String(form.get("comments") || "").trim();
   if (comments) workout.comments = comments;
   if (currentWorkoutPhoto) workout.photo = currentWorkoutPhoto;
-  workout.id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-  workout.owner = state.activePlayer;
-  workout.challengeId = getActiveChallenge().id;
   workout.date = workoutDate;
-  workout.createdAt = new Date().toISOString();
   workout.points = workout.basePoints + workout.qualityPoints;
-  state.workouts.push(workout);
-  if (customPlanToSave) {
-    const customIndex = customTrainingPlans.findIndex((plan) => plan.id === customPlanToSave.id);
-    if (customIndex >= 0) customTrainingPlans[customIndex] = customPlanToSave;
-    else customTrainingPlans.push(customPlanToSave);
-    localStorage.setItem(CUSTOM_PLANS_KEY, JSON.stringify(customTrainingPlans));
-    activeStrengthPlan = cloneTrainingPlan(customPlanToSave);
+
+  pendingWorkoutToSave = workout;
+  pendingCustomPlanToSave = customPlanToSave;
+
+  openSelectChallengesDialog();
+});
+
+let pendingWorkoutToSave = null;
+let pendingCustomPlanToSave = null;
+
+function openSelectChallengesDialog() {
+  const dialog = byId("select-challenges-dialog");
+  const listEl = byId("select-challenges-list");
+  const errorEl = byId("select-challenges-error");
+  if (!dialog || !listEl) return;
+  if (errorEl) errorEl.textContent = "";
+
+  const user = getAuthUser();
+  // Inclui todos os desafios existentes no aparelho/banco
+  let available = Array.isArray(challenges) && challenges.length > 0 ? [...challenges] : [];
+  const userChs = getUserChallenges();
+  userChs.forEach((uc) => {
+    if (!available.some((c) => c.id === uc.id)) available.push(uc);
+  });
+  const cur = getActiveChallenge();
+  if (cur && !available.some((c) => c.id === cur.id)) {
+    available.unshift(cur);
   }
+  if (available.length === 0) {
+    available = [{ id: "challenge-1", title: "Duelo 01", period: defaultDuelPeriod(), players: DEFAULT_PLAYERS }];
+  }
+
+  // Desduplica desafios por ID
+  const seenIds = new Set();
+  available = available.filter((ch) => {
+    if (!ch || !ch.id || seenIds.has(ch.id)) return false;
+    seenIds.add(ch.id);
+    return true;
+  });
+
+  const curActive = getActiveChallenge()?.id || activeChallengeId;
+
+  listEl.innerHTML = available.map((ch) => {
+    const isCurrent = ch.id === curActive;
+    const playersNames = Array.isArray(ch.players) ? ch.players.map((p) => p?.name || p).join(" vs ") : "";
+    let periodText = "";
+    try {
+      if (ch.period?.start && ch.period?.end) {
+        periodText = `${formatPeriodDate(ch.period.start)} a ${formatPeriodDate(ch.period.end)}`;
+      }
+    } catch (e) {}
+
+    const myPlayerInCh = getPlayerInChallenge(ch, user);
+    const ownerId = myPlayerInCh?.id || state.activePlayer;
+    const countToday = state.workouts.filter(
+      (w) => (w.challengeId || "challenge-1") === ch.id && w.owner === ownerId && w.date === pendingWorkoutToSave?.date
+    ).length;
+
+    const isChecked = isCurrent || available.length === 1;
+
+    return `
+      <label class="challenge-option-card ${isChecked ? "selected" : ""}" style="display:flex; align-items:center; gap:12px; padding:12px 14px; background:#fff; border:1.5px solid #dcdfd5; border-radius:6px; cursor:pointer;">
+        <input type="checkbox" class="challenge-target-checkbox" value="${escapeHTML(ch.id)}" ${isChecked ? "checked" : ""} style="width:18px; height:18px; accent-color:var(--lime); cursor:pointer;" />
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:6px;">
+            <strong style="font-size:13px; color:var(--ink); font-weight:700;">${escapeHTML(ch.title || "Duelo")}</strong>
+            <div style="display:flex; align-items:center; gap:4px;">
+              ${isCurrent ? '<span style="font-size:9px; font-weight:800; background:var(--lime); color:var(--ink); padding:2px 5px; border-radius:3px;">ATIVO</span>' : ""}
+              ${countToday > 0 ? `<span style="font-size:9px; font-weight:700; background:#f0fdf4; color:#166534; padding:2px 5px; border-radius:3px;">+${countToday} HOJE</span>` : ""}
+            </div>
+          </div>
+          <div style="font-size:11px; color:#6b7280; margin-top:3px; display:flex; gap:8px; flex-wrap:wrap;">
+            ${playersNames ? `<span>👥 ${escapeHTML(playersNames)}</span>` : ""}
+            ${periodText ? `<span>📅 ${escapeHTML(periodText)}</span>` : ""}
+          </div>
+        </div>
+      </label>
+    `;
+  }).join("");
+
+  listEl.querySelectorAll(".challenge-target-checkbox").forEach((cb) => {
+    cb.addEventListener("change", (e) => {
+      e.target.closest(".challenge-option-card")?.classList.toggle("selected", e.target.checked);
+    });
+  });
+
+  const toggleBtn = byId("btn-toggle-all-challenges");
+  if (toggleBtn) {
+    toggleBtn.textContent = "Marcar todos";
+    toggleBtn.onclick = () => {
+      const boxes = listEl.querySelectorAll(".challenge-target-checkbox");
+      const anyUnchecked = Array.from(boxes).some((b) => !b.checked);
+      boxes.forEach((b) => {
+        b.checked = anyUnchecked;
+        b.closest(".challenge-option-card")?.classList.toggle("selected", anyUnchecked);
+      });
+      toggleBtn.textContent = anyUnchecked ? "Desmarcar todos" : "Marcar todos";
+    };
+  }
+
+  // Fecha o workout-dialog para não conflitar e abre o modal de desafios
+  closeModalSafely(byId("workout-dialog"));
+  showModalSafely(dialog);
+}
+
+byId("cancel-select-challenges")?.addEventListener("click", () => {
+  closeModalSafely(byId("select-challenges-dialog"));
+  showModalSafely(byId("workout-dialog"));
+});
+byId("close-select-challenges-dialog")?.addEventListener("click", () => {
+  closeModalSafely(byId("select-challenges-dialog"));
+  showModalSafely(byId("workout-dialog"));
+});
+
+byId("confirm-select-challenges")?.addEventListener("click", async () => {
+  if (!pendingWorkoutToSave) return;
+  const errorEl = byId("select-challenges-error");
+  const checkedBoxes = Array.from(document.querySelectorAll(".challenge-target-checkbox:checked"));
+  const selectedIds = checkedBoxes.map((cb) => cb.value);
+
+  if (selectedIds.length === 0) {
+    if (errorEl) errorEl.textContent = "Selecione pelo menos um desafio para adicionar o treino.";
+    return;
+  }
+
+  const btnConfirm = byId("confirm-select-challenges");
+  if (btnConfirm) {
+    btnConfirm.disabled = true;
+    btnConfirm.textContent = "Salvando...";
+  }
+
+  const user = getAuthUser();
+  const cur = getActiveChallenge();
+  const curActiveId = cur?.id || activeChallengeId;
+  const curAthlete = playerFor(state.activePlayer);
+  const syncPromises = [];
+  const addedCount = selectedIds.length;
+  const savedPoints = Number(pendingWorkoutToSave.points) || 10;
+
+  for (const targetId of selectedIds) {
+    const targetChallenge = challenges.find((c) => c.id === targetId) || (cur && cur.id === targetId ? cur : null);
+    
+    // Se for o duelo atualmente ativo na tela, o atleta é o atleta ativo selecionado
+    let ownerId = state.activePlayer;
+    if (targetChallenge && targetChallenge.id !== curActiveId) {
+      const matchInTarget = targetChallenge.players?.find((p) => {
+        if (!p) return false;
+        if (curAthlete && (p.name?.toLowerCase() === curAthlete.name?.toLowerCase() || p.id === curAthlete.id)) return true;
+        return false;
+      });
+      if (matchInTarget) {
+        ownerId = matchInTarget.id;
+      } else {
+        const myPlayerInCh = getPlayerInChallenge(targetChallenge, user);
+        ownerId = myPlayerInCh ? myPlayerInCh.id : state.activePlayer;
+      }
+    }
+
+    const workoutInstance = {
+      ...pendingWorkoutToSave,
+      id: crypto.randomUUID ? crypto.randomUUID() : `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      challengeId: targetChallenge?.id || targetId,
+      owner: ownerId,
+      createdAt: new Date().toISOString(),
+    };
+
+    state.workouts.push(workoutInstance);
+    syncPromises.push(syncWorkoutToFirebase(workoutInstance));
+  }
+
+  if (pendingCustomPlanToSave) {
+    const customIndex = customTrainingPlans.findIndex((plan) => plan.id === pendingCustomPlanToSave.id);
+    if (customIndex >= 0) customTrainingPlans[customIndex] = pendingCustomPlanToSave;
+    else customTrainingPlans.push(pendingCustomPlanToSave);
+    localStorage.setItem(CUSTOM_PLANS_KEY, JSON.stringify(customTrainingPlans));
+    activeStrengthPlan = cloneTrainingPlan(pendingCustomPlanToSave);
+  }
+
   saveState();
   clearWorkoutPhoto();
-  try {
-    await syncWorkoutToFirebase(workout);
-  } catch (error) {
-    console.warn("Treino salvo localmente, mas não foi enviado ao Firebase.", error);
+
+  closeModalSafely(byId("select-challenges-dialog"));
+  closeModalSafely(byId("workout-dialog"));
+  byId("workout-form")?.reset();
+
+  if (pendingCustomPlanToSave && byId("template-select")) {
+    byId("template-select").value = pendingCustomPlanToSave.id;
   }
-  byId("workout-dialog").close();
-  workoutForm.reset();
-  if (customPlanToSave && byId("template-select")) byId("template-select").value = customPlanToSave.id;
+
   render();
-  showToast(`Treino registrado. +${workout.points} pontos (${workout.basePoints} base + ${workout.qualityPoints} qualidade).`);
+  showToast(`Treino registrado em ${addedCount} desafio(s)! (+${savedPoints} pts)`);
+
+  pendingWorkoutToSave = null;
+  pendingCustomPlanToSave = null;
+  if (btnConfirm) {
+    btnConfirm.disabled = false;
+    btnConfirm.innerHTML = 'Confirmar e Salvar <span>↗</span>';
+  }
+
+  try {
+    await Promise.allSettled(syncPromises);
+  } catch (e) {
+    console.warn("Falha de rede ao sincronizar multi-treinos no Firebase:", e);
+  }
 });
 
 byId("reset-demo").addEventListener("click", () => {
@@ -3378,14 +3610,16 @@ function setupFirebaseSync() {
     try {
       fbDb.ref("rep-club/workouts").on("value", (snapshot) => {
         const val = snapshot.val();
-        const remoteWorkoutsList = val ? Object.values(val) : [];
-        const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id) && String(lw.id).startsWith("local-"));
+        if (!val || typeof val !== "object" || val.error) return;
+        const remoteWorkoutsList = Object.values(val).filter((w) => w && typeof w === "object" && w.id && !w.error);
+        if (remoteWorkoutsList.length === 0) return;
+        const pendingLocal = state.workouts.filter((lw) => !remoteWorkoutsList.some((rw) => rw.id === lw.id));
         const syncedRemote = remoteWorkoutsList.map((workout) => ({
           id: workout.id,
-          challengeId: activeChallengeId || "challenge-1",
-          owner: workout.player_id,
+          challengeId: workout.challenge_id || workout.challengeId || workout.duel_id || activeChallengeId || "challenge-1",
+          owner: workout.player_id || workout.owner,
           category: workout.category,
-          date: workout.workout_date,
+          date: workout.workout_date || workout.date,
           name: workout.name || MODALITIES[workout.category]?.label || workout.category,
           comments: workout.comments || "",
           photo: workout.photo || null,
@@ -3403,6 +3637,8 @@ function setupFirebaseSync() {
           ind.textContent = "● Google Firebase Ao Vivo";
           ind.style.color = "var(--lime)";
         }
+      }, (err) => {
+        console.warn("Firebase workouts listener erro:", err);
       });
 
       fbDb.ref("rep-club/training-programs").on("value", (snapshot) => {
@@ -3499,7 +3735,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.5").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.7.8").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
