@@ -1,0 +1,6 @@
+# RPG / Game development assets (mantidos apenas na maquina local)
+assets/herois/
+
+# Sistema operacional
+.DS_Store
+Thumbs.db
