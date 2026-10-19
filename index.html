@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.8.2" />
+    <link rel="stylesheet" href="styles.css?v=2.8.3" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.8.2" defer></script>
+    <script src="app.js?v=2.8.3" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -358,16 +358,6 @@
         </div>
 
         <label class="form-field workout-name-field"><span>NOME DO TREINO · OPCIONAL</span><input id="workout-name" name="workoutName" type="text" maxlength="50" placeholder="Ex.: Treino A bem feito" /></label>
-        
-        <!-- CRONÔMETRO DE DESCANSO -->
-        <div class="rest-dock form-rest-dock" aria-label="Cronômetro de descanso">
-          <div class="timer-readout"><span>DESCANSO</span><strong id="timer-display">00:00</strong></div>
-          <button type="button" class="timer-button" data-rest-seconds="60" aria-label="Iniciar descanso de 60 segundos">60s</button>
-          <button type="button" class="timer-button" data-rest-seconds="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
-          <button type="button" class="timer-sound-btn" id="timer-sound-toggle" title="Som do descanso (Ligado/Mudo)" aria-label="Som">🔊</button>
-          <button type="button" class="timer-reset" id="timer-reset" aria-label="Zerar cronômetro">×</button>
-        </div>
-
         <div id="workout-fields"></div>
         
         <!-- FOTO DO TREINO -->
@@ -430,6 +420,13 @@
         <button type="button" class="button button-primary" id="confirm-select-challenges">Confirmar e Salvar <span>↗</span></button>
       </div>
     </dialog>
+    <div class="rest-dock" aria-label="Cronômetro de descanso">
+      <div class="timer-readout"><span>DESCANSO</span><strong id="timer-display">00:00</strong></div>
+      <button type="button" class="timer-button" data-rest-seconds="60" aria-label="Iniciar descanso de 60 segundos">60s</button>
+      <button type="button" class="timer-button" data-rest-seconds="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
+      <button type="button" class="timer-sound-btn" id="timer-sound-toggle" title="Som do descanso (Ligado/Mudo)" aria-label="Som">🔊</button>
+      <button type="button" class="timer-reset" id="timer-reset" aria-label="Zerar cronômetro">×</button>
+    </div>
     <dialog class="setup-dialog qr-dialog" id="qr-dialog" aria-labelledby="qr-title">
       <div class="dialog-top">
         <strong id="qr-title" style="font-family: var(--display); font-size: 20px; color: var(--ink);">📲 ABRIR NO CELULAR</strong>

@@ -661,7 +661,6 @@ dialog::backdrop {
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .button-quiet { background: transparent; color: #6d6f67; }
 .rest-dock { position: fixed; right: 18px; bottom: 16px; z-index: 6; display: flex; min-height: 54px; align-items: center; gap: 7px; padding: 7px 9px 7px 12px; border: 1px solid #3b3c36; border-radius: 4px; background: #242520; color: #f4f4ee; box-shadow: 0 8px 30px rgb(25 26 22 / 18%); }
-.rest-dock.form-rest-dock { position: static; right: auto; bottom: auto; left: auto; width: 100%; margin: 8px 0 14px 0; box-sizing: border-box; justify-content: space-between; z-index: auto; }
 .timer-readout { display: grid; gap: 2px; min-width: 54px; }
 .timer-readout span { color: #a9aaa1; font-size: 7px; font-weight: 700; letter-spacing: .08em; }
 .timer-readout strong { font-family: var(--display); font-size: 20px; line-height: 1; }

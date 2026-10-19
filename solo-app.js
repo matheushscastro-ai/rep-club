@@ -2661,7 +2661,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.8.2").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.3").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

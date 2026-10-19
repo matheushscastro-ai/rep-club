@@ -259,11 +259,6 @@
 .solo-body .rest-dock {
   z-index: 9999;
 }
-.solo-body .rest-dock.form-rest-dock {
-  position: static;
-  width: 100%;
-  margin: 8px 0 14px 0;
-}
 .solo-record .solo-share-workout-btn {
   background: transparent;
   border: 1px solid #3b3c36;
