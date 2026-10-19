@@ -601,7 +601,7 @@ dialog::backdrop {
 .duration-input { display: flex; align-items: center; }
 .duration-input input { width: 100%; padding: 0 11px; border: 0; outline: 0; background: transparent; font-size: 13px; }
 .duration-input span { padding-right: 12px; color: #85877d; font-size: 9px; font-weight: 700; }
-.exercise-log-list { display: grid; gap: 7px; max-height: min(440px, 47vh); overflow-y: auto; margin-top: 13px; padding-right: 3px; }
+.exercise-log-list { display: grid; gap: 7px; margin-top: 13px; }
 .exercise-log { padding: 10px 11px; border: 1px solid #e0e1d8; border-radius: 3px; background: #f8f8f3; }
 .exercise-log-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 9px; }
 .exercise-log-heading strong { font-size: 10px; line-height: 1.35; }
@@ -889,7 +889,6 @@ dialog::backdrop {
   .setup-dialog { padding: 22px 18px; }
   .setup-brand { margin-bottom: 28px; }
   .setup-dialog h1 { font-size: 34px; }
-  .exercise-log-list { max-height: 39vh; }
   .exercise-log { padding: 9px; }
   .exercise-log-heading { align-items: flex-start; flex-direction: column; gap: 4px; }
   .exercise-log-fields { gap: 5px; }
