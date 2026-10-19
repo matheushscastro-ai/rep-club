@@ -1851,16 +1851,6 @@ const ARCADE_SCENARIOS = {
     p1AuraColor: (tier) => tier === 3 ? "rgba(56, 189, 248, " : "rgba(250, 204, 21, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(234, 179, 8, " : "rgba(168, 85, 247, ",
   },
-  dbz_vegeta_boo: {
-    id: "dbz_vegeta_boo",
-    name: "Vegeta vs Majin Boo",
-    p1Name: (pts) => pts >= 100 ? "⚡ VEGETA BLUE EVOLVED" : pts >= 50 ? "🔥 MAJIN VEGETA" : "VEGETA SSJ",
-    p2Name: (pts) => pts >= 100 ? "👑 KID BOO" : pts >= 50 ? "💥 SUPER BOO" : "MAJIN BOO",
-    p1BeamColor: "#facc15",
-    p2BeamColor: "#ec4899",
-    p1AuraColor: (tier) => tier === 3 ? "rgba(96, 165, 250, " : "rgba(250, 204, 21, ",
-    p2AuraColor: (tier) => tier === 3 ? "rgba(236, 72, 153, " : "rgba(217, 70, 239, ",
-  },
   sf_ryu_ken: {
     id: "sf_ryu_ken",
     name: "Ryu vs Ken",
@@ -1870,18 +1860,12 @@ const ARCADE_SCENARIOS = {
     p2BeamColor: "#f97316",
     p1AuraColor: (tier) => tier === 3 ? "rgba(59, 130, 246, " : "rgba(147, 197, 253, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(239, 68, 68, " : "rgba(249, 115, 22, ",
-  },
-  rpg_champions: {
-    id: "rpg_champions",
-    name: "Guerreiro vs Mago",
-    p1Name: (pts) => pts >= 100 ? "⚡ GUERREIRO TITÂNICO" : pts >= 50 ? "🔥 BERSERKER" : "GUERREIRO",
-    p2Name: (pts) => pts >= 100 ? "👑 ARQUIMAGO SUPREMO" : pts >= 50 ? "💥 MAGO ELEMENTAL" : "MAGO ARCANO",
-    p1BeamColor: "#ef4444",
-    p2BeamColor: "#8b5cf6",
-    p1AuraColor: (tier) => tier === 3 ? "rgba(220, 38, 38, " : "rgba(248, 113, 113, ",
-    p2AuraColor: (tier) => tier === 3 ? "rgba(139, 92, 246, " : "rgba(192, 132, 252, ",
   }
 };
+
+if (!ARCADE_SCENARIOS[currentArcadeScenario]) {
+  currentArcadeScenario = "dbz_goku_cell";
+}
 
 const ARCADE_ASSETS = {
   dbz_goku_cell: {
@@ -1895,18 +1879,10 @@ const ARCADE_ASSETS = {
     p2X: 518, p2Y: 28,
     p1BlastX: 57, p1BlastY: 42,
     p2BlastX: 450, p2BlastY: 42,
-  },
-  dbz_vegeta_boo: {
-    p1: new Image(),
-    p2: new Image(),
-    p1Blast: new Image(),
-    p2Blast: new Image(),
-    p1Beam: new Image(),
-    p2Beam: new Image(),
-    p1X: 8, p1Y: 42,
-    p2X: 512, p2Y: 34,
-    p1BlastX: 68, p1BlastY: 42,
-    p2BlastX: 442, p2BlastY: 42,
+    p1BeamStartX: 142,
+    p2BeamEndX: 450,
+    p1AuraX: 33, p1AuraY: 90,
+    p2AuraX: 553, p2AuraY: 85,
   },
   sf_ryu_ken: {
     p1: new Image(),
@@ -1915,22 +1891,14 @@ const ARCADE_ASSETS = {
     p2Blast: new Image(),
     p1Beam: new Image(),
     p2Beam: new Image(),
-    p1X: 8, p1Y: 50,
-    p2X: 478, p2Y: 50,
-    p1BlastX: 82, p1BlastY: 42,
-    p2BlastX: 432, p2BlastY: 42,
-  },
-  rpg_champions: {
-    p1: new Image(),
-    p2: new Image(),
-    p1Blast: new Image(),
-    p2Blast: new Image(),
-    p1Beam: new Image(),
-    p2Beam: new Image(),
-    p1X: 10, p1Y: 40,
-    p2X: 485, p2Y: 40,
-    p1BlastX: 78, p1BlastY: 42,
-    p2BlastX: 438, p2BlastY: 42,
+    p1X: 8, p1Y: 44,
+    p2X: 498, p2Y: 36,
+    p1BlastX: 80, p1BlastY: 56,
+    p2BlastX: 468, p2BlastY: 56,
+    p1BeamStartX: 120,
+    p2BeamEndX: 475,
+    p1AuraX: 48, p1AuraY: 90,
+    p2AuraX: 546, p2AuraY: 88,
   },
   clashA: new Image(),
   clashB: new Image(),
@@ -1943,26 +1911,12 @@ ARCADE_ASSETS.dbz_goku_cell.p2Blast.src = "assets/dbz/cell_blast.png";
 ARCADE_ASSETS.dbz_goku_cell.p1Beam.src = "assets/dbz/goku_beam.png";
 ARCADE_ASSETS.dbz_goku_cell.p2Beam.src = "assets/dbz/cell_beam.png";
 
-ARCADE_ASSETS.dbz_vegeta_boo.p1.src = "assets/dbz_vb/vegeta.png";
-ARCADE_ASSETS.dbz_vegeta_boo.p2.src = "assets/dbz_vb/boo.png";
-ARCADE_ASSETS.dbz_vegeta_boo.p1Blast.src = "assets/dbz_vb/vegeta_blast.png";
-ARCADE_ASSETS.dbz_vegeta_boo.p2Blast.src = "assets/dbz_vb/boo_blast.png";
-ARCADE_ASSETS.dbz_vegeta_boo.p1Beam.src = "assets/dbz_vb/vegeta_beam.png";
-ARCADE_ASSETS.dbz_vegeta_boo.p2Beam.src = "assets/dbz_vb/boo_beam.png";
-
 ARCADE_ASSETS.sf_ryu_ken.p1.src = "assets/sf/ryu.png";
 ARCADE_ASSETS.sf_ryu_ken.p2.src = "assets/sf/ken.png";
 ARCADE_ASSETS.sf_ryu_ken.p1Blast.src = "assets/sf/ryu_blast.png";
 ARCADE_ASSETS.sf_ryu_ken.p2Blast.src = "assets/sf/ken_blast.png";
 ARCADE_ASSETS.sf_ryu_ken.p1Beam.src = "assets/sf/ryu_beam.png";
 ARCADE_ASSETS.sf_ryu_ken.p2Beam.src = "assets/sf/ken_beam.png";
-
-ARCADE_ASSETS.rpg_champions.p1.src = "assets/rpg/warrior.png";
-ARCADE_ASSETS.rpg_champions.p2.src = "assets/rpg/mage.png";
-ARCADE_ASSETS.rpg_champions.p1Blast.src = "assets/rpg/warrior_blast.png";
-ARCADE_ASSETS.rpg_champions.p2Blast.src = "assets/rpg/mage_blast.png";
-ARCADE_ASSETS.rpg_champions.p1Beam.src = "assets/rpg/warrior_beam.png";
-ARCADE_ASSETS.rpg_champions.p2Beam.src = "assets/rpg/mage_beam.png";
 
 ARCADE_ASSETS.clashA.src = "assets/dbz/clash_epicenter.png";
 ARCADE_ASSETS.clashB.src = "assets/dbz/clash_epicenter_b.png";
@@ -2006,11 +1960,16 @@ function startKamehamehaLoop() {
         const cellTier = cellFighterPoints >= 100 ? 3 : cellFighterPoints >= 50 ? 2 : 1;
 
         // AURA PULSANTE DO LUTADOR 1 (Tier 2 e 3)
+        const p1AuraX = assets.p1AuraX ?? 33;
+        const p1AuraY = assets.p1AuraY ?? 90;
+        const p2AuraX = assets.p2AuraX ?? 553;
+        const p2AuraY = assets.p2AuraY ?? 85;
+
         if (gokuTier >= 2) {
           const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
           ctx.fillStyle = `${scenario.p1AuraColor(gokuTier)}${pulse})`;
           ctx.beginPath();
-          ctx.arc(33, 90, gokuTier === 3 ? 46 : 38, 0, Math.PI * 2);
+          ctx.arc(p1AuraX, p1AuraY, gokuTier === 3 ? 46 : 38, 0, Math.PI * 2);
           ctx.fill();
         }
 
@@ -2019,37 +1978,39 @@ function startKamehamehaLoop() {
           const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
           ctx.fillStyle = `${scenario.p2AuraColor(cellTier)}${pulse})`;
           ctx.beginPath();
-          ctx.arc(553, 85, cellTier === 3 ? 50 : 44, 0, Math.PI * 2);
+          ctx.arc(p2AuraX, p2AuraY, cellTier === 3 ? 50 : 44, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // 1. FEIXE HORIZONTAL DO LUTADOR 1 (x=142 até clashX - 35, y=62, altura 27)
-        if (clashX > 142) {
-          const p1BeamWidth = Math.max(0, (clashX - 35) - 142);
+        // 1. FEIXE HORIZONTAL DO LUTADOR 1
+        const p1BeamStartX = assets.p1BeamStartX ?? 142;
+        if (clashX > p1BeamStartX) {
+          const p1BeamWidth = Math.max(0, (clashX - 35) - p1BeamStartX);
           if (p1BeamWidth > 0) {
             if (assets.p1Beam && assets.p1Beam.complete && assets.p1Beam.naturalWidth > 0) {
-              ctx.drawImage(assets.p1Beam, 0, 0, 1, 27, 142, 62, p1BeamWidth, 27);
+              ctx.drawImage(assets.p1Beam, 0, 0, 1, 27, p1BeamStartX, 62, p1BeamWidth, 27);
             } else {
-              const grad1 = ctx.createLinearGradient(142, 62, clashX - 35, 89);
+              const grad1 = ctx.createLinearGradient(p1BeamStartX, 62, clashX - 35, 89);
               grad1.addColorStop(0, scenario.p1BeamColor);
               grad1.addColorStop(0.5, "#ffffff");
               grad1.addColorStop(1, scenario.p1BeamColor);
               ctx.fillStyle = grad1;
-              ctx.fillRect(142, 67, p1BeamWidth, 18);
+              ctx.fillRect(p1BeamStartX, 67, p1BeamWidth, 18);
               ctx.fillStyle = "#ffffff";
-              ctx.fillRect(142, 72, p1BeamWidth, 8);
+              ctx.fillRect(p1BeamStartX, 72, p1BeamWidth, 8);
             }
           }
         }
 
-        // 2. FEIXE HORIZONTAL DO LUTADOR 2 (clashX + 35 até x=450, y=62, altura 27)
-        if (clashX < 450) {
-          const p2BeamWidth = Math.max(0, 450 - (clashX + 35));
+        // 2. FEIXE HORIZONTAL DO LUTADOR 2
+        const p2BeamEndX = assets.p2BeamEndX ?? 450;
+        if (clashX < p2BeamEndX) {
+          const p2BeamWidth = Math.max(0, p2BeamEndX - (clashX + 35));
           if (p2BeamWidth > 0) {
             if (assets.p2Beam && assets.p2Beam.complete && assets.p2Beam.naturalWidth > 0) {
               ctx.drawImage(assets.p2Beam, 0, 0, 1, 27, clashX + 35, 62, p2BeamWidth, 27);
             } else {
-              const grad2 = ctx.createLinearGradient(clashX + 35, 62, 450, 89);
+              const grad2 = ctx.createLinearGradient(clashX + 35, 62, p2BeamEndX, 89);
               grad2.addColorStop(0, scenario.p2BeamColor);
               grad2.addColorStop(0.5, "#ffffff");
               grad2.addColorStop(1, scenario.p2BeamColor);
@@ -4226,7 +4187,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.8.1").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.2").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

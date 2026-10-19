@@ -423,6 +423,14 @@ function currentWeekBounds() {
   return { start: toStr(start), end: toStr(end) };
 }
 
+function calculateTier(weekPts = 0) {
+  if (weekPts >= 60) return { name: "SSJ Blue · Mestre", label: "💥 SSJ Blue · Mestre" };
+  if (weekPts >= 40) return { name: "Super Saiyajin", label: "🔥 Super Saiyajin" };
+  if (weekPts >= 20) return { name: "Em Ritmo · Focado", label: "⚡ Em Ritmo · Focado" };
+  if (weekPts > 0) return { name: "Iniciando Semana", label: "🥋 Iniciando Semana" };
+  return { name: "Faixa Branca", label: "🥋 Faixa Branca" };
+}
+
 // PROGRAMAS DISPONÍVEIS
 function loadPrograms() {
   try {
@@ -492,19 +500,16 @@ function renderSoloScoreboard() {
   }
 
   // Nível de poder solo (Transformação)
-  let tierName = "🥋 Faixa Branca";
+  const tier = calculateTier(weekPts);
+  let tierName = tier.label;
   let leadMsg = "Registre seu primeiro treino da semana para subir de nível!";
   if (weekPts >= 60) {
-    tierName = "💥 SSJ Blue · Mestre";
     leadMsg = "🔥 META SEMANAL BATIDA! Você atingiu o ápice da semana!";
   } else if (weekPts >= 40) {
-    tierName = "🔥 Super Saiyajin";
     leadMsg = "Ritmo insano! Faltam apenas " + (goalPts - weekPts) + " pts para bater a meta máxima!";
   } else if (weekPts >= 20) {
-    tierName = "⚡ Em Ritmo · Focado";
     leadMsg = "Bom aquecimento! Mais " + (goalPts - weekPts) + " pts para atingir a meta semanal.";
   } else if (weekPts > 0) {
-    tierName = "🥋 Iniciando Semana";
     leadMsg = "Primeiro passo dado! Continue firme rumo aos 60 pontos.";
   }
 
@@ -599,7 +604,10 @@ function renderActivity() {
           ${record.comments ? `<div class="solo-record-comments">💬 ${escapeHTML(record.comments)}</div>` : ""}
         </div>
         <strong class="record-points">+${record.points} pts</strong>
-        <button type="button" class="solo-delete-btn" data-delete-created="${record.createdAt}" title="Excluir treino" aria-label="Excluir treino">✕</button>
+        <div class="record-actions" style="display:flex; align-items:center; gap:6px;">
+          <button type="button" class="solo-share-workout-btn" data-share-created="${record.createdAt}" title="Compartilhar este treino no Story (9:16)" aria-label="Compartilhar treino">📸</button>
+          <button type="button" class="solo-delete-btn" data-delete-created="${record.createdAt}" title="Excluir treino" aria-label="Excluir treino">✕</button>
+        </div>
       </article>
     `;
   }).join("");
@@ -1335,6 +1343,15 @@ soloById("solo-activity")?.addEventListener("click", (e) => {
       img.src = src;
       viewer.showModal();
     }
+    return;
+  }
+
+  // Compartilhar treino no Story
+  const shareBtn = e.target.closest("[data-share-created]");
+  if (shareBtn) {
+    const createdAt = shareBtn.dataset.shareCreated;
+    const record = soloState.find((r) => r.createdAt === createdAt);
+    openSoloStoryDialog(record || null);
     return;
   }
 
@@ -2553,8 +2570,16 @@ async function openSoloStoryDialog(workout = null) {
     if (preview) preview.src = currentSoloStoryDataUrl;
 
     const modal = soloById("solo-story-share-dialog");
-    if (modal && typeof modal.showModal === "function") {
-      modal.showModal();
+    if (modal) {
+      try {
+        if (typeof modal.showModal === "function") {
+          if (!modal.open) modal.showModal();
+        } else {
+          modal.setAttribute("open", "");
+        }
+      } catch (e) {
+        modal.setAttribute("open", "");
+      }
     }
   } catch (err) {
     console.error("Erro ao gerar Story:", err);
@@ -2598,26 +2623,26 @@ soloById("btn-solo-trigger-share")?.addEventListener("click", async () => {
   try {
     const res = await fetch(currentSoloStoryDataUrl);
     const blob = await res.blob();
-    const file = new File([blob], `rep-club-story-${todayKey()}.png`, { type: "image/png" });
+    const file = new File([blob], `rep-club-solo-story-${todayKey()}.png`, { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title: "Meu Treino no Rep Club Solo",
         text: "Mais um treino concluído com sucesso no Rep Club! 🔥",
         files: [file],
       });
-    } else {
-      const a = document.createElement("a");
-      a.href = currentSoloStoryDataUrl;
-      a.download = `rep-club-solo-story-${todayKey()}.png`;
-      a.click();
-      showToast("Imagem baixada para compartilhar!");
+      return;
     }
   } catch (err) {
-    if (err.name !== "AbortError") {
-      console.warn("Erro ao compartilhar story:", err);
-      showToast("Compartilhamento não disponível neste navegador.");
-    }
+    if (err.name === "AbortError") return;
+    console.warn("Erro ao compartilhar story:", err);
   }
+
+  // Fallback: download da imagem para envio direto no Instagram/WhatsApp
+  const a = document.createElement("a");
+  a.href = currentSoloStoryDataUrl;
+  a.download = `rep-club-solo-story-${todayKey()}.png`;
+  a.click();
+  showToast("Imagem baixada para compartilhar!");
 });
 
 // INICIALIZAÇÃO
@@ -2636,7 +2661,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.8.1").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.2").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

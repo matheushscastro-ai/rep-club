@@ -259,6 +259,29 @@
 .solo-body .rest-dock {
   z-index: 9999;
 }
+.solo-body .rest-dock.form-rest-dock {
+  position: static;
+  width: 100%;
+  margin: 8px 0 14px 0;
+}
+.solo-record .solo-share-workout-btn {
+  background: transparent;
+  border: 1px solid #3b3c36;
+  border-radius: 4px;
+  color: #f4f4ee;
+  font-size: 13px;
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.solo-record .solo-share-workout-btn:hover {
+  border-color: var(--lime);
+  background: rgba(215, 250, 82, 0.1);
+}
 .solo-photo-compress-badge {
   display: inline-flex;
   align-items: center;

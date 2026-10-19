@@ -14,9 +14,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.8.1" />
-    <link rel="stylesheet" href="solo.css?v=2.8.1" />
-    <script src="solo-app.js?v=2.8.1" defer></script>
+    <link rel="stylesheet" href="styles.css?v=2.8.2" />
+    <link rel="stylesheet" href="solo.css?v=2.8.2" />
+    <script src="solo-app.js?v=2.8.2" defer></script>
   </head>
   <body class="solo-body">
     <header class="solo-header">
@@ -215,6 +215,15 @@
           <input name="name" id="solo-workout-name" maxlength="50" placeholder="Ex.: Treino A bem executado" />
         </label>
 
+        <!-- CRONÔMETRO DE DESCANSO NO MODO SOLO -->
+        <div class="rest-dock form-rest-dock" aria-label="Cronômetro de descanso">
+          <div class="timer-readout"><span>DESCANSO</span><strong id="solo-timer-display">00:00</strong></div>
+          <button type="button" class="timer-button" data-solo-rest="60" aria-label="Iniciar descanso de 60 segundos">60s</button>
+          <button type="button" class="timer-button" data-solo-rest="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
+          <button type="button" class="timer-sound-btn" id="solo-timer-sound-toggle" title="Som do descanso (Ligado/Mudo)" aria-label="Som">🔊</button>
+          <button type="button" class="timer-reset" id="solo-timer-reset" aria-label="Zerar cronômetro">×</button>
+        </div>
+
         <!-- CAMPOS DINÂMICOS DE EXERCÍCIOS OU DURAÇÃO -->
         <div id="solo-fields"></div>
 
@@ -348,15 +357,6 @@
         <button type="button" class="button button-primary" id="save-solo-builder-program">Salvar Treino <span>↗</span></button>
       </div>
     </dialog>
-
-    <!-- CRONÔMETRO DE DESCANSO NO MODO SOLO -->
-    <div class="rest-dock" aria-label="Cronômetro de descanso">
-      <div class="timer-readout"><span>DESCANSO</span><strong id="solo-timer-display">00:00</strong></div>
-      <button type="button" class="timer-button" data-solo-rest="60" aria-label="Iniciar descanso de 60 segundos">60s</button>
-      <button type="button" class="timer-button" data-solo-rest="90" aria-label="Iniciar descanso de 90 segundos">90s</button>
-      <button type="button" class="timer-sound-btn" id="solo-timer-sound-toggle" title="Som do descanso (Ligado/Mudo)" aria-label="Som">🔊</button>
-      <button type="button" class="timer-reset" id="solo-timer-reset" aria-label="Zerar cronômetro">×</button>
-    </div>
 
     <!-- MODAL COMPARTILHAR NO INSTAGRAM STORIES SOLO (9:16) -->
     <dialog class="setup-dialog story-share-dialog" id="solo-story-share-dialog" aria-labelledby="solo-story-dialog-title">
