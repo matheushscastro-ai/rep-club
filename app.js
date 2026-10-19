@@ -1357,6 +1357,7 @@ let state = loadState();
 let toastTimer;
 let restTimerInterval = null;
 let restSecondsRemaining = 0;
+let activeExerciseTimerIndex = null;
 const CANONICAL_DUEL_ID = "a3026d38-17fe-48a1-92d3-d5e8df833147";
 
 function saveState() {
@@ -2475,6 +2476,7 @@ function readExerciseLogs(formData, plan) {
       note: exercise.note || "",
       requiresLoad,
       loadFactor,
+      restDuration: Number(formData.get(`restDuration-${index}`)) || 60,
       sets: Array.from({ length: plannedSets }, (_, setIndex) => ({
         done: formData.getAll(`done-${index}`).includes(String(setIndex)),
         reps: Number(formData.get(`reps-${index}-${setIndex}`) || 0),
@@ -2491,11 +2493,13 @@ function preserveSetEntries(logs) {
     const minReps = byId("workout-fields").querySelector(`[name="minReps-${index}"]`);
     const maxReps = byId("workout-fields").querySelector(`[name="maxReps-${index}"]`);
     const loadFactor = byId("workout-fields").querySelector(`[name="loadFactor-${index}"]`);
+    const restInput = byId("workout-fields").querySelector(`[name="restDuration-${index}"]`);
     if (name) name.value = exercise.name;
     if (plannedSets) plannedSets.value = exercise.plannedSets;
     if (minReps) minReps.value = exercise.minReps;
     if (maxReps) maxReps.value = exercise.maxReps;
     if (loadFactor) loadFactor.value = exercise.loadFactor;
+    if (restInput && exercise.restDuration) restInput.value = exercise.restDuration;
     exercise.sets.forEach((set, setIndex) => {
       const checkbox = byId("workout-fields").querySelector(`[name="done-${index}"][value="${setIndex}"]`);
       const reps = byId("workout-fields").querySelector(`[name="reps-${index}-${setIndex}"]`);
@@ -2765,6 +2769,20 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
               <label class="set-reps-label"><span>${exercise.unit === "s" ? "SEGUNDOS" : "REPS"}</span><input name="reps-${index}-${setIndex}" type="number" min="1" max="${exercise.max}" step="1" value="${exercise.min}" required /></label>
               ${exercise.load === false ? "" : `<label class="set-load-label"><span>KG</span><input name="load-${index}-${setIndex}" type="number" min="0.5" max="500" step="0.5" placeholder="kg" /></label>`}
             </div>`).join("")}</div>
+          <div class="exercise-rest-bar" data-exercise-index="${index}">
+            <div class="exercise-rest-label">
+              <span class="exercise-rest-icon">⏱️</span>
+              <span class="exercise-rest-text">Descanso:</span>
+            </div>
+            <div class="exercise-rest-input-wrap">
+              <input type="number" class="exercise-rest-input" name="restDuration-${index}" id="rest-duration-${index}" min="5" max="600" step="5" value="${exercise.restDuration || 60}" inputmode="numeric" aria-label="Segundos de descanso" />
+              <span class="exercise-rest-unit">seg</span>
+            </div>
+            <button type="button" class="exercise-rest-btn ${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "running" : ""}" data-trigger-rest="${index}" aria-label="Iniciar descanso">
+              <span class="exercise-rest-btn-icon">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "⏹" : "▶"}</span>
+              <span class="exercise-rest-btn-text">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? String(Math.floor(restSecondsRemaining / 60)).padStart(2, "0") + ":" + String(restSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
+            </button>
+          </div>
         </article>`).join("")}</div>
       ` : `<p class="custom-plan-empty">Ficha vazia. Adicione seu primeiro exercício pelo catálogo abaixo.</p>`}
       <div class="add-exercise-bar" style="margin: 14px 0 10px; padding: 12px; background: #f4f5ee; border: 1px solid #d5d7cd; border-radius: 6px;">
@@ -3093,12 +3111,32 @@ function updateSoundToggleUI() {
 function updateRestTimer() {
   const minutes = String(Math.floor(restSecondsRemaining / 60)).padStart(2, "0");
   const seconds = String(restSecondsRemaining % 60).padStart(2, "0");
-  byId("timer-display").textContent = `${minutes}:${seconds}`;
+  const displayStr = `${minutes}:${seconds}`;
+  const displayEl = byId("timer-display");
+  if (displayEl) displayEl.textContent = displayStr;
+
+  document.querySelectorAll("[data-trigger-rest]").forEach((btn) => {
+    const exIdx = Number(btn.dataset.triggerRest);
+    const iconSpan = btn.querySelector(".exercise-rest-btn-icon");
+    const textSpan = btn.querySelector(".exercise-rest-btn-text");
+    if (activeExerciseTimerIndex === exIdx && restSecondsRemaining > 0) {
+      btn.classList.add("running");
+      if (iconSpan) iconSpan.textContent = "⏹";
+      if (textSpan) textSpan.textContent = displayStr;
+    } else {
+      btn.classList.remove("running");
+      if (iconSpan) iconSpan.textContent = "▶";
+      if (textSpan) textSpan.textContent = "Iniciar";
+    }
+  });
 }
 
-function startRestTimer(seconds) {
+function startRestTimer(seconds, exerciseIndex = null) {
   clearInterval(restTimerInterval);
   restSecondsRemaining = seconds;
+  if (exerciseIndex !== null) {
+    activeExerciseTimerIndex = exerciseIndex;
+  }
   updateRestTimer();
   getAudioContext(); // Pre-aquece contexto no clique do usuário
   restTimerInterval = setInterval(() => {
@@ -3111,6 +3149,8 @@ function startRestTimer(seconds) {
     if (restSecondsRemaining <= 0) {
       clearInterval(restTimerInterval);
       restTimerInterval = null;
+      activeExerciseTimerIndex = null;
+      updateRestTimer();
       playRestFinishedAlert();
       if ("vibrate" in navigator) navigator.vibrate([150, 80, 150]);
       showToast("⏱️ Descanso finalizado!");
@@ -3122,6 +3162,7 @@ function resetRestTimer() {
   clearInterval(restTimerInterval);
   restTimerInterval = null;
   restSecondsRemaining = 0;
+  activeExerciseTimerIndex = null;
   updateRestTimer();
 }
 
@@ -3612,7 +3653,13 @@ byId("workout-fields").addEventListener("change", (event) => {
   else {
     if (event.target.matches(".set-check")) {
       event.target.closest(".set-check-label").classList.toggle("done", event.target.checked);
-      if (event.target.checked) startRestTimer(60);
+      if (event.target.checked) {
+        const parts = event.target.name.split("-");
+        const exIdx = Number(parts[1]);
+        const input = byId(`rest-duration-${exIdx}`);
+        const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
+        startRestTimer(sec, isNaN(exIdx) ? null : exIdx);
+      }
     }
     updatePointsPreview();
   }
@@ -3659,6 +3706,21 @@ function handleAddExerciseToCurrentWorkout(inputOrName) {
 }
 
 byId("workout-fields").addEventListener("click", async (event) => {
+  const restBtn = event.target.closest("[data-trigger-rest]");
+  if (restBtn) {
+    event.preventDefault();
+    const exIdx = Number(restBtn.dataset.triggerRest);
+    if (activeExerciseTimerIndex === exIdx && restTimerInterval) {
+      resetRestTimer();
+      showToast("Descanso cancelado.");
+    } else {
+      const input = byId(`rest-duration-${exIdx}`);
+      const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
+      startRestTimer(sec, exIdx);
+      showToast(`⏱️ Descanso de ${sec}s iniciado!`);
+    }
+    return;
+  }
   const applyBtn = event.target.closest("[data-apply-load]");
   if (applyBtn) {
     event.preventDefault();
@@ -3701,6 +3763,14 @@ byId("workout-fields").addEventListener("click", async (event) => {
 byId("workout-fields").addEventListener("change", (event) => {
   if (event.target.id === "workout-add-exercise-select" && event.target.value === "__custom__") {
     handleAddExerciseToCurrentWorkout(event.target);
+  }
+});
+byId("workout-fields").addEventListener("keydown", (event) => {
+  if (event.key === "Enter" && event.target.matches(".exercise-rest-input")) {
+    event.preventDefault();
+    const bar = event.target.closest(".exercise-rest-bar");
+    const btn = bar?.querySelector("[data-trigger-rest]");
+    if (btn) btn.click();
   }
 });
 byId("history-exercise").addEventListener("change", drawHistoryChart);
@@ -4187,7 +4257,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.8.3").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.4").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

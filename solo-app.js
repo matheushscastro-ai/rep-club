@@ -798,6 +798,20 @@ function renderSoloFields() {
                 </div>
               `).join("")}
             </div>
+            <div class="exercise-rest-bar solo-rest-bar" data-solo-exercise-index="${index}">
+              <div class="exercise-rest-label">
+                <span class="exercise-rest-icon">⏱️</span>
+                <span class="exercise-rest-text">Descanso:</span>
+              </div>
+              <div class="exercise-rest-input-wrap">
+                <input type="number" class="exercise-rest-input" name="soloRestDuration-${index}" id="solo-rest-input-${index}" min="5" max="600" step="5" value="60" inputmode="numeric" aria-label="Segundos de descanso" />
+                <span class="exercise-rest-unit">seg</span>
+              </div>
+              <button type="button" class="exercise-rest-btn ${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "running" : ""}" data-solo-trigger-rest="${index}" aria-label="Iniciar descanso">
+                <span class="exercise-rest-btn-icon">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "⏹" : "▶"}</span>
+                <span class="exercise-rest-btn-text">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? String(Math.floor(soloRestSecondsRemaining / 60)).padStart(2, "0") + ":" + String(soloRestSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
+              </button>
+            </div>
           </article>
         `;
       }).join("")}
@@ -878,6 +892,9 @@ function handleAddExerciseToCurrentSoloWorkout(inputOrName) {
 
   if (currentData && form) {
     session.exercises.forEach((ex, idx) => {
+      const restInput = form.querySelector(`#solo-rest-input-${idx}`);
+      const valRest = currentData.get(`soloRestDuration-${idx}`);
+      if (restInput && valRest !== null) restInput.value = valRest;
       for (let s = 0; s < ex.sets; s++) {
         const repsInput = form.querySelector(`[name="reps-${idx}-${s}"]`);
         const loadInput = form.querySelector(`[name="load-${idx}-${s}"]`);
@@ -1315,13 +1332,45 @@ soloById("solo-dialog-program-select")?.addEventListener("change", (e) => {
 soloById("solo-dialog-session-select")?.addEventListener("change", () => renderSoloFields());
 soloById("solo-fields")?.addEventListener("input", updateSoloVolumePreview);
 soloById("solo-fields")?.addEventListener("click", (e) => {
+  const restBtn = e.target.closest("[data-solo-trigger-rest]");
+  if (restBtn) {
+    e.preventDefault();
+    const exIdx = Number(restBtn.dataset.soloTriggerRest);
+    if (activeSoloExerciseTimerIndex === exIdx && soloRestTimerInterval) {
+      resetSoloRestTimer();
+      showToast("Descanso cancelado.");
+    } else {
+      const input = soloById(`solo-rest-input-${exIdx}`);
+      const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
+      startSoloRestTimer(sec, exIdx);
+      showToast(`⏱️ Descanso de ${sec}s iniciado!`);
+    }
+    return;
+  }
   const btn = e.target.closest("#btn-solo-add-exercise");
   if (btn) {
     const select = soloById("solo-add-exercise-select");
     handleAddExerciseToCurrentSoloWorkout(select);
   }
 });
+soloById("solo-fields")?.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && e.target.matches(".exercise-rest-input")) {
+    e.preventDefault();
+    const bar = e.target.closest(".exercise-rest-bar");
+    const btn = bar?.querySelector("[data-solo-trigger-rest]");
+    if (btn) btn.click();
+  }
+});
 soloById("solo-fields")?.addEventListener("change", (e) => {
+  if (e.target.matches("input[type='checkbox'][name^='done-']")) {
+    if (e.target.checked) {
+      const parts = e.target.name.split("-");
+      const exIdx = Number(parts[1]);
+      const input = soloById(`solo-rest-input-${exIdx}`);
+      const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
+      startSoloRestTimer(sec, isNaN(exIdx) ? null : exIdx);
+    }
+  }
   if (e.target.id === "solo-add-exercise-select" && e.target.value === "__custom__") {
     handleAddExerciseToCurrentSoloWorkout(e.target);
   }
@@ -1911,6 +1960,7 @@ let soloAudioCtx = null;
 let soloSoundEnabled = localStorage.getItem("rep-club-sound-enabled") !== "false";
 let soloRestTimerInterval = null;
 let soloRestSecondsRemaining = 0;
+let activeSoloExerciseTimerIndex = null;
 
 function getSoloAudioContext() {
   if (!soloAudioCtx) {
@@ -1976,13 +2026,32 @@ function updateSoloSoundToggleUI() {
 function updateSoloRestTimerDisplay() {
   const minutes = String(Math.floor(soloRestSecondsRemaining / 60)).padStart(2, "0");
   const seconds = String(soloRestSecondsRemaining % 60).padStart(2, "0");
+  const displayStr = `${minutes}:${seconds}`;
   const display = soloById("solo-timer-display");
-  if (display) display.textContent = `${minutes}:${seconds}`;
+  if (display) display.textContent = displayStr;
+
+  document.querySelectorAll("[data-solo-trigger-rest]").forEach((btn) => {
+    const exIdx = Number(btn.dataset.soloTriggerRest);
+    const iconSpan = btn.querySelector(".exercise-rest-btn-icon");
+    const textSpan = btn.querySelector(".exercise-rest-btn-text");
+    if (activeSoloExerciseTimerIndex === exIdx && soloRestSecondsRemaining > 0) {
+      btn.classList.add("running");
+      if (iconSpan) iconSpan.textContent = "⏹";
+      if (textSpan) textSpan.textContent = displayStr;
+    } else {
+      btn.classList.remove("running");
+      if (iconSpan) iconSpan.textContent = "▶";
+      if (textSpan) textSpan.textContent = "Iniciar";
+    }
+  });
 }
 
-function startSoloRestTimer(seconds) {
+function startSoloRestTimer(seconds, exerciseIndex = null) {
   clearInterval(soloRestTimerInterval);
   soloRestSecondsRemaining = seconds;
+  if (exerciseIndex !== null) {
+    activeSoloExerciseTimerIndex = exerciseIndex;
+  }
   updateSoloRestTimerDisplay();
   getSoloAudioContext();
   soloRestTimerInterval = setInterval(() => {
@@ -1994,6 +2063,8 @@ function startSoloRestTimer(seconds) {
     if (soloRestSecondsRemaining <= 0) {
       clearInterval(soloRestTimerInterval);
       soloRestTimerInterval = null;
+      activeSoloExerciseTimerIndex = null;
+      updateSoloRestTimerDisplay();
       playSoloRestFinishedAlert();
       if ("vibrate" in navigator) {
         try { navigator.vibrate([200, 100, 200]); } catch (e) {}
@@ -2007,6 +2078,7 @@ function resetSoloRestTimer() {
   clearInterval(soloRestTimerInterval);
   soloRestTimerInterval = null;
   soloRestSecondsRemaining = 0;
+  activeSoloExerciseTimerIndex = null;
   updateSoloRestTimerDisplay();
 }
 
@@ -2661,7 +2733,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.8.3").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.4").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
