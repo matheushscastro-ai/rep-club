@@ -1458,21 +1458,58 @@ function finishSoloWorkoutSave(selectedChallengeIds = []) {
   renderActivity();
   populateHistorySelect();
 
-  // 2. Se desafios foram selecionados, replica no Rep Club (localStorage e Firebase)
+  // 2. Se desafios foram selecionados, replica no Rep Club (localStorage e Firebase) travado ao usuário
   if (Array.isArray(selectedChallengeIds) && selectedChallengeIds.length > 0) {
     try {
-      const repClubRaw = localStorage.getItem("rep-club-state-v2");
+      const STORAGE_KEY = "rep-club-demo-v3";
+      const repClubRaw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem("rep-club-state-v2");
       let repClubState = repClubRaw ? JSON.parse(repClubRaw) : { workouts: [] };
       if (!Array.isArray(repClubState.workouts)) repClubState.workouts = [];
 
+      let challengesList = [];
+      try {
+        challengesList = JSON.parse(localStorage.getItem("rep-club-challenges-v2") || "[]");
+      } catch (e) {}
+
+      const soloUser = getSoloUser();
+
       selectedChallengeIds.forEach((chId) => {
+        const targetCh = challengesList.find((c) => c && c.id === chId);
+        let ownerId = null;
+        if (targetCh && Array.isArray(targetCh.players)) {
+          const uId = String(soloUser?.id || soloUser?.uid || "").trim().toLowerCase();
+          const uEmail = String(soloUser?.email || "").trim().toLowerCase();
+          const uName = String(soloUser?.name || "").trim().toLowerCase();
+          const match = targetCh.players.find((p) => {
+            if (!p) return false;
+            const pId = String(p.id || "").trim().toLowerCase();
+            const pUid = String(p.uid || "").trim().toLowerCase();
+            const pEmail = String(p.email || "").trim().toLowerCase();
+            const pName = String(p.name || "").trim().toLowerCase();
+            if (uId && (pId === uId || pUid === uId)) return true;
+            if (uEmail && pEmail === uEmail) return true;
+            if (uName && pName === uName) return true;
+            return false;
+          });
+          if (match) ownerId = match.id;
+        }
+        if (!ownerId) {
+          ownerId = repClubState.activePlayer || "player-1";
+        }
+
         const repWorkout = {
           id: crypto.randomUUID ? crypto.randomUUID() : `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
           duel_id: chId,
           challenge_id: chId,
           challengeId: chId,
-          player_id: repClubState.activePlayer || "player-1",
-          owner: repClubState.activePlayer || "player-1",
+          player_id: ownerId,
+          owner: ownerId,
+          user_id: soloUser?.id || soloUser?.uid || null,
+          user_email: soloUser?.email || null,
+          user_name: soloUser?.name || null,
+          userId: soloUser?.id || soloUser?.uid || "",
+          userEmail: soloUser?.email || "",
+          userName: soloUser?.name || "",
           category: record.category,
           name: record.name,
           workout_date: record.date,
@@ -1498,6 +1535,7 @@ function finishSoloWorkoutSave(selectedChallengeIds = []) {
         }).catch(() => {});
       });
 
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(repClubState));
       localStorage.setItem("rep-club-state-v2", JSON.stringify(repClubState));
     } catch (e) {
       console.warn("Erro ao sincronizar treino solo com Rep Club:", e);

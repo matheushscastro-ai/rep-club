@@ -651,13 +651,101 @@ const pointsForWorkout = (workout) => {
   const pts = Number(workout.points);
   return Number.isFinite(pts) ? pts : 10;
 };
+const resolvePlayerForWorkout = (workout, challenge = null) => {
+  if (!workout) return null;
+  const ch = challenge || (typeof challenges !== "undefined" && Array.isArray(challenges) ? challenges.find((c) => c && c.id === (workout.challengeId || workout.duel_id)) : null) || (typeof getActiveChallenge === "function" ? getActiveChallenge() : null);
+  const pool = Array.isArray(ch?.players) && ch.players.length >= 2 ? ch.players : (typeof PLAYERS !== "undefined" && Array.isArray(PLAYERS) ? PLAYERS : DEFAULT_PLAYERS);
+
+  const wUserId = String(workout.userId || workout.user_id || "").trim().toLowerCase();
+  const wEmail = String(workout.userEmail || workout.user_email || "").trim().toLowerCase();
+  const wName = String(workout.userName || workout.user_name || "").trim().toLowerCase();
+  const wOwner = String(workout.owner || workout.player_id || "").trim();
+
+  // 1. Prioridade absoluta: UID / ID permanente do usuário autenticado que registrou o treino
+  if (wUserId) {
+    const foundByUid = pool.find((p) => {
+      if (!p) return false;
+      const pId = String(p.id || "").trim().toLowerCase();
+      const pUid = String(p.uid || "").trim().toLowerCase();
+      return pUid === wUserId || pId === wUserId || pId === `player-${wUserId}`;
+    });
+    if (foundByUid) return foundByUid;
+  }
+
+  // 2. Email do usuário que registrou o treino
+  if (wEmail) {
+    const foundByEmail = pool.find((p) => {
+      if (!p) return false;
+      const pEmail = String(p.email || "").trim().toLowerCase();
+      return pEmail && pEmail === wEmail;
+    });
+    if (foundByEmail) return foundByEmail;
+  }
+
+  // 3. Nome do usuário que registrou o treino
+  if (wName) {
+    const foundByName = pool.find((p) => {
+      if (!p) return false;
+      const pName = String(p.name || "").trim().toLowerCase();
+      if (!pName) return false;
+      if (pName === wName) return true;
+      const pFirst = pName.split(/\s+/)[0];
+      const wFirst = wName.split(/\s+/)[0];
+      if (pFirst.length >= 3 && wFirst.length >= 3 && pFirst === wFirst) return true;
+      return false;
+    });
+    if (foundByName) return foundByName;
+  }
+
+  // 4. Fallback pelo ID do player registrado (owner)
+  if (wOwner) {
+    const foundByOwner = pool.find((p) => p && String(p.id).trim() === wOwner);
+    if (foundByOwner) return foundByOwner;
+  }
+
+  return pool[0] || null;
+};
+
+function healWorkouts(workoutsList) {
+  if (!Array.isArray(workoutsList)) return;
+  workoutsList.forEach((w) => {
+    if (!w) return;
+    const ch = (typeof challenges !== "undefined" && Array.isArray(challenges) ? challenges.find((c) => c && c.id === (w.challengeId || w.duel_id)) : null) || (typeof getActiveChallenge === "function" ? getActiveChallenge() : null);
+    const pool = Array.isArray(ch?.players) && ch.players.length >= 2 ? ch.players : (typeof PLAYERS !== "undefined" && Array.isArray(PLAYERS) ? PLAYERS : DEFAULT_PLAYERS);
+    
+    // Se o treino tem autor gravado (nome/email/userId), repara o owner para o id do atleta no desafio
+    if (w.userName || w.userEmail || w.userId || w.user_name || w.user_email || w.user_id) {
+      const authorPlayer = resolvePlayerForWorkout(w, ch);
+      if (authorPlayer && w.owner !== authorPlayer.id) {
+        w.owner = authorPlayer.id;
+      }
+      if (authorPlayer) {
+        if (!w.userName && authorPlayer.name) w.userName = authorPlayer.name;
+        if (!w.userEmail && authorPlayer.email) w.userEmail = authorPlayer.email;
+        if (!w.userId && (authorPlayer.uid || authorPlayer.id)) w.userId = authorPlayer.uid || authorPlayer.id;
+      }
+    } else if (w.owner) {
+      // Se é legado sem autor, amarra aos dados do participante atual daquele owner
+      const matched = pool.find((p) => p && String(p.id).trim() === String(w.owner).trim());
+      if (matched) {
+        if (!w.userName && matched.name) w.userName = matched.name;
+        if (!w.userEmail && matched.email) w.userEmail = matched.email;
+        if (!w.userId && (matched.uid || matched.id)) w.userId = matched.uid || matched.id;
+      }
+    }
+  });
+}
+
 const playerFor = (id) => {
-  const cur = getActiveChallenge();
+  if (id && typeof id === "object" && (id.owner || id.userId || id.userName || id.player_id)) {
+    return resolvePlayerForWorkout(id);
+  }
+  const cur = typeof getActiveChallenge === "function" ? getActiveChallenge() : null;
   if (cur && Array.isArray(cur.players)) {
     const found = cur.players.find((player) => (player?.id || player) === id);
     if (found) return typeof found === "object" ? found : { id: found, name: found };
   }
-  return PLAYERS.find((player) => player.id === id) || { id, name: id || "Atleta", short: (id || "A")[0].toUpperCase(), color: "var(--lime)", textColor: "#000" };
+  return (typeof PLAYERS !== "undefined" && Array.isArray(PLAYERS) ? PLAYERS : DEFAULT_PLAYERS).find((player) => player.id === id) || { id, name: id || "Atleta", short: (id || "A")[0].toUpperCase(), color: "var(--lime)", textColor: "#000" };
 };
 
 // AUTENTICAÇÃO E INDIVIDUALIZAÇÃO DE PERFIL DO ATLETA (POR ETAPAS)
@@ -785,13 +873,13 @@ function getUserChallenges() {
 
 function getPlayerInChallenge(challenge, user) {
   if (!challenge) return null;
-  const pool = challenge?.players || PLAYERS;
+  const pool = Array.isArray(challenge?.players) && challenge.players.length > 0 ? challenge.players : PLAYERS;
   if (!user) return pool[0] || null;
   const uName = String(user.name || "").trim().toLowerCase();
   const uEmail = String(user.email || "").trim().toLowerCase();
   const uId = String(user.id || user.uid || "").trim();
 
-  return pool.find((p) => {
+  let matched = pool.find((p) => {
     if (!p) return false;
     const pId = String(p.id || p.uid || "").trim();
     const pEmail = String(p.email || "").trim().toLowerCase();
@@ -805,7 +893,25 @@ function getPlayerInChallenge(challenge, user) {
       if (pFirst.length >= 3 && uFirst.length >= 3 && pFirst === uFirst) return true;
     }
     return false;
-  }) || pool[0];
+  });
+
+  if (matched) {
+    if (!matched.uid && (user.id || user.uid)) matched.uid = user.id || user.uid;
+    if (!matched.email && user.email) matched.email = user.email;
+    return matched;
+  }
+
+  // Se o usuário for o criador do desafio e não há outro jogador que coincida
+  if (challenge.createdBy && (String(challenge.createdBy).toLowerCase() === uId.toLowerCase() || (uEmail && String(challenge.creatorEmail || "").toLowerCase() === uEmail))) {
+    const creatorP = pool[0];
+    if (creatorP) {
+      if (!creatorP.uid && (user.id || user.uid)) creatorP.uid = user.id || user.uid;
+      if (!creatorP.email && user.email) creatorP.email = user.email;
+      return creatorP;
+    }
+  }
+
+  return null;
 }
 
 function getActiveUserPlayer() {
@@ -1223,15 +1329,17 @@ function loadState() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     const legacyIds = { matheus: "player-1", rafa: "player-2" };
     if (saved && Array.isArray(saved.workouts)) {
-      saved.activePlayer = legacyIds[saved.activePlayer] || saved.activePlayer;
+      saved.activePlayer = legacyIds[saved.activePlayer] || saved.activePlayer || "player-1";
       saved.workouts = saved.workouts.map((workout) => ({
         ...workout,
         challengeId: workout.challengeId || "challenge-1",
         owner: legacyIds[workout.owner] || workout.owner,
+        userId: workout.userId || workout.user_id || "",
+        userEmail: workout.userEmail || workout.user_email || "",
+        userName: workout.userName || workout.user_name || "",
       }));
-    }
-    if (saved && Array.isArray(saved.workouts) && playerFor(saved.activePlayer)) {
-      const demoOnly = saved.workouts.length > 0 && saved.workouts.every((workout) => workout.id.startsWith("demo-"));
+      healWorkouts(saved.workouts);
+      const demoOnly = saved.workouts.length > 0 && saved.workouts.every((workout) => String(workout.id).startsWith("demo-"));
       if (demoOnly) {
         const demo = createDemoState();
         demo.activePlayer = saved.activePlayer;
@@ -1261,6 +1369,9 @@ function firebaseWorkoutPayload(workout) {
     duel_id: workout.challengeId || CANONICAL_DUEL_ID,
     challenge_id: workout.challengeId || null,
     player_id: workout.owner,
+    user_id: workout.userId || workout.user_id || null,
+    user_email: workout.userEmail || workout.user_email || null,
+    user_name: workout.userName || workout.user_name || null,
     category: workout.category,
     workout_date: workout.date,
     name: workout.name,
@@ -1394,6 +1505,9 @@ async function hydrateFromFirebase() {
       id: workout.id,
       challengeId: workout.challenge_id || workout.challengeId || workout.duel_id || activeChallengeId || "challenge-1",
       owner: workout.player_id || workout.owner,
+      userId: workout.user_id || workout.userId || "",
+      userEmail: workout.user_email || workout.userEmail || "",
+      userName: workout.user_name || workout.userName || "",
       category: workout.category,
       date: workout.workout_date || workout.date,
       name: workout.name || MODALITIES[workout.category]?.label || workout.category,
@@ -1404,10 +1518,19 @@ async function hydrateFromFirebase() {
       duration: workout.duration || 0,
       exercises: workout.exercises,
       qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
+      createdAt: workout.created_at || workout.createdAt || new Date().toISOString(),
     }));
 
     state.workouts = [...pendingLocal, ...syncedRemote];
-    state.activePlayer = PLAYERS[0].id;
+    healWorkouts(state.workouts);
+    const activeUser = getAuthUser();
+    const curChallenge = getActiveChallenge();
+    const myPlayer = activeUser ? getPlayerInChallenge(curChallenge, activeUser) : null;
+    if (myPlayer) {
+      state.activePlayer = myPlayer.id;
+    } else if (!PLAYERS.some((p) => p.id === state.activePlayer)) {
+      state.activePlayer = PLAYERS[0]?.id || "player-1";
+    }
     saveState();
     render();
     hydrateProgramsFromFirebase();
@@ -1549,7 +1672,11 @@ function syncActiveChallengeGlobals() {
   localStorage.setItem(PLAYERS_STORAGE_KEY, JSON.stringify(playerConfig));
   localStorage.setItem(PRIZE_STORAGE_KEY, challengePrize);
   localStorage.setItem(PERIOD_STORAGE_KEY, JSON.stringify(duelPeriod));
-  if (!PLAYERS.some((p) => p.id === state.activePlayer)) {
+  const authUser = getAuthUser();
+  const myPlayer = authUser ? getPlayerInChallenge(cur, authUser) : null;
+  if (myPlayer) {
+    state.activePlayer = myPlayer.id;
+  } else if (!PLAYERS.some((p) => p.id === state.activePlayer)) {
     state.activePlayer = cur?.activePlayer || PLAYERS[0].id;
   }
 }
@@ -1578,7 +1705,11 @@ function formatPeriodDate(value) {
 }
 
 function workoutsFor(playerId) {
-  return currentChallengeWorkouts().filter((workout) => workout.owner === playerId);
+  const cur = getActiveChallenge();
+  return currentChallengeWorkouts().filter((workout) => {
+    const assigned = resolvePlayerForWorkout(workout, cur);
+    return assigned && assigned.id === playerId;
+  });
 }
 
 function renderChallengeSelector() {
@@ -2061,6 +2192,7 @@ function renderToday() {
 
 function renderActivity() {
   const me = playerFor(state.activePlayer) || PLAYERS[0];
+  const cur = getActiveChallenge();
   const list = currentChallengeWorkouts();
   const recent = [...list].sort((a, b) => (b.createdAt || b.date).localeCompare(a.createdAt || a.date)).slice(0, 12);
   byId("activity-count").textContent = `${list.length} REGISTRO${list.length === 1 ? "" : "S"}`;
@@ -2070,9 +2202,11 @@ function renderActivity() {
     return;
   }
 
+  const authUser = getAuthUser();
+
   byId("activity-list").innerHTML = recent.map((workout) => {
-    const player = playerFor(workout.owner) || { name: "Atleta", short: "A", color: "var(--lime)", textColor: "#000" };
-    const isMe = player.id === me.id;
+    const player = resolvePlayerForWorkout(workout, cur) || playerFor(workout.owner) || { name: "Atleta", short: "A", color: "var(--lime)", textColor: "#000" };
+    const isMe = (authUser && ((workout.userId && (authUser.id === workout.userId || authUser.uid === workout.userId)) || (workout.userEmail && authUser.email === workout.userEmail) || (workout.userName && authUser.name && authUser.name.toLowerCase() === workout.userName.toLowerCase()))) || (player.id === me.id);
     const completedSets = workout.exercises?.reduce((sum, exercise) => sum + exercise.sets.filter((set) => set.done).length, 0);
     const plannedSets = workout.exercises?.reduce((sum, exercise) => sum + exercise.plannedSets, 0);
     const volumeInfo = workout.trainingVolume ? ` · ${Math.round(workout.trainingVolume).toLocaleString("pt-BR")} kg levantados` : "";
@@ -2737,7 +2871,7 @@ function openWorkoutDialog(templateId = null) {
     openAuthDialog("Entre com um perfil que participa deste duelo ou crie um novo.");
     return;
   }
-  const me = getActiveUserPlayer() || playerFor(state.activePlayer) || PLAYERS[0];
+  const me = getPlayerInChallenge(cur, user) || getActiveUserPlayer() || playerFor(state.activePlayer) || PLAYERS[0];
   state.activePlayer = me.id;
   cur.activePlayer = me.id;
 
@@ -3052,7 +3186,8 @@ byId("activity-list")?.addEventListener("click", (event) => {
   const workoutId = deleteBtn.dataset.deleteWorkout;
   const workout = state.workouts.find((w) => String(w.id) === String(workoutId));
   if (!workout) return;
-  const owner = playerFor(workout.owner);
+  const cur = getActiveChallenge();
+  const owner = resolvePlayerForWorkout(workout, cur) || playerFor(workout.owner);
   const workoutDesc = `${workout.name} (${formatShortDate(workout.date)}) de ${owner ? owner.name : "participante"}`;
   if (!window.confirm(`Tem certeza que deseja excluir o seguinte registro de treino?\n\n${workoutDesc}\n(+${pointsForWorkout(workout)} pontos)`)) {
     return;
@@ -3089,15 +3224,21 @@ byId("setup-form").addEventListener("submit", async (event) => {
     return;
   }
 
+  const curForEdit = setupMode === "edit" ? getActiveChallenge() : null;
+  const existingPlayers = curForEdit?.players || [];
   const configuredPlayers = names.map((name, index) => {
     const palette = PLAYER_PALETTE[index % PLAYER_PALETTE.length];
+    const prev = existingPlayers.find((p) => p && p.name && p.name.trim().toLowerCase() === name.trim().toLowerCase()) || existingPlayers[index];
+    const playerId = prev?.id || `player-${index + 1}`;
     return {
-      id: `player-${index + 1}`,
+      id: playerId,
       name,
       short: name.charAt(0).toUpperCase(),
       side: index === 0 ? "me" : index === 1 ? "rival" : `other-${index + 1}`,
-      color: palette.color,
-      textColor: palette.text,
+      color: prev?.color || palette.color,
+      textColor: prev?.textColor || palette.text,
+      email: prev?.email || "",
+      uid: prev?.uid || "",
     };
   });
 
@@ -3370,6 +3511,14 @@ byId("workout-form").addEventListener("submit", async (event) => {
   if (comments) workout.comments = comments;
   if (currentWorkoutPhoto) workout.photo = currentWorkoutPhoto;
   workout.date = workoutDate;
+
+  const authUser = getAuthUser();
+  const cur = getActiveChallenge();
+  const currentAthlete = (cur && authUser ? getPlayerInChallenge(cur, authUser) : null) || getActiveUserPlayer() || playerFor(state.activePlayer) || PLAYERS[0];
+  workout.userId = authUser?.id || authUser?.uid || "";
+  workout.userEmail = authUser?.email || "";
+  workout.userName = authUser?.name || currentAthlete.name || "";
+  workout.owner = currentAthlete.id;
   workout.points = workout.basePoints + workout.qualityPoints;
 
   pendingWorkoutToSave = workout;
@@ -3426,7 +3575,7 @@ function openSelectChallengesDialog() {
     const myPlayerInCh = getPlayerInChallenge(ch, user);
     const ownerId = myPlayerInCh?.id || state.activePlayer;
     const countToday = state.workouts.filter(
-      (w) => (w.challengeId || "challenge-1") === ch.id && w.owner === ownerId && w.date === pendingWorkoutToSave?.date
+      (w) => (w.challengeId || "challenge-1") === ch.id && resolvePlayerForWorkout(w, ch)?.id === ownerId && w.date === pendingWorkoutToSave?.date
     ).length;
 
     const isChecked = isCurrent || available.length === 1;
@@ -3513,27 +3662,21 @@ byId("confirm-select-challenges")?.addEventListener("click", async () => {
   for (const targetId of selectedIds) {
     const targetChallenge = challenges.find((c) => c.id === targetId) || (cur && cur.id === targetId ? cur : null);
     
-    // Se for o duelo atualmente ativo na tela, o atleta é o atleta ativo selecionado
-    let ownerId = state.activePlayer;
-    if (targetChallenge && targetChallenge.id !== curActiveId) {
-      const matchInTarget = targetChallenge.players?.find((p) => {
-        if (!p) return false;
-        if (curAthlete && (p.name?.toLowerCase() === curAthlete.name?.toLowerCase() || p.id === curAthlete.id)) return true;
-        return false;
-      });
-      if (matchInTarget) {
-        ownerId = matchInTarget.id;
-      } else {
-        const myPlayerInCh = getPlayerInChallenge(targetChallenge, user);
-        ownerId = myPlayerInCh ? myPlayerInCh.id : state.activePlayer;
-      }
+    // Resolve o atleta deste usuário especificamente neste desafio de destino
+    let playerInTarget = getPlayerInChallenge(targetChallenge, user);
+    if (!playerInTarget && targetChallenge?.players) {
+      playerInTarget = targetChallenge.players.find((p) => p && user?.name && p.name && p.name.trim().toLowerCase() === user.name.trim().toLowerCase());
     }
+    const ownerId = playerInTarget ? playerInTarget.id : (targetChallenge?.id === curActiveId ? state.activePlayer : (targetChallenge?.players?.[0]?.id || "player-1"));
 
     const workoutInstance = {
       ...pendingWorkoutToSave,
       id: crypto.randomUUID ? crypto.randomUUID() : `w-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       challengeId: targetChallenge?.id || targetId,
       owner: ownerId,
+      userId: user?.id || user?.uid || pendingWorkoutToSave.userId || "",
+      userEmail: user?.email || pendingWorkoutToSave.userEmail || "",
+      userName: user?.name || pendingWorkoutToSave.userName || playerInTarget?.name || "",
       createdAt: new Date().toISOString(),
     };
 
@@ -3618,6 +3761,9 @@ function setupFirebaseSync() {
           id: workout.id,
           challengeId: workout.challenge_id || workout.challengeId || workout.duel_id || activeChallengeId || "challenge-1",
           owner: workout.player_id || workout.owner,
+          userId: workout.user_id || workout.userId || "",
+          userEmail: workout.user_email || workout.userEmail || "",
+          userName: workout.user_name || workout.userName || "",
           category: workout.category,
           date: workout.workout_date || workout.date,
           name: workout.name || MODALITIES[workout.category]?.label || workout.category,
@@ -3628,8 +3774,11 @@ function setupFirebaseSync() {
           duration: workout.duration || 0,
           exercises: workout.exercises,
           qualityPoints: Math.max(0, (workout.points || 0) - (MODALITIES[workout.category]?.basePoints || 0)),
+          createdAt: workout.created_at || workout.createdAt || new Date().toISOString(),
         }));
+        healWorkouts(syncedRemote);
         state.workouts = [...pendingLocal, ...syncedRemote];
+        healWorkouts(state.workouts);
         saveState();
         render();
         const ind = byId("sync-status-indicator");
