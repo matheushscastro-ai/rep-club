@@ -1837,6 +1837,56 @@ function renderProfileSelect() {
 }
 
 // ENGINE DO KAMEHAMEHA 16-BIT (STRICTLY ON-AXIS CANVAS)
+// ENGINE DO KAMEHAMEHA 16-BIT & MODOS RETRO ARCADE
+let currentArcadeScenario = localStorage.getItem("rep-club-arcade-scenario") || "dbz_goku_cell";
+
+const ARCADE_SCENARIOS = {
+  dbz_goku_cell: {
+    id: "dbz_goku_cell",
+    name: "Goku vs Cell",
+    p1Name: (pts) => pts >= 100 ? "⚡ GOKU SSJ BLUE" : pts >= 50 ? "🔥 GOKU SSJ2" : "GOKU SSJ",
+    p2Name: (pts) => pts >= 100 ? "👑 CELL DOURADO" : pts >= 50 ? "💥 CELL 100% POWER" : "PERFECT CELL",
+    p1BeamColor: "#38bdf8",
+    p2BeamColor: "#eab308",
+    p1AuraColor: (tier) => tier === 3 ? "rgba(56, 189, 248, " : "rgba(250, 204, 21, ",
+    p2AuraColor: (tier) => tier === 3 ? "rgba(234, 179, 8, " : "rgba(168, 85, 247, ",
+    useDbzSprites: true,
+  },
+  dbz_vegeta_boo: {
+    id: "dbz_vegeta_boo",
+    name: "Vegeta vs Majin Boo",
+    p1Name: (pts) => pts >= 100 ? "⚡ VEGETA BLUE EVOLVED" : pts >= 50 ? "🔥 MAJIN VEGETA" : "VEGETA SSJ",
+    p2Name: (pts) => pts >= 100 ? "👑 KID BOO" : pts >= 50 ? "💥 SUPER BOO" : "MAJIN BOO",
+    p1BeamColor: "#facc15",
+    p2BeamColor: "#ec4899",
+    p1AuraColor: (tier) => tier === 3 ? "rgba(96, 165, 250, " : "rgba(250, 204, 21, ",
+    p2AuraColor: (tier) => tier === 3 ? "rgba(236, 72, 153, " : "rgba(217, 70, 239, ",
+    useDbzSprites: false,
+  },
+  sf_ryu_ken: {
+    id: "sf_ryu_ken",
+    name: "Ryu vs Ken",
+    p1Name: (pts) => pts >= 100 ? "⚡ SHIN RYU (METSU)" : pts >= 50 ? "🔥 EVIL RYU" : "RYU",
+    p2Name: (pts) => pts >= 100 ? "👑 VIOLENT KEN" : pts >= 50 ? "💥 FIRE KEN" : "KEN MASTERS",
+    p1BeamColor: "#60a5fa",
+    p2BeamColor: "#f97316",
+    p1AuraColor: (tier) => tier === 3 ? "rgba(59, 130, 246, " : "rgba(147, 197, 253, ",
+    p2AuraColor: (tier) => tier === 3 ? "rgba(239, 68, 68, " : "rgba(249, 115, 22, ",
+    useDbzSprites: false,
+  },
+  rpg_champions: {
+    id: "rpg_champions",
+    name: "Guerreiro vs Mago",
+    p1Name: (pts) => pts >= 100 ? "⚡ GUERREIRO TITÂNICO" : pts >= 50 ? "🔥 BERSERKER" : "GUERREIRO",
+    p2Name: (pts) => pts >= 100 ? "👑 ARQUIMAGO SUPREMO" : pts >= 50 ? "💥 MAGO ELEMENTAL" : "MAGO ARCANO",
+    p1BeamColor: "#ef4444",
+    p2BeamColor: "#8b5cf6",
+    p1AuraColor: (tier) => tier === 3 ? "rgba(220, 38, 38, " : "rgba(248, 113, 113, ",
+    p2AuraColor: (tier) => tier === 3 ? "rgba(139, 92, 246, " : "rgba(192, 132, 252, ",
+    useDbzSprites: false,
+  }
+};
+
 const DBZ_ASSETS = {
   goku: new Image(),
   cell: new Image(),
@@ -1870,6 +1920,8 @@ function startKamehamehaLoop() {
     if (canvas && !byId("scoreboard-kamehameha")?.hidden) {
       const ctx = canvas.getContext("2d");
       if (ctx) {
+        const scenario = ARCADE_SCENARIOS[currentArcadeScenario] || ARCADE_SCENARIOS.dbz_goku_cell;
+
         // Interpolação suave em direção à pontuação real
         currentClashRatio += (targetClashRatio - currentClashRatio) * 0.08;
 
@@ -1886,65 +1938,115 @@ function startKamehamehaLoop() {
         const shakeX = (Math.random() - 0.5) * 1.5;
         const shakeY = (Math.random() - 0.5) * 1.5;
 
-        // Tiers de transformação (Tier 1: Base/SSJ, Tier 2: SSJ2 / 100%, Tier 3: SSJ Blue / Gold)
+        // Tiers de transformação (Tier 1: Base, Tier 2: 50+ pts, Tier 3: 100+ pts)
         const gokuTier = gokuFighterPoints >= 100 ? 3 : gokuFighterPoints >= 50 ? 2 : 1;
         const cellTier = cellFighterPoints >= 100 ? 3 : cellFighterPoints >= 50 ? 2 : 1;
 
-        // AURA PULSANTE DO GOKU (Tier 2 e 3)
+        // AURA PULSANTE DO LUTADOR 1 (Tier 2 e 3)
         if (gokuTier >= 2) {
           const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
-          ctx.fillStyle = gokuTier === 3 ? `rgba(56, 189, 248, ${pulse})` : `rgba(250, 204, 21, ${pulse})`;
+          ctx.fillStyle = `${scenario.p1AuraColor(gokuTier)}${pulse})`;
           ctx.beginPath();
           ctx.arc(33, 90, gokuTier === 3 ? 46 : 38, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // AURA PULSANTE DO CELL (Tier 2 e 3)
+        // AURA PULSANTE DO LUTADOR 2 (Tier 2 e 3)
         if (cellTier >= 2) {
           const pulse = 0.16 + 0.12 * Math.sin(Date.now() / 130);
-          ctx.fillStyle = cellTier === 3 ? `rgba(234, 179, 8, ${pulse})` : `rgba(168, 85, 247, ${pulse})`;
+          ctx.fillStyle = `${scenario.p2AuraColor(cellTier)}${pulse})`;
           ctx.beginPath();
           ctx.arc(553, 85, cellTier === 3 ? 50 : 44, 0, Math.PI * 2);
           ctx.fill();
         }
 
-        // 1. FEIXE HORIZONTAL DO GOKU (x=142 até clashX - 35, y=62, altura 27)
-        if (DBZ_ASSETS.gokuBeam.complete && clashX > 142) {
+        // 1. FEIXE HORIZONTAL DO LUTADOR 1 (x=142 até clashX - 35, y=62, altura 27)
+        if (clashX > 142) {
           const gokuBeamWidth = Math.max(0, (clashX - 35) - 142);
           if (gokuBeamWidth > 0) {
-            ctx.drawImage(DBZ_ASSETS.gokuBeam, 0, 0, 1, 27, 142, 62, gokuBeamWidth, 27);
+            if (scenario.useDbzSprites && DBZ_ASSETS.gokuBeam.complete) {
+              ctx.drawImage(DBZ_ASSETS.gokuBeam, 0, 0, 1, 27, 142, 62, gokuBeamWidth, 27);
+            } else {
+              const grad1 = ctx.createLinearGradient(142, 62, clashX - 35, 89);
+              grad1.addColorStop(0, scenario.p1BeamColor);
+              grad1.addColorStop(0.5, "#ffffff");
+              grad1.addColorStop(1, scenario.p1BeamColor);
+              ctx.fillStyle = grad1;
+              ctx.fillRect(142, 67, gokuBeamWidth, 18);
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(142, 72, gokuBeamWidth, 8);
+            }
           }
         }
 
-        // 2. FEIXE HORIZONTAL DO CELL (clashX + 35 até x=450, y=62, altura 27)
-        if (DBZ_ASSETS.cellBeam.complete && clashX < 450) {
+        // 2. FEIXE HORIZONTAL DO LUTADOR 2 (clashX + 35 até x=450, y=62, altura 27)
+        if (clashX < 450) {
           const cellBeamWidth = Math.max(0, 450 - (clashX + 35));
           if (cellBeamWidth > 0) {
-            ctx.drawImage(DBZ_ASSETS.cellBeam, 0, 0, 1, 27, clashX + 35, 62, cellBeamWidth, 27);
+            if (scenario.useDbzSprites && DBZ_ASSETS.cellBeam.complete) {
+              ctx.drawImage(DBZ_ASSETS.cellBeam, 0, 0, 1, 27, clashX + 35, 62, cellBeamWidth, 27);
+            } else {
+              const grad2 = ctx.createLinearGradient(clashX + 35, 62, 450, 89);
+              grad2.addColorStop(0, scenario.p2BeamColor);
+              grad2.addColorStop(0.5, "#ffffff");
+              grad2.addColorStop(1, scenario.p2BeamColor);
+              ctx.fillStyle = grad2;
+              ctx.fillRect(clashX + 35, 67, cellBeamWidth, 18);
+              ctx.fillStyle = "#ffffff";
+              ctx.fillRect(clashX + 35, 72, cellBeamWidth, 8);
+            }
           }
         }
 
-        // 3. SPRITE DO GOKU SSJ (x=8, y=48, tamanho 51x84)
-        if (DBZ_ASSETS.goku.complete) {
+        // 3. SPRITE DO LUTADOR 1
+        if (scenario.useDbzSprites && DBZ_ASSETS.goku.complete) {
           ctx.drawImage(DBZ_ASSETS.goku, 8, 48);
+        } else {
+          ctx.fillStyle = scenario.p1BeamColor;
+          ctx.beginPath();
+          ctx.arc(33, 80, 24, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 13px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("P1", 33, 84);
         }
 
-        // 4. ESFERA DE ORIGEM DO GOKU (x=57, y=42, tamanho 85x68)
-        if (DBZ_ASSETS.gokuBlast.complete) {
+        // 4. ESFERA DE ORIGEM DO LUTADOR 1
+        if (scenario.useDbzSprites && DBZ_ASSETS.gokuBlast.complete) {
           ctx.drawImage(DBZ_ASSETS.gokuBlast, 57 + shakeX * 0.4, 42 + shakeY * 0.4);
+        } else {
+          ctx.fillStyle = scenario.p1BeamColor;
+          ctx.beginPath();
+          ctx.arc(96, 75, 18, 0, Math.PI * 2);
+          ctx.fill();
         }
 
-        // 5. SPRITE DO PERFECT CELL (x=518, y=28, tamanho 70x118)
-        if (DBZ_ASSETS.cell.complete) {
+        // 5. SPRITE DO LUTADOR 2
+        if (scenario.useDbzSprites && DBZ_ASSETS.cell.complete) {
           ctx.drawImage(DBZ_ASSETS.cell, 518, 28);
+        } else {
+          ctx.fillStyle = scenario.p2BeamColor;
+          ctx.beginPath();
+          ctx.arc(553, 80, 24, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 13px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText("P2", 553, 84);
         }
 
-        // 6. ESFERA DE ORIGEM DO CELL (x=450, y=42, tamanho 75x68)
-        if (DBZ_ASSETS.cellBlast.complete) {
+        // 6. ESFERA DE ORIGEM DO LUTADOR 2
+        if (scenario.useDbzSprites && DBZ_ASSETS.cellBlast.complete) {
           ctx.drawImage(DBZ_ASSETS.cellBlast, 450 + shakeX * 0.4, 42 + shakeY * 0.4);
+        } else {
+          ctx.fillStyle = scenario.p2BeamColor;
+          ctx.beginPath();
+          ctx.arc(485, 75, 18, 0, Math.PI * 2);
+          ctx.fill();
         }
 
-        // DESCARGAS ELÉTRICAS RETRO 16-BIT (GOKU TIER 2 & 3)
+        // DESCARGAS ELÉTRICAS RETRO 16-BIT (LUTADOR 1 TIER 2 & 3)
         if (gokuTier >= 2 && Math.random() < 0.75) {
           ctx.strokeStyle = gokuTier === 3 ? "#7dd3fc" : "#fef08a";
           ctx.lineWidth = 1.8;
@@ -1957,7 +2059,7 @@ function startKamehamehaLoop() {
           ctx.stroke();
         }
 
-        // DESCARGAS ELÉTRICAS RETRO 16-BIT (CELL TIER 2 & 3)
+        // DESCARGAS ELÉTRICAS RETRO 16-BIT (LUTADOR 2 TIER 2 & 3)
         if (cellTier >= 2 && Math.random() < 0.75) {
           ctx.strokeStyle = cellTier === 3 ? "#fef08a" : "#c084fc";
           ctx.lineWidth = 1.8;
@@ -2086,12 +2188,18 @@ function renderScoreboard() {
     byId("score-track-rival").style.backgroundColor = fighter2.player.color || "var(--blue)";
   }
 
-  // MODO KAMEHAMEHA DRAGON BALL (GOKU SSJ VS CELL - STRICT AXIS CANVAS)
+  // MODO RETRO ARCADE (KAMEHAMEHA & CENÁRIOS)
   gokuFighterPoints = f1Points;
   cellFighterPoints = f2Points;
 
-  const gokuTierName = f1Points >= 100 ? "🔥 GOKU SSJ BLUE" : f1Points >= 50 ? "⚡ GOKU SSJ2" : "GOKU SSJ";
-  const cellTierName = f2Points >= 100 ? "🔥 CELL DOURADO" : f2Points >= 50 ? "⚡ CELL 100% POWER" : "PERFECT CELL";
+  const scenario = ARCADE_SCENARIOS[currentArcadeScenario] || ARCADE_SCENARIOS.dbz_goku_cell;
+  const gokuTierName = scenario.p1Name(f1Points);
+  const cellTierName = scenario.p2Name(f2Points);
+
+  const scenarioSelect = byId("arcade-scenario-select");
+  if (scenarioSelect && scenarioSelect.value !== currentArcadeScenario) {
+    scenarioSelect.value = currentArcadeScenario;
+  }
 
   const gokuTag = byId("goku-fighter-tag");
   if (gokuTag) gokuTag.textContent = gokuTierName;
@@ -2120,20 +2228,17 @@ function renderScoreboard() {
 
     const commentary = byId("kamehameha-commentary");
     if (commentary) {
-      const gokuTransformNote = f1Points >= 100 ? " [MODO SSJ BLUE DIVINO]" : f1Points >= 50 ? " [MODO SSJ2 ATIVO]" : "";
-      const cellTransformNote = f2Points >= 100 ? " [MODO CELL DOURADO]" : f2Points >= 50 ? " [MODO 100% POWER]" : "";
-
       if (lead === 0) {
-        commentary.textContent = `⚡ CHOQUE DE KAMEHAMEHA EM EQUILÍBRIO TOTAL! QUEM TREINAR PRIMEIRO DESEMPATA!${gokuTransformNote || cellTransformNote}`;
+        commentary.textContent = `⚡ DUELO EM EQUILÍBRIO TOTAL! QUEM TREINAR PRIMEIRO DESEMPATA!`;
       } else if (f1Points > f2Points) {
         commentary.textContent = lead >= 15
-          ? `💥 ${gokuTierName} ESTÁ ESMAGANDO COM O KAMEHAMEHA DOURADO! ${fighter1.player.name} ABRIU ${lead} PTS DE VANTAGEM!${gokuTransformNote}`
-          : `🔥 ${gokuTierName} ESTÁ AVANÇANDO O FEIXE DOURADO! ${fighter1.player.name} LIDERA POR ${lead} PTS!${gokuTransformNote}`;
+          ? `💥 ${gokuTierName} ESTÁ DOMINANDO O DUELO! ${fighter1.player.name} ABRIU ${lead} PTS DE VANTAGEM!`
+          : `🔥 ${gokuTierName} ESTÁ AVANÇANDO O PLACAR! ${fighter1.player.name} LIDERA POR ${lead} PTS!`;
       } else {
         const adv = f2Points - f1Points;
         commentary.textContent = adv >= 15
-          ? `⚡ ${cellTierName} LIBEROU TODO O PODER DO KAMEHAMEHA SOLAR! ${fighter2.player.name} TEM ${adv} PTS DE VANTAGEM!${cellTransformNote}`
-          : `✨ ${cellTierName} ESTÁ EMPURRANDO O FEIXE DE ENERGIA! ${fighter2.player.name} AVANÇA COM ${adv} PTS!${cellTransformNote}`;
+          ? `⚡ ${cellTierName} LIBEROU FORÇA MÁXIMA! ${fighter2.player.name} TEM ${adv} PTS DE VANTAGEM!`
+          : `✨ ${cellTierName} ESTÁ PRESSIONANDO O PLACAR! ${fighter2.player.name} AVANÇA COM ${adv} PTS!`;
       }
     }
   }
@@ -2511,6 +2616,80 @@ function modalityQuality(category, duration, effort) {
   return { total: durationPoints + effortPoints, durationPoints, effortPoints };
 }
 
+// SOBRECARGA PROGRESSIVA INTELIGENTE (HISTÓRICO, 1RM E METAS)
+function getHistoricalExercisePerformance(exerciseName, playerId) {
+  if (!exerciseName) return null;
+  const normTarget = exerciseName.trim().toLowerCase();
+  const curCh = getActiveChallenge();
+
+  const athleteWorkouts = (state.workouts || [])
+    .filter((w) => {
+      if (w.category !== "strength" || !Array.isArray(w.exercises)) return false;
+      const owner = resolvePlayerForWorkout(w, curCh);
+      return owner && owner.id === playerId;
+    })
+    .sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime());
+
+  for (const w of athleteWorkouts) {
+    const found = w.exercises.find((e) => e && e.name && e.name.trim().toLowerCase() === normTarget);
+    if (found && Array.isArray(found.sets) && found.sets.length > 0) {
+      const validSets = found.sets.filter((s) => s && (Number(s.load) > 0 || Number(s.reps) > 0));
+      if (validSets.length > 0) {
+        const loads = validSets.map((s) => Number(s.load) || 0);
+        const maxLoad = Math.max(...loads);
+        const topSet = validSets.find((s) => (Number(s.load) || 0) === maxLoad) || validSets[0];
+        const topReps = Number(topSet.reps) || 10;
+        const est1RM = maxLoad > 0 ? Math.round(maxLoad * (1 + topReps / 30) * 10) / 10 : 0;
+        return {
+          date: w.date || (w.createdAt ? w.createdAt.split("T")[0] : null),
+          maxLoad,
+          topReps,
+          est1RM,
+          setsCount: validSets.length,
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function renderOverloadCardHtml(exerciseName, exerciseIndex) {
+  const perf = getHistoricalExercisePerformance(exerciseName, state.activePlayer);
+  if (!perf || perf.maxLoad <= 0) {
+    return `
+      <div class="progressive-overload-card overload-new">
+        <span class="overload-badge">💡 SOBRECARGA PROGRESSIVA</span>
+        <span class="overload-note">Primeiro registro deste exercício! Anote suas cargas hoje para gerar metas de progressão na próxima sessão.</span>
+      </div>
+    `;
+  }
+
+  const nextReps = `${perf.maxLoad}kg × ${perf.topReps + 1}–${perf.topReps + 2} reps`;
+  const nextLoadInc = perf.maxLoad >= 40 ? 4 : 2;
+  const nextLoad = `${perf.maxLoad + nextLoadInc}kg × ${Math.max(6, perf.topReps - 2)}–${perf.topReps} reps`;
+
+  return `
+    <div class="progressive-overload-card">
+      <div class="overload-header">
+        <span class="overload-badge">⚡ SOBRECARGA PROGRESSIVA</span>
+        <button type="button" class="overload-apply-btn" data-apply-load="${exerciseIndex}" data-last-load="${perf.maxLoad}" title="Preencher séries com ${perf.maxLoad} kg">Copiar ${perf.maxLoad} kg</button>
+      </div>
+      <div class="overload-body">
+        <div class="overload-row">
+          <span>Última sessão:</span>
+          <strong>${perf.maxLoad} kg × ${perf.topReps} reps</strong>
+          ${perf.est1RM ? `<span class="est-1rm">1RM est. ~${perf.est1RM} kg</span>` : ""}
+          <small>${perf.date ? `em ${formatDisplayDate(perf.date)}` : ""}</small>
+        </div>
+        <div class="overload-row overload-target">
+          <span>🎯 Meta sugerida hoje:</span>
+          <strong>${nextReps}</strong> ou <strong>${nextLoad}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderWorkoutFields(templateId = null, planOverride = null) {
   const category = byId("workout-category").value;
   const fields = byId("workout-fields");
@@ -2555,6 +2734,7 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
           ${exercise.alternatives ? `<label class="exercise-variation"><span>VARIAÇÃO</span><select name="variation-${index}">${exercise.alternatives.map((alternative) => `<option value="${alternative}">${alternative}</option>`).join("")}</select></label>` : ""}
           ${isCustomPlan ? `<div class="custom-prescription"><label>SÉRIES<input name="plannedSets-${index}" type="number" min="1" max="12" value="${exercise.sets}" /></label><label>REPS MÍN<input name="minReps-${index}" type="number" min="1" max="100" value="${exercise.min}" /></label><label>REPS MÁX<input name="maxReps-${index}" type="number" min="1" max="100" value="${exercise.max}" /></label><label>VOLUME<select name="loadFactor-${index}"><option value="1" ${(exercise.loadFactor || 1) === 1 ? "selected" : ""}>Aparelho / carga total</option><option value="2" ${exercise.loadFactor === 2 ? "selected" : ""}>Por halter / por lado</option><option value="4" ${exercise.loadFactor === 4 ? "selected" : ""}>Dois halteres / por perna</option></select></label></div>` : ""}
           <div class="exercise-log-fields"><span class="bodyweight-note">${exercise.load === false ? "PESO CORPORAL · FORA DO VOLUME EXTERNO" : `CARGA ${exercise.loadFactor === 2 ? "POR HALTER" : exercise.loadFactor === 4 ? "DOIS HALTERES · POR PERNA" : "INDICADA NO APARELHO"}`}</span><output class="exercise-mean" data-mean-for="${index}">MÉDIA: —</output></div>
+          ${renderOverloadCardHtml(exercise.name, index)}
           <div class="set-log-list">${Array.from({ length: exercise.sets }, (_, setIndex) => `
             <div class="set-log-row">
               <label class="set-check-label"><input class="set-check" name="done-${index}" type="checkbox" value="${setIndex}" /><span>SÉRIE ${setIndex + 1}</span></label>
@@ -2821,6 +3001,71 @@ function showToast(message) {
   toastTimer = setTimeout(() => toast.classList.remove("visible"), 2600);
 }
 
+// SÍNTESE DE ÁUDIO WEB AUDIO API PARA O DESCANSO & ALERTAS
+let audioCtx = null;
+let soundEnabled = localStorage.getItem("rep-club-sound-enabled") !== "false";
+
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) audioCtx = new AudioContextClass();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume().catch(() => {});
+  }
+  return audioCtx;
+}
+
+function playBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("Audio play error", e);
+  }
+}
+
+function playRestCountdownBeep() {
+  playBeep(520, "sine", 0.08, 0.18);
+}
+
+function playRestFinishedAlert() {
+  playBeep(660, "sine", 0.14, 0.22);
+  setTimeout(() => playBeep(880, "sine", 0.32, 0.25), 120);
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem("rep-club-sound-enabled", String(soundEnabled));
+  updateSoundToggleUI();
+  if (soundEnabled) {
+    playBeep(600, "sine", 0.09, 0.16);
+    showToast("🔊 Áudio do cronômetro ativado");
+  } else {
+    showToast("🔇 Áudio do cronômetro silenciado");
+  }
+}
+
+function updateSoundToggleUI() {
+  const btn = byId("timer-sound-toggle");
+  if (btn) {
+    btn.textContent = soundEnabled ? "🔊" : "🔇";
+    btn.classList.toggle("muted", !soundEnabled);
+    btn.setAttribute("aria-label", soundEnabled ? "Silenciar cronômetro" : "Ativar áudio do cronômetro");
+  }
+}
+
 function updateRestTimer() {
   const minutes = String(Math.floor(restSecondsRemaining / 60)).padStart(2, "0");
   const seconds = String(restSecondsRemaining % 60).padStart(2, "0");
@@ -2831,14 +3076,20 @@ function startRestTimer(seconds) {
   clearInterval(restTimerInterval);
   restSecondsRemaining = seconds;
   updateRestTimer();
+  getAudioContext(); // Pre-aquece contexto no clique do usuário
   restTimerInterval = setInterval(() => {
     restSecondsRemaining -= 1;
     updateRestTimer();
+    // Bip sutil nos últimos 3 segundos (3, 2, 1)
+    if (restSecondsRemaining === 3 || restSecondsRemaining === 2 || restSecondsRemaining === 1) {
+      playRestCountdownBeep();
+    }
     if (restSecondsRemaining <= 0) {
       clearInterval(restTimerInterval);
       restTimerInterval = null;
-      if ("vibrate" in navigator) navigator.vibrate([120, 80, 120]);
-      showToast("Descanso finalizado.");
+      playRestFinishedAlert();
+      if ("vibrate" in navigator) navigator.vibrate([150, 80, 150]);
+      showToast("⏱️ Descanso finalizado!");
     }
   }, 1000);
 }
@@ -3126,6 +3377,12 @@ byId("cancel-setup-dialog")?.addEventListener("click", () => closeModalSafely(by
 
 byId("btn-style-classic")?.addEventListener("click", () => setScoreboardStyle("classic"));
 byId("btn-style-kamehameha")?.addEventListener("click", () => setScoreboardStyle("kamehameha"));
+byId("arcade-scenario-select")?.addEventListener("change", (e) => {
+  currentArcadeScenario = e.target.value;
+  localStorage.setItem("rep-club-arcade-scenario", currentArcadeScenario);
+  renderScoreboard();
+  showToast(`Cenário arcade: ${ARCADE_SCENARIOS[currentArcadeScenario]?.name || currentArcadeScenario}`);
+});
 
 byId("setup-dialog")?.addEventListener("cancel", (event) => {
   if (!playerConfig && challenges.length > 0) event.preventDefault();
@@ -3378,6 +3635,23 @@ function handleAddExerciseToCurrentWorkout(inputOrName) {
 }
 
 byId("workout-fields").addEventListener("click", async (event) => {
+  const applyBtn = event.target.closest("[data-apply-load]");
+  if (applyBtn) {
+    event.preventDefault();
+    const exIdx = applyBtn.dataset.applyLoad;
+    const loadVal = applyBtn.dataset.lastLoad;
+    if (exIdx != null && loadVal) {
+      const inputs = byId("workout-fields").querySelectorAll(`[name^="load-${exIdx}-"]`);
+      inputs.forEach((input) => {
+        input.value = loadVal;
+        input.style.borderColor = "var(--lime)";
+        setTimeout(() => (input.style.borderColor = ""), 800);
+      });
+      updatePointsPreview();
+      showToast(`Cargas preenchidas com ${loadVal} kg`);
+    }
+    return;
+  }
   const addBtn = event.target.closest("#btn-add-exercise-to-workout");
   if (addBtn) {
     const select = byId("workout-add-exercise-select");
@@ -3409,6 +3683,8 @@ byId("history-exercise").addEventListener("change", drawHistoryChart);
 window.addEventListener("resize", drawHistoryChart);
 document.querySelectorAll("[data-rest-seconds]").forEach((button) => button.addEventListener("click", () => startRestTimer(Number(button.dataset.restSeconds))));
 byId("timer-reset").addEventListener("click", resetRestTimer);
+byId("timer-sound-toggle")?.addEventListener("click", toggleSound);
+updateSoundToggleUI();
 byId("program-list").addEventListener("click", (event) => {
   const button = event.target.closest("[data-start-template]");
   if (button) openWorkoutDialog(button.dataset.startTemplate);
@@ -3705,6 +3981,7 @@ byId("confirm-select-challenges")?.addEventListener("click", async () => {
 
   render();
   showToast(`Treino registrado em ${addedCount} desafio(s)! (+${savedPoints} pts)`);
+  checkNewBadgesAfterWorkout(state.activePlayer);
 
   pendingWorkoutToSave = null;
   pendingCustomPlanToSave = null;
@@ -3777,6 +4054,7 @@ function setupFirebaseSync() {
           createdAt: workout.created_at || workout.createdAt || new Date().toISOString(),
         }));
         healWorkouts(syncedRemote);
+        checkForRivalNewWorkouts(syncedRemote);
         state.workouts = [...pendingLocal, ...syncedRemote];
         healWorkouts(state.workouts);
         saveState();
@@ -3847,6 +4125,7 @@ function setupFirebaseSync() {
   });
 }
 setupFirebaseSync();
+initNotificationControls();
 loadRegisteredUsersDirectory();
 checkInviteLinkParam();
 
@@ -4350,14 +4629,17 @@ const photoPreview = byId("workout-photo-preview");
 const photoFilename = byId("photo-filename");
 const btnRemovePhoto = byId("btn-remove-photo");
 
-function handleWorkoutPhotoFile(file) {
-  if (!file) return;
-  if (photoFilename) photoFilename.textContent = file.name;
+function compressWorkoutPhoto(file, callback) {
+  if (!file || !file.type.startsWith("image/")) {
+    if (callback) callback(null);
+    return;
+  }
+  const originalSizeKb = Math.round(file.size / 1024);
   const reader = new FileReader();
   reader.onload = (event) => {
     const img = new Image();
     img.onload = () => {
-      const maxDim = 480;
+      const maxDim = 1280;
       let width = img.width;
       let height = img.height;
       if (width > height && width > maxDim) {
@@ -4372,13 +4654,55 @@ function handleWorkoutPhotoFile(file) {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      currentWorkoutPhoto = canvas.toDataURL("image/jpeg", 0.72);
-      if (photoPreview) photoPreview.src = currentWorkoutPhoto;
-      if (photoPreviewWrap) photoPreviewWrap.style.display = "block";
+
+      let dataUrl = "";
+      try {
+        dataUrl = canvas.toDataURL("image/webp", 0.78);
+        if (!dataUrl.startsWith("data:image/webp")) {
+          dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+        }
+      } catch (err) {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      }
+
+      const compressedSizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+      const ratio = Math.max(0, Math.round(((file.size - (compressedSizeKb * 1024)) / file.size) * 100));
+
+      if (callback) {
+        callback({
+          dataUrl,
+          originalSizeKb,
+          compressedSizeKb,
+          ratio,
+          filename: file.name
+        });
+      }
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function handleWorkoutPhotoFile(file) {
+  if (!file) return;
+  if (photoFilename) photoFilename.textContent = file.name;
+  const badge = byId("photo-compress-badge");
+  if (badge) {
+    badge.style.display = "inline-flex";
+    badge.textContent = "⏳ Otimizando foto...";
+  }
+
+  compressWorkoutPhoto(file, (res) => {
+    if (!res) return;
+    currentWorkoutPhoto = res.dataUrl;
+    if (photoPreview) photoPreview.src = currentWorkoutPhoto;
+    if (photoPreviewWrap) photoPreviewWrap.style.display = "block";
+    if (badge) {
+      const origStr = res.originalSizeKb > 1024 ? `${(res.originalSizeKb / 1024).toFixed(1)} MB` : `${res.originalSizeKb} KB`;
+      badge.style.display = "inline-flex";
+      badge.innerHTML = `⚡ Otimizada: <strong>${origStr}</strong> ➔ <strong>${res.compressedSizeKb} KB</strong> (${res.ratio}% menor)`;
+    }
+  });
 }
 
 photoCameraInput?.addEventListener("change", (e) => handleWorkoutPhotoFile(e.target.files?.[0]));
@@ -4395,10 +4719,719 @@ function clearWorkoutPhoto() {
   if (photoFilename) photoFilename.textContent = "Nenhuma foto anexada";
   if (photoPreview) photoPreview.src = "";
   if (photoPreviewWrap) photoPreviewWrap.style.display = "none";
+  const badge = byId("photo-compress-badge");
+  if (badge) {
+    badge.style.display = "none";
+    badge.textContent = "";
+  }
 }
 
 byId("cancel-dialog")?.addEventListener("click", () => clearWorkoutPhoto());
 byId("close-dialog")?.addEventListener("click", () => clearWorkoutPhoto());
+
+// ============================================================
+// SISTEMA DE GAMIFICAÇÃO: BADGES & CONQUISTAS DE CONSISTÊNCIA
+// ============================================================
+const BADGES_CATALOG = [
+  {
+    id: "monstro-madrugada",
+    name: "Monstro da Madrugada",
+    icon: "🌅",
+    description: "Registrou um treino antes das 07:00 da manhã.",
+    check: (workouts) => workouts.some((w) => {
+      const dt = w.createdAt ? new Date(w.createdAt) : null;
+      return dt && !isNaN(dt.getTime()) && dt.getHours() < 7;
+    }),
+    progress: (workouts) => "Treino antes das 07h",
+  },
+  {
+    id: "coruja-noturna",
+    name: "Coruja Noturna",
+    icon: "🌙",
+    description: "Registrou um treino depois das 21:00 da noite.",
+    check: (workouts) => workouts.some((w) => {
+      const dt = w.createdAt ? new Date(w.createdAt) : null;
+      return dt && !isNaN(dt.getTime()) && dt.getHours() >= 21;
+    }),
+    progress: (workouts) => "Treino após as 21h",
+  },
+  {
+    id: "sequencia-ferro",
+    name: "Sequência de Ferro",
+    icon: "🔥",
+    description: "7 dias seguidos com pelo menos um treino registrado.",
+    check: (workouts) => {
+      const dates = Array.from(new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean))).sort();
+      if (dates.length < 7) return false;
+      let streak = 1;
+      let maxStreak = 1;
+      for (let i = 1; i < dates.length; i++) {
+        const d1 = new Date(dates[i - 1]);
+        const d2 = new Date(dates[i]);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      return maxStreak >= 7;
+    },
+    progress: (workouts) => {
+      const dates = Array.from(new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean))).sort();
+      let streak = 1;
+      let maxStreak = dates.length ? 1 : 0;
+      for (let i = 1; i < dates.length; i++) {
+        const d1 = new Date(dates[i - 1]);
+        const d2 = new Date(dates[i]);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      return `${Math.min(7, maxStreak)} / 7 dias`;
+    },
+  },
+  {
+    id: "guerreiro-fds",
+    name: "Guerreiro de Fim de Semana",
+    icon: "⚔️",
+    description: "Treinou no sábado e no domingo do mesmo fim de semana.",
+    check: (workouts) => {
+      const dates = new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean));
+      for (const dStr of dates) {
+        const d = new Date(dStr + "T12:00:00");
+        if (d.getDay() === 6) {
+          const sun = new Date(d);
+          sun.setDate(sun.getDate() + 1);
+          const sunStr = localDate(sun);
+          if (dates.has(sunStr)) return true;
+        }
+      }
+      return false;
+    },
+    progress: (workouts) => "Sábado + Domingo",
+  },
+  {
+    id: "clube-100k",
+    name: "Clube dos 100k",
+    icon: "🏋️‍♂️",
+    description: "Levantou mais de 100.000 kg (100 toneladas) acumuladas.",
+    check: (workouts) => {
+      const vol = workouts.reduce((sum, w) => sum + (Number(w.trainingVolume) || 0), 0);
+      return vol >= 100000;
+    },
+    progress: (workouts) => {
+      const vol = workouts.reduce((sum, w) => sum + (Number(w.trainingVolume) || 0), 0);
+      return `${Math.min(100000, vol).toLocaleString("pt-BR")} / 100.000 kg`;
+    },
+  },
+  {
+    id: "centuriao",
+    name: "Centurião dos Treinos",
+    icon: "💯",
+    description: "Atingiu 100 ou mais pontos no duelo atual.",
+    check: (workouts) => {
+      const pts = workouts.reduce((sum, w) => sum + pointsForWorkout(w), 0);
+      return pts >= 100;
+    },
+    progress: (workouts) => {
+      const pts = workouts.reduce((sum, w) => sum + pointsForWorkout(w), 0);
+      return `${Math.min(100, pts)} / 100 pts`;
+    },
+  },
+  {
+    id: "mestre-trilhas",
+    name: "Mestre Multidisciplinar",
+    icon: "🥋",
+    description: "Treinou nas 3 modalidades (Musculação, Jiu-jitsu e Cardio).",
+    check: (workouts) => {
+      const cats = new Set(workouts.map((w) => w.category));
+      return cats.has("strength") && cats.has("bjj") && cats.has("cardio");
+    },
+    progress: (workouts) => {
+      const cats = new Set(workouts.map((w) => w.category));
+      const count = (cats.has("strength") ? 1 : 0) + (cats.has("bjj") ? 1 : 0) + (cats.has("cardio") ? 1 : 0);
+      return `${count} / 3 modalidades`;
+    },
+  },
+  {
+    id: "virada-epica",
+    name: "Virada Épica",
+    icon: "⚡",
+    description: "Assumiu a liderança do duelo ultrapassando o rival.",
+    check: (workouts) => {
+      return localStorage.getItem("rep-club-unlocked-virada-epica") === "true";
+    },
+    progress: () => "Ultrapassar rival",
+  },
+  {
+    id: "batedor-recorde",
+    name: "Batedor de Recordes",
+    icon: "🏆",
+    description: "Bateu seu recorde de carga pessoal em qualquer exercício.",
+    check: (workouts) => {
+      return workouts.some((w) => w.improvedRecord || (w.qualityPoints && w.qualityPoints >= 10));
+    },
+    progress: () => "Superar 1RM/PR",
+  },
+  {
+    id: "primeiro-sangue",
+    name: "Primeiro Sangue",
+    icon: "🩸",
+    description: "Registrou o primeiríssimo treino do desafio atual antes do rival.",
+    check: (workouts) => workouts.length >= 1,
+    progress: () => "1º treino do duelo",
+  },
+];
+
+function getSavedBadges(athleteId) {
+  try {
+    return JSON.parse(localStorage.getItem(`rep-club-badges-${athleteId}`) || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveBadgesState(athleteId, badgeMap) {
+  try {
+    localStorage.setItem(`rep-club-badges-${athleteId}`, JSON.stringify(badgeMap));
+  } catch (e) {}
+}
+
+function evaluateAthleteBadges(athleteId) {
+  const curCh = getActiveChallenge();
+  const athleteWorkouts = (state.workouts || []).filter((w) => {
+    const owner = resolvePlayerForWorkout(w, curCh);
+    return owner && owner.id === athleteId;
+  });
+
+  const saved = getSavedBadges(athleteId);
+  const result = [];
+
+  for (const b of BADGES_CATALOG) {
+    const wasUnlocked = Boolean(saved[b.id]?.unlocked);
+    const isNowUnlocked = wasUnlocked || b.check(athleteWorkouts);
+    const unlockedAt = saved[b.id]?.unlockedAt || (isNowUnlocked ? new Date().toISOString() : null);
+
+    if (isNowUnlocked && !wasUnlocked) {
+      saved[b.id] = { unlocked: true, unlockedAt };
+    }
+
+    result.push({
+      ...b,
+      unlocked: isNowUnlocked,
+      unlockedAt,
+      progressText: b.progress(athleteWorkouts),
+    });
+  }
+
+  saveBadgesState(athleteId, saved);
+  return result;
+}
+
+function openBadgesDialog() {
+  const athleteId = state.activePlayer;
+  const badges = evaluateAthleteBadges(athleteId);
+  const container = byId("badges-grid-container");
+  if (!container) return;
+
+  const unlockedCount = badges.filter((b) => b.unlocked).length;
+
+  container.innerHTML = badges.map((b) => {
+    const dateFormatted = b.unlockedAt ? new Date(b.unlockedAt).toLocaleDateString("pt-BR") : "";
+    return `
+      <div class="badge-card ${b.unlocked ? "unlocked" : "locked"}">
+        <div class="badge-top">
+          <div class="badge-icon">${b.icon}</div>
+          <div class="badge-title-wrap">
+            <strong class="badge-title">${escapeHTML(b.name)}</strong>
+            <span class="badge-status-tag">${b.unlocked ? "✓ Conquistada" : "🔒 Bloqueada"}</span>
+          </div>
+        </div>
+        <p class="badge-desc">${escapeHTML(b.description)}</p>
+        <div class="badge-footer">
+          <span>${b.unlocked ? `Em ${dateFormatted}` : `Meta: ${escapeHTML(b.progressText)}`}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const modal = byId("badges-dialog");
+  if (modal) {
+    const titleEl = byId("badges-title");
+    if (titleEl) titleEl.textContent = `🏆 Suas Conquistas (${unlockedCount}/${badges.length})`;
+    showModalSafely(modal);
+  }
+}
+
+let lastCelebratedBadge = null;
+
+function checkNewBadgesAfterWorkout(athleteId) {
+  const savedBefore = getSavedBadges(athleteId);
+  const badges = evaluateAthleteBadges(athleteId);
+
+  const newlyUnlocked = badges.find((b) => b.unlocked && !savedBefore[b.id]?.unlocked);
+  if (newlyUnlocked) {
+    lastCelebratedBadge = newlyUnlocked;
+    playBeep(523, "sine", 0.14, 0.22);
+    setTimeout(() => playBeep(659, "sine", 0.14, 0.22), 120);
+    setTimeout(() => playBeep(784, "sine", 0.35, 0.26), 240);
+
+    const iconEl = byId("celebration-badge-icon");
+    const titleEl = byId("celebration-title");
+    const descEl = byId("celebration-desc");
+    if (iconEl) iconEl.textContent = newlyUnlocked.icon;
+    if (titleEl) titleEl.textContent = newlyUnlocked.name;
+    if (descEl) descEl.textContent = newlyUnlocked.description;
+
+    const modal = byId("badge-celebration-dialog");
+    if (modal) showModalSafely(modal);
+  }
+}
+
+// ============================================================
+// GERADOR DE CARDS PARA INSTAGRAM STORIES (CANVAS VERTICAL 9:16)
+// ============================================================
+let currentStoryDataUrl = null;
+
+async function generateStoryCard(workout = null) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+
+  // 1. Fundo dark tech arena com gradiente vertical 9:16
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+  bgGrad.addColorStop(0, "#080c14");
+  bgGrad.addColorStop(0.3, "#0e1524");
+  bgGrad.addColorStop(0.7, "#141c2e");
+  bgGrad.addColorStop(1, "#070a10");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1080, 1920);
+
+  // Grid e partículas sutis de fundo
+  ctx.fillStyle = "rgba(255, 255, 255, 0.02)";
+  for (let x = 40; x < 1080; x += 80) {
+    for (let y = 40; y < 1920; y += 80) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Brilhos ambientais neon nos cantos
+  const glowTop = ctx.createRadialGradient(200, 200, 10, 200, 200, 500);
+  glowTop.addColorStop(0, "rgba(215, 250, 82, 0.12)");
+  glowTop.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glowTop;
+  ctx.fillRect(0, 0, 1080, 800);
+
+  const glowCenter = ctx.createRadialGradient(880, 800, 10, 880, 800, 600);
+  glowCenter.addColorStop(0, "rgba(70, 100, 234, 0.14)");
+  glowCenter.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glowCenter;
+  ctx.fillRect(0, 400, 1080, 1000);
+
+  // 2. Cabeçalho / Branding Rep Club
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 68px 'Barlow Condensed', Impact, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("REP CLUB", 90, 180);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 24px 'DM Sans', sans-serif";
+  ctx.letterSpacing = "4px";
+  ctx.fillText("DUELO COMPETITIVO · PWA", 90, 222);
+
+  const curCh = getActiveChallenge();
+  const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "600 24px 'DM Sans', sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(curCh?.title || "Duelo Ativo", 990, 180);
+  ctx.fillText(dateStr, 990, 222);
+
+  // 3. Card do Duelo (Top Matchup)
+  const rankedPlayers = PLAYERS.map((p) => {
+    const workouts = duelWorkouts(p.id);
+    const pts = workouts.reduce((s, w) => s + pointsForWorkout(w), 0);
+    return { player: p, points: pts };
+  }).sort((a, b) => b.points - a.points);
+
+  const p1 = rankedPlayers[0] || { player: PLAYERS[0] || { name: "Atleta 1" }, points: 0 };
+  const p2 = rankedPlayers[1] || { player: PLAYERS[1] || { name: "Atleta 2" }, points: 0 };
+
+  // Moldura do matchup
+  ctx.fillStyle = "rgba(18, 24, 38, 0.85)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 2;
+  roundRect(ctx, 90, 270, 900, 340, 24, true, true);
+
+  // Lutador 1 (Esquerda)
+  ctx.fillStyle = "#d7fa52";
+  ctx.beginPath();
+  ctx.arc(210, 410, 52, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#181915";
+  ctx.font = "800 48px 'Barlow Condensed', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(p1.player.name.charAt(0).toUpperCase(), 210, 426);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 36px 'DM Sans', sans-serif";
+  ctx.fillText(p1.player.name, 210, 510);
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 64px 'Barlow Condensed', Impact, sans-serif";
+  ctx.fillText(`${p1.points} PTS`, 210, 576);
+
+  // Centro VS & Barra
+  ctx.fillStyle = "#ef4444";
+  ctx.beginPath();
+  ctx.arc(540, 420, 36, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 28px 'Barlow Condensed', Impact, sans-serif";
+  ctx.fillText("VS", 540, 430);
+
+  const totalPts = Math.max(1, p1.points + p2.points);
+  const p1Pct = p1.points / totalPts;
+
+  ctx.fillStyle = "#1e293b";
+  roundRect(ctx, 420, 480, 240, 16, 8, true, false);
+  ctx.fillStyle = "#d7fa52";
+  roundRect(ctx, 420, 480, Math.max(12, 240 * p1Pct), 16, 8, true, false);
+
+  // Lutador 2 (Direita)
+  ctx.fillStyle = "#4664ea";
+  ctx.beginPath();
+  ctx.arc(870, 410, 52, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 48px 'Barlow Condensed', sans-serif";
+  ctx.fillText(p2.player.name.charAt(0).toUpperCase(), 870, 426);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 36px 'DM Sans', sans-serif";
+  ctx.fillText(p2.player.name, 870, 510);
+  ctx.fillStyle = "#60a5fa";
+  ctx.font = "800 64px 'Barlow Condensed', Impact, sans-serif";
+  ctx.fillText(`${p2.points} PTS`, 870, 576);
+
+  // 4. Card do Treino / Destaque da Sessão
+  const targetWorkout = workout || (state.workouts && state.workouts[0]) || null;
+  const cardY = 650;
+  const cardHeight = 900;
+
+  ctx.fillStyle = "rgba(18, 24, 38, 0.95)";
+  ctx.strokeStyle = "rgba(215, 250, 82, 0.4)";
+  ctx.lineWidth = 3;
+  roundRect(ctx, 90, cardY, 900, cardHeight, 28, true, true);
+
+  const modLabel = targetWorkout ? (MODALITIES[targetWorkout.category]?.label || targetWorkout.category).toUpperCase() : "SESSÃO DO DIA";
+  const ptsEarned = targetWorkout ? pointsForWorkout(targetWorkout) : 0;
+
+  ctx.fillStyle = "#d7fa52";
+  roundRect(ctx, 130, cardY + 45, 260, 42, 8, true, false);
+  ctx.fillStyle = "#181915";
+  ctx.font = "800 20px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`+${ptsEarned} PTS NO DUELO`, 260, cardY + 73);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 64px 'Barlow Condensed', Impact, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(modLabel, 130, cardY + 160);
+
+  const dur = targetWorkout?.duration || 45;
+  const vol = targetWorkout?.trainingVolume || 0;
+  const eff = targetWorkout?.effort || 8;
+
+  const statWidth = 260;
+  const statBoxY = cardY + 200;
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRect(ctx, 130, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("DURAÇÃO", 155, statBoxY + 40);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(`${dur} min`, 155, statBoxY + 88);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRect(ctx, 410, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("VOLUME TOTAL", 435, statBoxY + 40);
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(vol > 0 ? `${vol.toLocaleString("pt-BR")} kg` : "—", 435, statBoxY + 88);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRect(ctx, 690, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("ESFORÇO RPE", 715, statBoxY + 40);
+  ctx.fillStyle = "#facc15";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(`${eff} / 10`, 715, statBoxY + 88);
+
+  if (targetWorkout?.photo) {
+    try {
+      const img = await loadHtmlImage(targetWorkout.photo);
+      if (img) {
+        ctx.save();
+        const photoY = cardY + 360;
+        const photoH = 380;
+        roundRect(ctx, 130, photoY, 820, photoH, 18, false, false);
+        ctx.clip();
+        const aspect = img.width / img.height;
+        let dw = 820;
+        let dh = 820 / aspect;
+        if (dh < photoH) {
+          dh = photoH;
+          dw = photoH * aspect;
+        }
+        const dx = 130 + (820 - dw) / 2;
+        const dy = photoY + (photoH - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(215, 250, 82, 0.5)";
+        ctx.lineWidth = 2;
+        roundRect(ctx, 130, photoY, 820, photoH, 18, false, true);
+      }
+    } catch (e) {
+      console.warn("Falha ao desenhar foto no canvas:", e);
+    }
+  } else if (Array.isArray(targetWorkout?.exercises) && targetWorkout.exercises.length > 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "800 22px 'DM Sans', sans-serif";
+    ctx.fillText("DESTAQUES DO TREINO:", 130, cardY + 380);
+
+    let exY = cardY + 440;
+    targetWorkout.exercises.slice(0, 4).forEach((ex) => {
+      const setsCount = Array.isArray(ex.sets) ? ex.sets.length : (ex.sets || 3);
+      const maxL = Array.isArray(ex.sets) ? Math.max(...ex.sets.map((s) => Number(s.load) || 0)) : (ex.load || 0);
+      const text = `• ${ex.name} — ${setsCount} séries ${maxL > 0 ? `com até ${maxL}kg` : ""}`;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "600 28px 'DM Sans', sans-serif";
+      ctx.fillText(text, 140, exY);
+      exY += 56;
+    });
+  }
+
+  if (targetWorkout?.comments) {
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "italic 24px 'DM Sans', sans-serif";
+    const cleanComm = `"${targetWorkout.comments.slice(0, 80)}${targetWorkout.comments.length > 80 ? "..." : ""}"`;
+    ctx.fillText(cleanComm, 130, cardY + 840);
+  }
+
+  // 5. Rodapé & Tagline
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 32px 'Barlow Condensed', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("DISPUTA PONTO A PONTO. SUPERA SEU RIVAL.", 540, 1650);
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "600 22px 'DM Sans', sans-serif";
+  ctx.fillText("REP CLUB · Aplicativo de Duelo & Treino PWA", 540, 1700);
+
+  return canvas;
+}
+
+function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
+}
+
+function loadHtmlImage(src) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function openStoryShareDialog(workout = null) {
+  showToast("Gerando Story 9:16...");
+  try {
+    const canvas = await generateStoryCard(workout);
+    currentStoryDataUrl = canvas.toDataURL("image/png");
+
+    const preview = byId("story-preview-img");
+    if (preview) preview.src = currentStoryDataUrl;
+
+    const modal = byId("story-share-dialog");
+    if (modal) showModalSafely(modal);
+  } catch (err) {
+    console.error("Erro ao gerar Story:", err);
+    showToast("Não foi possível gerar a imagem do Story.");
+  }
+}
+
+// ============================================================
+// NOTIFICAÇÕES & ALERTAS EM TEMPO REAL QUANDO O RIVAL TREINA
+// ============================================================
+const knownWorkoutIds = new Set();
+let isInitialSyncDone = false;
+
+function checkForRivalNewWorkouts(syncedRemote) {
+  if (!isInitialSyncDone) {
+    syncedRemote.forEach((w) => knownWorkoutIds.add(w.id));
+    isInitialSyncDone = true;
+    return;
+  }
+
+  const curCh = getActiveChallenge();
+  const authUser = getAuthUser();
+  const currentUserId = String(authUser?.id || authUser?.uid || "").trim().toLowerCase();
+  const currentEmail = String(authUser?.email || "").trim().toLowerCase();
+
+  const newRivalWorkouts = syncedRemote.filter((w) => {
+    if (knownWorkoutIds.has(w.id)) return false;
+    knownWorkoutIds.add(w.id);
+
+    if (curCh && w.challengeId && w.challengeId !== curCh.id) return false;
+
+    const wUid = String(w.userId || w.user_id || "").trim().toLowerCase();
+    const wEmail = String(w.userEmail || w.user_email || "").trim().toLowerCase();
+    if (currentUserId && wUid && wUid === currentUserId) return false;
+    if (currentEmail && wEmail && wEmail === currentEmail) return false;
+
+    const owner = resolvePlayerForWorkout(w, curCh);
+    if (owner && owner.id === state.activePlayer) return false;
+
+    return true;
+  });
+
+  if (newRivalWorkouts.length > 0) {
+    newRivalWorkouts.forEach((w) => {
+      const owner = resolvePlayerForWorkout(w, curCh);
+      const rivalName = owner ? owner.name : (w.userName || "Seu rival");
+      const modLabel = MODALITIES[w.category]?.label || w.name || "treino";
+      const pts = pointsForWorkout(w);
+
+      const title = `⚠️ ${rivalName} treinou no Rep Club!`;
+      const body = `${rivalName} acabou de registrar ${modLabel} (+${pts} pts) e avançou no Duelo!`;
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        try {
+          if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.ready.then((reg) => {
+              reg.showNotification(title, {
+                body,
+                icon: "assets/icons/icon-192.png",
+                badge: "assets/icons/icon-192.png",
+                tag: `rival-${w.id}`,
+                data: { url: "./" },
+              });
+            });
+          } else {
+            new Notification(title, {
+              body,
+              icon: "assets/icons/icon-192.png",
+            });
+          }
+        } catch (e) {
+          console.warn("Falha ao disparar Notification nativa:", e);
+        }
+      }
+
+      showRivalAlertBanner(rivalName, modLabel, pts);
+      playBeep(480, "sawtooth", 0.18, 0.2);
+    });
+  }
+}
+
+function showRivalAlertBanner(rivalName, modLabel, pts) {
+  const toast = byId("rival-alert-toast");
+  const titleEl = byId("rival-alert-title");
+  const bodyEl = byId("rival-alert-body");
+  if (!toast) return;
+
+  if (titleEl) titleEl.textContent = `🚨 ALERTA: ${rivalName} acabou de treinar!`;
+  if (bodyEl) bodyEl.textContent = `Registrou ${modLabel} (+${pts} pts) no Duelo. Hora de responder!`;
+
+  toast.classList.add("visible");
+  setTimeout(() => toast.classList.remove("visible"), 5000);
+}
+
+function initNotificationControls() {
+  const btn = byId("btn-toggle-notifications");
+  if (!btn) return;
+
+  function updateBtnUI() {
+    if (!("Notification" in window)) {
+      btn.style.display = "none";
+      return;
+    }
+    if (Notification.permission === "granted") {
+      btn.textContent = "🔔 Alertas: On";
+      btn.classList.add("btn-active-notif");
+      btn.title = "Alertas de rival ativos! Clique para testar notificação.";
+    } else if (Notification.permission === "denied") {
+      btn.textContent = "🔕 Alertas: Bloqueados";
+      btn.title = "Notificações bloqueadas nas configurações do navegador.";
+    } else {
+      btn.textContent = "🔔 Ativar Alertas";
+      btn.title = "Clique para receber alertas em tempo real quando o rival treinar!";
+    }
+  }
+
+  btn.addEventListener("click", async () => {
+    if (!("Notification" in window)) {
+      showToast("Seu navegador não suporta notificações.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      showToast("🔔 Alertas ativos! Enviando notificação de teste...");
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        const reg = await navigator.serviceWorker.ready;
+        reg.showNotification("🔔 Rep Club: Alertas Ativos", {
+          body: "Você será avisado sempre que seu rival registrar um treino!",
+          icon: "assets/icons/icon-192.png",
+        });
+      } else {
+        new Notification("🔔 Rep Club: Alertas Ativos", {
+          body: "Você será avisado sempre que seu rival registrar um treino!",
+          icon: "assets/icons/icon-192.png",
+        });
+      }
+      return;
+    }
+
+    const perm = await Notification.requestPermission();
+    updateBtnUI();
+    if (perm === "granted") {
+      showToast("🔔 Notificações ativadas com sucesso!");
+    } else {
+      showToast("Permissão de notificação negada.");
+    }
+  });
+
+  updateBtnUI();
+}
 
 // MODO RAIO-X
 function openRaioXDialog() {
@@ -4581,6 +5614,72 @@ byId("gear-reset-challenge")?.addEventListener("click", () => {
 byId("gear-open-qr")?.addEventListener("click", () => {
   closeGearMenu();
   showModalSafely(byId("qr-dialog"));
+});
+
+// EVENT LISTENERS DE BADGES & STORIES
+byId("btn-open-badges")?.addEventListener("click", () => openBadgesDialog());
+byId("btn-open-badges-topbar")?.addEventListener("click", () => openBadgesDialog());
+byId("close-badges-dialog")?.addEventListener("click", () => closeModalSafely(byId("badges-dialog")));
+byId("btn-close-badges-footer")?.addEventListener("click", () => closeModalSafely(byId("badges-dialog")));
+
+byId("btn-open-story-card")?.addEventListener("click", () => openStoryShareDialog());
+byId("close-story-dialog")?.addEventListener("click", () => closeModalSafely(byId("story-share-dialog")));
+
+byId("btn-trigger-share")?.addEventListener("click", async () => {
+  if (!currentStoryDataUrl) return;
+  try {
+    const res = await fetch(currentStoryDataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], "rep-club-story.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "Meu Duelo no Rep Club",
+        text: "Confira meu treino e o placar do duelo no Rep Club!",
+        files: [file],
+      });
+      showToast("Compartilhado com sucesso!");
+    } else {
+      const a = document.createElement("a");
+      a.href = currentStoryDataUrl;
+      a.download = "rep-club-story.png";
+      a.click();
+      showToast("Story baixado! Abra o Instagram e poste no seu Story.");
+    }
+  } catch (e) {
+    if (e.name !== "AbortError") {
+      console.warn("Erro ao compartilhar story:", e);
+    }
+  }
+});
+
+byId("btn-download-story")?.addEventListener("click", () => {
+  if (!currentStoryDataUrl) return;
+  const a = document.createElement("a");
+  a.href = currentStoryDataUrl;
+  a.download = `rep-club-story-${new Date().toISOString().split("T")[0]}.png`;
+  a.click();
+  showToast("Story baixado com sucesso!");
+});
+
+byId("btn-copy-story")?.addEventListener("click", async () => {
+  if (!currentStoryDataUrl) return;
+  try {
+    const res = await fetch(currentStoryDataUrl);
+    const blob = await res.blob();
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+    showToast("Imagem copiada para a área de transferência!");
+  } catch (e) {
+    showToast("Não foi possível copiar. Use o botão Baixar Story.");
+  }
+});
+
+byId("btn-share-unlocked-badge")?.addEventListener("click", () => {
+  closeModalSafely(byId("badge-celebration-dialog"));
+  openStoryShareDialog();
+});
+
+byId("btn-close-celebration")?.addEventListener("click", () => {
+  closeModalSafely(byId("badge-celebration-dialog"));
 });
 
 // EXPOSIÇÃO GLOBAL PARA MANIPULADORES MOBILE E EVENTOS NATIVOS

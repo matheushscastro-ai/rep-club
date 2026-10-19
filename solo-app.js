@@ -635,6 +635,76 @@ function updateDialogSessions() {
   sessSel.innerHTML = sessions.map((s) => `<option value="${s.id}" ${s.id === selectedSessionId ? "selected" : ""}>Treino ${s.id} (${escapeHTML(s.title)})</option>`).join("");
 }
 
+function getSoloHistoricalPerformance(exerciseName) {
+  if (!exerciseName) return null;
+  const normTarget = exerciseName.trim().toLowerCase();
+
+  const sorted = (soloState || [])
+    .filter((w) => w.category === "strength" && Array.isArray(w.exercises))
+    .sort((a, b) => new Date(b.date || b.createdAt).getTime() - new Date(a.date || a.createdAt).getTime());
+
+  for (const w of sorted) {
+    const found = w.exercises.find((e) => e && e.name && e.name.trim().toLowerCase() === normTarget);
+    if (found && Array.isArray(found.sets) && found.sets.length > 0) {
+      const validSets = found.sets.filter((s) => s && (Number(s.load) > 0 || Number(s.reps) > 0));
+      if (validSets.length > 0) {
+        const loads = validSets.map((s) => Number(s.load) || 0);
+        const maxLoad = Math.max(...loads);
+        if (maxLoad > 0) {
+          const topSet = validSets.find((s) => (Number(s.load) || 0) === maxLoad) || validSets[0];
+          const topReps = Number(topSet.reps) || 10;
+          const est1RM = Math.round(maxLoad * (1 + topReps / 30) * 10) / 10;
+          return {
+            date: w.date || (w.createdAt ? w.createdAt.split("T")[0] : null),
+            maxLoad,
+            topReps,
+            est1RM,
+            setsCount: validSets.length,
+          };
+        }
+      }
+    }
+  }
+  return null;
+}
+
+function renderSoloOverloadCardHtml(exerciseName, exerciseIndex) {
+  const perf = getSoloHistoricalPerformance(exerciseName);
+  if (!perf || perf.maxLoad <= 0) {
+    return `
+      <div class="progressive-overload-card overload-new" style="margin: 8px 0;">
+        <span class="overload-badge">💡 SOBRECARGA PROGRESSIVA</span>
+        <span class="overload-note">Primeiro registro deste exercício! Anote suas cargas hoje para gerar metas de progressão na próxima sessão.</span>
+      </div>
+    `;
+  }
+
+  const nextReps = `${perf.maxLoad}kg × ${perf.topReps + 1}–${perf.topReps + 2} reps`;
+  const nextLoadInc = perf.maxLoad >= 40 ? 4 : 2;
+  const nextLoad = `${perf.maxLoad + nextLoadInc}kg × ${Math.max(6, perf.topReps - 2)}–${perf.topReps} reps`;
+
+  return `
+    <div class="progressive-overload-card" style="margin: 8px 0;">
+      <div class="overload-header">
+        <span class="overload-badge">⚡ SOBRECARGA PROGRESSIVA</span>
+        <button type="button" class="overload-apply-btn" data-solo-apply-load="${exerciseIndex}" data-last-load="${perf.maxLoad}" title="Preencher séries com ${perf.maxLoad} kg">Copiar ${perf.maxLoad} kg</button>
+      </div>
+      <div class="overload-body">
+        <div class="overload-row">
+          <span>Última sessão:</span>
+          <strong>${perf.maxLoad} kg × ${perf.topReps} reps</strong>
+          ${perf.est1RM ? `<span class="est-1rm">1RM est. ~${perf.est1RM} kg</span>` : ""}
+          <small>${perf.date ? `em ${perf.date.split("-").reverse().join("/")}` : ""}</small>
+        </div>
+        <div class="overload-row overload-target">
+          <span>🎯 Meta sugerida hoje:</span>
+          <strong>${nextReps}</strong> ou <strong>${nextLoad}</strong>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 function renderSoloFields() {
   const cat = soloById("solo-category-select")?.value || "strength";
   const strengthBlock = soloById("solo-strength-selectors");
@@ -710,6 +780,7 @@ function renderSoloFields() {
               <span style="font-size:8px; font-weight:700; color:#85877e;">${isWeight ? `CARGA ${exercise.factor === 2 ? "POR HALTER" : exercise.factor === 4 ? "DOIS HALTERES" : "APARELHO"}` : "PESO CORPORAL"}</span>
               <output id="solo-mean-${index}" style="font-size:9px; font-weight:700; color:#20211d;">MÉDIA: —</output>
             </div>
+            ${isWeight ? renderSoloOverloadCardHtml(exercise.name, index) : ""}
             <div class="solo-set-list">
               ${Array.from({ length: exercise.sets }, (_, set) => `
                 <div class="solo-set-row" style="grid-template-columns: 1fr 65px ${isWeight ? "65px" : ""};">
@@ -872,14 +943,17 @@ const soloPhotoPreview = soloById("solo-photo-preview");
 const soloPhotoFilename = soloById("solo-photo-filename");
 const soloBtnRemovePhoto = soloById("solo-btn-remove-photo");
 
-function handleSoloPhotoFile(file) {
-  if (!file) return;
-  if (soloPhotoFilename) soloPhotoFilename.textContent = file.name;
+function compressWorkoutPhoto(file, callback) {
+  if (!file || !file.type.startsWith("image/")) {
+    if (callback) callback(null);
+    return;
+  }
+  const originalSizeKb = Math.round(file.size / 1024);
   const reader = new FileReader();
   reader.onload = (event) => {
     const img = new Image();
     img.onload = () => {
-      const maxDim = 480;
+      const maxDim = 1280;
       let width = img.width;
       let height = img.height;
       if (width > height && width > maxDim) {
@@ -894,13 +968,55 @@ function handleSoloPhotoFile(file) {
       canvas.height = height;
       const ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, width, height);
-      soloCurrentPhoto = canvas.toDataURL("image/jpeg", 0.72);
-      if (soloPhotoPreview) soloPhotoPreview.src = soloCurrentPhoto;
-      if (soloPhotoPreviewWrap) soloPhotoPreviewWrap.style.display = "block";
+
+      let dataUrl = "";
+      try {
+        dataUrl = canvas.toDataURL("image/webp", 0.78);
+        if (!dataUrl.startsWith("data:image/webp")) {
+          dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+        }
+      } catch (err) {
+        dataUrl = canvas.toDataURL("image/jpeg", 0.78);
+      }
+
+      const compressedSizeKb = Math.round((dataUrl.length * 3) / 4 / 1024);
+      const ratio = Math.max(0, Math.round(((file.size - (compressedSizeKb * 1024)) / file.size) * 100));
+
+      if (callback) {
+        callback({
+          dataUrl,
+          originalSizeKb,
+          compressedSizeKb,
+          ratio,
+          filename: file.name,
+        });
+      }
     };
     img.src = event.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+function handleSoloPhotoFile(file) {
+  if (!file) return;
+  if (soloPhotoFilename) soloPhotoFilename.textContent = file.name;
+  const badge = soloById("solo-photo-compress-badge");
+  if (badge) {
+    badge.style.display = "inline-flex";
+    badge.textContent = "⏳ Otimizando foto...";
+  }
+
+  compressWorkoutPhoto(file, (res) => {
+    if (!res) return;
+    soloCurrentPhoto = res.dataUrl;
+    if (soloPhotoPreview) soloPhotoPreview.src = soloCurrentPhoto;
+    if (soloPhotoPreviewWrap) soloPhotoPreviewWrap.style.display = "block";
+    if (badge) {
+      const origStr = res.originalSizeKb > 1024 ? `${(res.originalSizeKb / 1024).toFixed(1)} MB` : `${res.originalSizeKb} KB`;
+      badge.style.display = "inline-flex";
+      badge.innerHTML = `⚡ Otimizada: <strong>${origStr}</strong> ➔ <strong>${res.compressedSizeKb} KB</strong> (${res.ratio}% menor)`;
+    }
+  });
 }
 
 soloPhotoCamera?.addEventListener("change", (e) => handleSoloPhotoFile(e.target.files?.[0]));
@@ -915,6 +1031,11 @@ function clearSoloPhoto() {
   if (soloPhotoFilename) soloPhotoFilename.textContent = "Nenhuma foto anexada";
   if (soloPhotoPreview) soloPhotoPreview.src = "";
   if (soloPhotoPreviewWrap) soloPhotoPreviewWrap.style.display = "none";
+  const badge = soloById("solo-photo-compress-badge");
+  if (badge) {
+    badge.style.display = "none";
+    badge.innerHTML = "";
+  }
 }
 
 // ==========================================
@@ -1562,6 +1683,8 @@ function finishSoloWorkoutSave(selectedChallengeIds = []) {
   } else {
     showToast("Treino registrado no Modo Solo com sucesso!");
   }
+
+  setTimeout(() => checkNewSoloBadgesAfterWorkout(), 400);
 }
 
 soloById("solo-confirm-select-challenges")?.addEventListener("click", () => {
@@ -1764,6 +1887,739 @@ soloById("save-solo-builder-program")?.addEventListener("click", () => saveSoloB
 window.openSoloProgramBuilder = openSoloProgramBuilder;
 window.drawSoloHistory = drawSoloHistory;
 
+// ==========================================
+// CRONÔMETRO DE DESCANSO SOLO & WEB AUDIO API
+// ==========================================
+let soloAudioCtx = null;
+let soloSoundEnabled = localStorage.getItem("rep-club-sound-enabled") !== "false";
+let soloRestTimerInterval = null;
+let soloRestSecondsRemaining = 0;
+
+function getSoloAudioContext() {
+  if (!soloAudioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (AudioContextClass) soloAudioCtx = new AudioContextClass();
+  }
+  if (soloAudioCtx && soloAudioCtx.state === "suspended") {
+    soloAudioCtx.resume().catch(() => {});
+  }
+  return soloAudioCtx;
+}
+
+function playSoloBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
+  if (!soloSoundEnabled) return;
+  try {
+    const ctx = getSoloAudioContext();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, ctx.currentTime);
+    gain.gain.setValueAtTime(gainVal, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + duration);
+  } catch (e) {
+    console.warn("Audio play error", e);
+  }
+}
+
+function playSoloRestCountdownBeep() {
+  playSoloBeep(520, "sine", 0.08, 0.18);
+}
+
+function playSoloRestFinishedAlert() {
+  playSoloBeep(660, "sine", 0.14, 0.22);
+  setTimeout(() => playSoloBeep(880, "sine", 0.32, 0.25), 120);
+}
+
+function toggleSoloSound() {
+  soloSoundEnabled = !soloSoundEnabled;
+  localStorage.setItem("rep-club-sound-enabled", String(soloSoundEnabled));
+  updateSoloSoundToggleUI();
+  if (soloSoundEnabled) {
+    playSoloBeep(600, "sine", 0.09, 0.16);
+    showToast("🔊 Áudio do cronômetro ativado");
+  } else {
+    showToast("🔇 Áudio do cronômetro silenciado");
+  }
+}
+
+function updateSoloSoundToggleUI() {
+  const btn = soloById("solo-timer-sound-toggle");
+  if (btn) {
+    btn.textContent = soloSoundEnabled ? "🔊" : "🔇";
+    btn.classList.toggle("muted", !soloSoundEnabled);
+    btn.setAttribute("aria-label", soloSoundEnabled ? "Silenciar cronômetro" : "Ativar áudio do cronômetro");
+  }
+}
+
+function updateSoloRestTimerDisplay() {
+  const minutes = String(Math.floor(soloRestSecondsRemaining / 60)).padStart(2, "0");
+  const seconds = String(soloRestSecondsRemaining % 60).padStart(2, "0");
+  const display = soloById("solo-timer-display");
+  if (display) display.textContent = `${minutes}:${seconds}`;
+}
+
+function startSoloRestTimer(seconds) {
+  clearInterval(soloRestTimerInterval);
+  soloRestSecondsRemaining = seconds;
+  updateSoloRestTimerDisplay();
+  getSoloAudioContext();
+  soloRestTimerInterval = setInterval(() => {
+    soloRestSecondsRemaining -= 1;
+    updateSoloRestTimerDisplay();
+    if (soloRestSecondsRemaining === 3 || soloRestSecondsRemaining === 2 || soloRestSecondsRemaining === 1) {
+      playSoloRestCountdownBeep();
+    }
+    if (soloRestSecondsRemaining <= 0) {
+      clearInterval(soloRestTimerInterval);
+      soloRestTimerInterval = null;
+      playSoloRestFinishedAlert();
+      if ("vibrate" in navigator) {
+        try { navigator.vibrate([200, 100, 200]); } catch (e) {}
+      }
+      showToast("⏰ Tempo de descanso encerrado! Próxima série!");
+    }
+  }, 1000);
+}
+
+function resetSoloRestTimer() {
+  clearInterval(soloRestTimerInterval);
+  soloRestTimerInterval = null;
+  soloRestSecondsRemaining = 0;
+  updateSoloRestTimerDisplay();
+}
+
+document.querySelectorAll("[data-solo-rest]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const sec = Number(btn.dataset.soloRest) || 60;
+    startSoloRestTimer(sec);
+    showToast(`Descanso de ${sec}s iniciado!`);
+  });
+});
+soloById("solo-timer-reset")?.addEventListener("click", resetSoloRestTimer);
+soloById("solo-timer-sound-toggle")?.addEventListener("click", toggleSoloSound);
+updateSoloSoundToggleUI();
+
+// Preenchimento de sobrecarga progressiva com 1 clique
+document.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-solo-apply-load]");
+  if (!btn) return;
+  const exIdx = btn.dataset.soloApplyLoad;
+  const loadVal = btn.dataset.lastLoad;
+  const form = soloById("solo-form");
+  if (!form || !loadVal) return;
+
+  const loadInputs = form.querySelectorAll(`input[name^="load-${exIdx}-"]`);
+  loadInputs.forEach((inp) => {
+    inp.value = loadVal;
+  });
+  updateSoloVolumePreview();
+  showToast(`Carga de ${loadVal} kg aplicada em todas as séries!`);
+});
+
+// ==========================================
+// CONQUISTAS & BADGES (MODO SOLO)
+// ==========================================
+const SOLO_BADGES_CATALOG = [
+  {
+    id: "monstro-madrugada",
+    name: "Monstro da Madrugada",
+    icon: "🌅",
+    description: "Registrou um treino antes das 07:00 da manhã.",
+    check: (workouts) => workouts.some((w) => {
+      const dt = w.createdAt ? new Date(w.createdAt) : null;
+      return dt && !isNaN(dt.getTime()) && dt.getHours() < 7;
+    }),
+    progress: () => "Treino antes das 07h",
+  },
+  {
+    id: "coruja-noturna",
+    name: "Coruja Noturna",
+    icon: "🌙",
+    description: "Registrou um treino depois das 21:00 da noite.",
+    check: (workouts) => workouts.some((w) => {
+      const dt = w.createdAt ? new Date(w.createdAt) : null;
+      return dt && !isNaN(dt.getTime()) && dt.getHours() >= 21;
+    }),
+    progress: () => "Treino após as 21h",
+  },
+  {
+    id: "sequencia-ferro",
+    name: "Sequência de Ferro",
+    icon: "🔥",
+    description: "7 dias seguidos com pelo menos um treino registrado.",
+    check: (workouts) => {
+      const dates = Array.from(new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean))).sort();
+      if (dates.length < 7) return false;
+      let streak = 1;
+      let maxStreak = 1;
+      for (let i = 1; i < dates.length; i++) {
+        const d1 = new Date(dates[i - 1]);
+        const d2 = new Date(dates[i]);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      return maxStreak >= 7;
+    },
+    progress: (workouts) => {
+      const dates = Array.from(new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean))).sort();
+      let streak = 1;
+      let maxStreak = dates.length ? 1 : 0;
+      for (let i = 1; i < dates.length; i++) {
+        const d1 = new Date(dates[i - 1]);
+        const d2 = new Date(dates[i]);
+        const diffDays = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) {
+          streak++;
+          if (streak > maxStreak) maxStreak = streak;
+        } else if (diffDays > 1) {
+          streak = 1;
+        }
+      }
+      return `${Math.min(7, maxStreak)} / 7 dias`;
+    },
+  },
+  {
+    id: "guerreiro-fds",
+    name: "Guerreiro de Fim de Semana",
+    icon: "⚔️",
+    description: "Treinou no sábado e no domingo do mesmo fim de semana.",
+    check: (workouts) => {
+      const dates = new Set(workouts.map((w) => w.date || (w.createdAt ? w.createdAt.split("T")[0] : null)).filter(Boolean));
+      for (const dStr of dates) {
+        const d = new Date(dStr + "T12:00:00");
+        if (d.getDay() === 6) {
+          const sun = new Date(d);
+          sun.setDate(sun.getDate() + 1);
+          const y = sun.getFullYear();
+          const m = String(sun.getMonth() + 1).padStart(2, "0");
+          const day = String(sun.getDate()).padStart(2, "0");
+          const sunStr = `${y}-${m}-${day}`;
+          if (dates.has(sunStr)) return true;
+        }
+      }
+      return false;
+    },
+    progress: () => "Sábado + Domingo",
+  },
+  {
+    id: "clube-100k",
+    name: "Clube dos 100k",
+    icon: "🏋️‍♂️",
+    description: "Levantou mais de 100.000 kg (100 toneladas) acumuladas.",
+    check: (workouts) => {
+      const vol = workouts.reduce((sum, w) => sum + (Number(w.volume) || 0), 0);
+      return vol >= 100000;
+    },
+    progress: (workouts) => {
+      const vol = workouts.reduce((sum, w) => sum + (Number(w.volume) || 0), 0);
+      return `${Math.min(100000, Math.round(vol)).toLocaleString("pt-BR")} / 100.000 kg`;
+    },
+  },
+  {
+    id: "centuriao",
+    name: "Centurião dos Treinos",
+    icon: "💯",
+    description: "Atingiu 100 ou mais pontos acumulados no histórico solo.",
+    check: (workouts) => {
+      const pts = workouts.reduce((sum, w) => sum + (Number(w.points) || 0), 0);
+      return pts >= 100;
+    },
+    progress: (workouts) => {
+      const pts = workouts.reduce((sum, w) => sum + (Number(w.points) || 0), 0);
+      return `${Math.min(100, pts)} / 100 pts`;
+    },
+  },
+  {
+    id: "mestre-trilhas",
+    name: "Mestre Multidisciplinar",
+    icon: "🥋",
+    description: "Treinou nas 3 modalidades (Musculação, Jiu-jitsu e Cardio).",
+    check: (workouts) => {
+      const cats = new Set(workouts.map((w) => w.category));
+      return cats.has("strength") && cats.has("bjj") && cats.has("cardio");
+    },
+    progress: (workouts) => {
+      const cats = new Set(workouts.map((w) => w.category));
+      const count = (cats.has("strength") ? 1 : 0) + (cats.has("bjj") ? 1 : 0) + (cats.has("cardio") ? 1 : 0);
+      return `${count} / 3 modalidades`;
+    },
+  },
+  {
+    id: "virada-epica",
+    name: "Superação Pessoal",
+    icon: "⚡",
+    description: "Alcançou sequência de pelo menos 5 treinos no histórico.",
+    check: (workouts) => workouts.length >= 5,
+    progress: (workouts) => `${Math.min(5, workouts.length)} / 5 treinos`,
+  },
+  {
+    id: "batedor-recorde",
+    name: "Batedor de Recordes",
+    icon: "🏆",
+    description: "Registrou uma sessão de força com volume acima de 5.000 kg.",
+    check: (workouts) => workouts.some((w) => w.category === "strength" && (w.volume || 0) >= 5000),
+    progress: () => "Volume numa sessão ≥ 5.000 kg",
+  },
+  {
+    id: "primeiro-sangue",
+    name: "Primeiro Sangue",
+    icon: "🩸",
+    description: "Registrou seu primeiro treino no Modo Solo.",
+    check: (workouts) => workouts.length >= 1,
+    progress: () => "1º treino registrado",
+  },
+];
+
+function getSavedSoloBadges() {
+  try {
+    return JSON.parse(localStorage.getItem("rep-club-badges-solo") || "{}");
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveSoloBadgesState(badgeMap) {
+  try {
+    localStorage.setItem("rep-club-badges-solo", JSON.stringify(badgeMap));
+  } catch (e) {}
+}
+
+function evaluateSoloBadges() {
+  const saved = getSavedSoloBadges();
+  const result = [];
+
+  for (const b of SOLO_BADGES_CATALOG) {
+    const wasUnlocked = Boolean(saved[b.id]?.unlocked);
+    const isNowUnlocked = wasUnlocked || b.check(soloState);
+    const unlockedAt = saved[b.id]?.unlockedAt || (isNowUnlocked ? new Date().toISOString() : null);
+
+    if (isNowUnlocked && !wasUnlocked) {
+      saved[b.id] = { unlocked: true, unlockedAt };
+    }
+
+    result.push({
+      ...b,
+      unlocked: isNowUnlocked,
+      unlockedAt,
+      progressText: b.progress(soloState),
+    });
+  }
+
+  saveSoloBadgesState(saved);
+  return result;
+}
+
+function openSoloBadgesDialog() {
+  const badges = evaluateSoloBadges();
+  const container = soloById("solo-badges-grid-container");
+  if (!container) return;
+
+  const unlockedCount = badges.filter((b) => b.unlocked).length;
+
+  container.innerHTML = badges.map((b) => {
+    const dateFormatted = b.unlockedAt ? new Date(b.unlockedAt).toLocaleDateString("pt-BR") : "";
+    return `
+      <div class="badge-card ${b.unlocked ? "unlocked" : "locked"}">
+        <div class="badge-top">
+          <div class="badge-icon">${b.icon}</div>
+          <div class="badge-title-wrap">
+            <strong class="badge-title">${escapeHTML(b.name)}</strong>
+            <span class="badge-status-tag">${b.unlocked ? "✓ Conquistada" : "🔒 Bloqueada"}</span>
+          </div>
+        </div>
+        <p class="badge-desc">${escapeHTML(b.description)}</p>
+        <div class="badge-footer">
+          <span>${b.unlocked ? `Em ${dateFormatted}` : `Meta: ${escapeHTML(b.progressText)}`}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  const modal = soloById("solo-badges-dialog");
+  if (modal) {
+    const titleEl = soloById("solo-badges-title");
+    if (titleEl) titleEl.textContent = `🏆 Suas Conquistas (${unlockedCount}/${badges.length})`;
+    if (typeof modal.showModal === "function") modal.showModal();
+  }
+}
+
+function checkNewSoloBadgesAfterWorkout() {
+  const saved = getSavedSoloBadges();
+  const newlyUnlocked = [];
+
+  for (const b of SOLO_BADGES_CATALOG) {
+    const wasUnlocked = Boolean(saved[b.id]?.unlocked);
+    if (!wasUnlocked && b.check(soloState)) {
+      saved[b.id] = { unlocked: true, unlockedAt: new Date().toISOString() };
+      newlyUnlocked.push(b);
+    }
+  }
+
+  saveSoloBadgesState(saved);
+
+  if (newlyUnlocked.length > 0) {
+    const b = newlyUnlocked[0];
+    playSoloBeep(523, "sine", 0.14, 0.22);
+    setTimeout(() => playSoloBeep(659, "sine", 0.14, 0.22), 120);
+    setTimeout(() => playSoloBeep(784, "sine", 0.35, 0.26), 240);
+
+    const iconEl = soloById("solo-celebration-badge-icon");
+    const titleEl = soloById("solo-celebration-title");
+    const descEl = soloById("solo-celebration-desc");
+    if (iconEl) iconEl.textContent = b.icon;
+    if (titleEl) titleEl.textContent = b.name;
+    if (descEl) descEl.textContent = b.description;
+
+    const modal = soloById("solo-badge-celebration-dialog");
+    if (modal && typeof modal.showModal === "function") {
+      modal.showModal();
+    }
+  }
+}
+
+soloById("btn-solo-badges")?.addEventListener("click", openSoloBadgesDialog);
+soloById("close-solo-badges-dialog")?.addEventListener("click", () => soloById("solo-badges-dialog")?.close());
+soloById("btn-close-solo-badges-footer")?.addEventListener("click", () => soloById("solo-badges-dialog")?.close());
+soloById("btn-close-solo-celebration")?.addEventListener("click", () => soloById("solo-badge-celebration-dialog")?.close());
+soloById("btn-solo-share-unlocked-badge")?.addEventListener("click", () => {
+  soloById("solo-badge-celebration-dialog")?.close();
+  openSoloStoryDialog();
+});
+
+// ==========================================
+// GERADOR DE STORY 9:16 (MODO SOLO)
+// ==========================================
+let currentSoloStoryDataUrl = null;
+
+async function generateSoloStoryCard(workout = null) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 1080;
+  canvas.height = 1920;
+  const ctx = canvas.getContext("2d");
+
+  // Fundo dark tech arena gradiente 9:16
+  const bgGrad = ctx.createLinearGradient(0, 0, 0, 1920);
+  bgGrad.addColorStop(0, "#080c14");
+  bgGrad.addColorStop(0.3, "#0e1524");
+  bgGrad.addColorStop(0.7, "#141c2e");
+  bgGrad.addColorStop(1, "#070a10");
+  ctx.fillStyle = bgGrad;
+  ctx.fillRect(0, 0, 1080, 1920);
+
+  // Grid e partículas sutis
+  ctx.fillStyle = "rgba(255, 255, 255, 0.02)";
+  for (let x = 40; x < 1080; x += 80) {
+    for (let y = 40; y < 1920; y += 80) {
+      ctx.beginPath();
+      ctx.arc(x, y, 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // Brilho neon
+  const glowTop = ctx.createRadialGradient(200, 200, 10, 200, 200, 500);
+  glowTop.addColorStop(0, "rgba(215, 250, 82, 0.12)");
+  glowTop.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glowTop;
+  ctx.fillRect(0, 0, 1080, 800);
+
+  const glowCenter = ctx.createRadialGradient(880, 800, 10, 880, 800, 600);
+  glowCenter.addColorStop(0, "rgba(70, 100, 234, 0.14)");
+  glowCenter.addColorStop(1, "rgba(0, 0, 0, 0)");
+  ctx.fillStyle = glowCenter;
+  ctx.fillRect(0, 400, 1080, 1000);
+
+  // Cabeçalho / Branding
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 68px 'Barlow Condensed', Impact, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText("REP CLUB", 90, 180);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "700 24px 'DM Sans', sans-serif";
+  ctx.fillText("MODO SOLO · EVOLUÇÃO INDIVIDUAL", 90, 222);
+
+  const user = getSoloUser();
+  const userName = user?.name || "Atleta";
+  const dateStr = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "600 24px 'DM Sans', sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(userName, 990, 180);
+  ctx.fillText(dateStr, 990, 222);
+
+  // Placar / Faixa Solo
+  const currentWeek = currentWeekBounds();
+  const weekRecords = soloState.filter((r) => r.date >= currentWeek.start && r.date <= currentWeek.end);
+  const weekPts = weekRecords.reduce((acc, r) => acc + (r.points || 0), 0);
+  const tier = calculateTier(weekPts);
+
+  ctx.fillStyle = "rgba(18, 24, 38, 0.85)";
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+  ctx.lineWidth = 2;
+  roundRectSolo(ctx, 90, 270, 900, 320, 24, true, true);
+
+  // Círculo com inicial
+  ctx.fillStyle = "#d7fa52";
+  ctx.beginPath();
+  ctx.arc(220, 420, 56, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#181915";
+  ctx.font = "800 52px 'Barlow Condensed', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(userName.charAt(0).toUpperCase(), 220, 438);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 40px 'DM Sans', sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(userName, 310, 390);
+
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "700 26px 'DM Sans', sans-serif";
+  ctx.fillText(`FAIXA ATUAL: ${tier.name.toUpperCase()}`, 310, 435);
+
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "600 22px 'DM Sans', sans-serif";
+  ctx.fillText(`${weekPts} pts nesta semana · ${weekRecords.length} treinos realizados`, 310, 480);
+
+  // Card do Treino
+  const targetWorkout = workout || soloState[soloState.length - 1] || null;
+  const cardY = 630;
+  const cardHeight = 920;
+
+  ctx.fillStyle = "rgba(18, 24, 38, 0.95)";
+  ctx.strokeStyle = "rgba(215, 250, 82, 0.4)";
+  ctx.lineWidth = 3;
+  roundRectSolo(ctx, 90, cardY, 900, cardHeight, 28, true, true);
+
+  const modLabel = targetWorkout ? (targetWorkout.categoryLabel || targetWorkout.category || "TREINO").toUpperCase() : "SESSÃO DO DIA";
+  const ptsEarned = targetWorkout ? (targetWorkout.points || 0) : 0;
+
+  ctx.fillStyle = "#d7fa52";
+  roundRectSolo(ctx, 130, cardY + 45, 260, 42, 8, true, false);
+  ctx.fillStyle = "#181915";
+  ctx.font = "800 20px 'DM Sans', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(`+${ptsEarned} PTS CONQUISTADOS`, 260, cardY + 73);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 64px 'Barlow Condensed', Impact, sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(modLabel, 130, cardY + 160);
+
+  const dur = targetWorkout?.duration || 45;
+  const vol = targetWorkout?.volume || 0;
+  const eff = targetWorkout?.effort || 8;
+
+  const statWidth = 260;
+  const statBoxY = cardY + 200;
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRectSolo(ctx, 130, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("DURAÇÃO", 155, statBoxY + 40);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(`${dur} min`, 155, statBoxY + 88);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRectSolo(ctx, 410, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("VOLUME TOTAL", 435, statBoxY + 40);
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(vol > 0 ? `${Math.round(vol).toLocaleString("pt-BR")} kg` : "—", 435, statBoxY + 88);
+
+  ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+  roundRectSolo(ctx, 690, statBoxY, statWidth, 120, 14, true, false);
+  ctx.fillStyle = "#94a3b8";
+  ctx.font = "700 18px 'DM Sans', sans-serif";
+  ctx.fillText("ESFORÇO RPE", 715, statBoxY + 40);
+  ctx.fillStyle = "#facc15";
+  ctx.font = "800 38px 'Barlow Condensed', sans-serif";
+  ctx.fillText(`${eff} / 10`, 715, statBoxY + 88);
+
+  if (targetWorkout?.photo) {
+    try {
+      const img = await loadSoloHtmlImage(targetWorkout.photo);
+      if (img) {
+        ctx.save();
+        const photoY = cardY + 360;
+        const photoH = 390;
+        roundRectSolo(ctx, 130, photoY, 820, photoH, 18, false, false);
+        ctx.clip();
+        const aspect = img.width / img.height;
+        let dw = 820;
+        let dh = 820 / aspect;
+        if (dh < photoH) {
+          dh = photoH;
+          dw = photoH * aspect;
+        }
+        const dx = 130 + (820 - dw) / 2;
+        const dy = photoY + (photoH - dh) / 2;
+        ctx.drawImage(img, dx, dy, dw, dh);
+        ctx.restore();
+
+        ctx.strokeStyle = "rgba(215, 250, 82, 0.5)";
+        ctx.lineWidth = 2;
+        roundRectSolo(ctx, 130, photoY, 820, photoH, 18, false, true);
+      }
+    } catch (e) {
+      console.warn("Falha ao desenhar foto solo:", e);
+    }
+  } else if (Array.isArray(targetWorkout?.exercises) && targetWorkout.exercises.length > 0) {
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "800 22px 'DM Sans', sans-serif";
+    ctx.fillText("DESTAQUES DO TREINO:", 130, cardY + 380);
+
+    let exY = cardY + 440;
+    targetWorkout.exercises.slice(0, 4).forEach((ex) => {
+      const setsCount = Array.isArray(ex.sets) ? ex.sets.length : 3;
+      const maxL = Array.isArray(ex.sets) ? Math.max(...ex.sets.map((s) => Number(s.load) || 0)) : 0;
+      const text = `• ${ex.name} — ${setsCount} séries ${maxL > 0 ? `com até ${maxL}kg` : ""}`;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "600 28px 'DM Sans', sans-serif";
+      ctx.fillText(text, 140, exY);
+      exY += 56;
+    });
+  }
+
+  if (targetWorkout?.comments) {
+    ctx.fillStyle = "#cbd5e1";
+    ctx.font = "italic 24px 'DM Sans', sans-serif";
+    const cleanComm = `"${targetWorkout.comments.slice(0, 80)}${targetWorkout.comments.length > 80 ? "..." : ""}"`;
+    ctx.fillText(cleanComm, 130, cardY + 860);
+  }
+
+  // Rodapé
+  ctx.fillStyle = "#d7fa52";
+  ctx.font = "800 32px 'Barlow Condensed', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("CONSISTÊNCIA E SUPERAÇÃO DIÁRIA.", 540, 1650);
+
+  ctx.fillStyle = "#64748b";
+  ctx.font = "600 22px 'DM Sans', sans-serif";
+  ctx.fillText("REP CLUB · Modo Solo · PWA", 540, 1700);
+
+  return canvas;
+}
+
+function roundRectSolo(ctx, x, y, width, height, radius, fill, stroke) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + width - radius, y);
+  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+  ctx.lineTo(x + width, y + height - radius);
+  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  ctx.lineTo(x + radius, y + height);
+  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+  ctx.lineTo(x, y + radius);
+  ctx.quadraticCurveTo(x, y, x + radius, y);
+  ctx.closePath();
+  if (fill) ctx.fill();
+  if (stroke) ctx.stroke();
+}
+
+function loadSoloHtmlImage(src) {
+  return new Promise((resolve) => {
+    if (!src) return resolve(null);
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
+async function openSoloStoryDialog(workout = null) {
+  showToast("Gerando Story 9:16...");
+  try {
+    const canvas = await generateSoloStoryCard(workout);
+    currentSoloStoryDataUrl = canvas.toDataURL("image/png");
+
+    const preview = soloById("solo-story-preview-img");
+    if (preview) preview.src = currentSoloStoryDataUrl;
+
+    const modal = soloById("solo-story-share-dialog");
+    if (modal && typeof modal.showModal === "function") {
+      modal.showModal();
+    }
+  } catch (err) {
+    console.error("Erro ao gerar Story:", err);
+    showToast("Não foi possível gerar a imagem do Story.");
+  }
+}
+
+soloById("btn-solo-story")?.addEventListener("click", () => openSoloStoryDialog());
+soloById("close-solo-story-dialog")?.addEventListener("click", () => soloById("solo-story-share-dialog")?.close());
+
+soloById("btn-solo-download-story")?.addEventListener("click", () => {
+  if (!currentSoloStoryDataUrl) return;
+  const a = document.createElement("a");
+  a.href = currentSoloStoryDataUrl;
+  a.download = `rep-club-solo-story-${todayKey()}.png`;
+  a.click();
+  showToast("Imagem do Story baixada!");
+});
+
+soloById("btn-solo-copy-story")?.addEventListener("click", async () => {
+  if (!currentSoloStoryDataUrl) return;
+  try {
+    const res = await fetch(currentSoloStoryDataUrl);
+    const blob = await res.blob();
+    if (navigator.clipboard && window.ClipboardItem) {
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob })
+      ]);
+      showToast("Story copiado para a área de transferência!");
+    } else {
+      showToast("Cópia direta não suportada no seu navegador.");
+    }
+  } catch (err) {
+    console.error("Erro ao copiar story:", err);
+    showToast("Não foi possível copiar a imagem.");
+  }
+});
+
+soloById("btn-solo-trigger-share")?.addEventListener("click", async () => {
+  if (!currentSoloStoryDataUrl) return;
+  try {
+    const res = await fetch(currentSoloStoryDataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], `rep-club-story-${todayKey()}.png`, { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "Meu Treino no Rep Club Solo",
+        text: "Mais um treino concluído com sucesso no Rep Club! 🔥",
+        files: [file],
+      });
+    } else {
+      const a = document.createElement("a");
+      a.href = currentSoloStoryDataUrl;
+      a.download = `rep-club-solo-story-${todayKey()}.png`;
+      a.click();
+      showToast("Imagem baixada para compartilhar!");
+    }
+  } catch (err) {
+    if (err.name !== "AbortError") {
+      console.warn("Erro ao compartilhar story:", err);
+      showToast("Compartilhamento não disponível neste navegador.");
+    }
+  }
+});
+
 // INICIALIZAÇÃO
 renderProgramSelectors();
 renderSoloScoreboard();
@@ -1780,7 +2636,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.8").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.0").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);

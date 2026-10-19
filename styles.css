@@ -1024,6 +1024,425 @@ dialog.select-challenges-dialog {
   z-index: 100005 !important;
 }
 
+/* ============================================================
+   MELHORIAS DE ENGAJAMENTO, GAMIFICAÇÃO & PRATICIDADE (v2.8.0)
+   ============================================================ */
+
+/* 1. CRONÔMETRO DE DESCANSO COM SOM */
+.timer-sound-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  transition: all 0.16s ease;
+  margin-left: 4px;
+}
+.timer-sound-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
+}
+.timer-sound-btn.muted {
+  opacity: 0.55;
+  filter: grayscale(1);
+}
+
+/* 2. SOBRECARGA PROGRESSIVA INTELIGENTE */
+.progressive-overload-card {
+  margin: 10px 0 12px;
+  padding: 10px 12px;
+  background: #f7f8f2;
+  border: 1px solid #d5d7cd;
+  border-left: 3.5px solid var(--lime);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.progressive-overload-card.overload-new {
+  border-left-color: var(--blue);
+  background: #f4f6fd;
+}
+.overload-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.overload-badge {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  color: #3b3d36;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.overload-apply-btn {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  background: #181915;
+  color: #ffffff;
+  border: 1px solid #181915;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+.overload-apply-btn:hover {
+  background: #33352d;
+  transform: translateY(-1px);
+}
+.overload-body {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  color: #44463e;
+}
+.overload-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.overload-row strong {
+  color: #181915;
+  font-weight: 700;
+}
+.overload-row small {
+  color: #7b7e74;
+  font-size: 10px;
+}
+.overload-row .est-1rm {
+  color: #55584e;
+  font-size: 10px;
+  font-weight: 600;
+  background: #e9ece0;
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+.overload-target {
+  margin-top: 3px;
+  padding-top: 4px;
+  border-top: 1px dashed #d5d8cd;
+  color: #1f201b;
+}
+.overload-target strong {
+  color: #15803d;
+}
+.overload-note {
+  display: block;
+  font-size: 11px;
+  color: #575a50;
+  line-height: 1.4;
+}
+
+/* 3. COMPACTAÇÃO DE FOTOS */
+.photo-compress-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  background: #eef8df;
+  border: 1px solid #c7e89b;
+  color: #275210;
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+.photo-compress-badge strong {
+  font-weight: 800;
+}
+
+/* 4. SELETOR DE CENÁRIOS ARCADE NO KAMEHAMEHA */
+.arcade-scenario-picker-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  padding: 6px 14px 2px;
+  background: #000;
+}
+.arcade-scenario-picker-wrap span {
+  font-size: 9px;
+  font-weight: 800;
+  color: #71717a;
+  letter-spacing: 0.08em;
+}
+.arcade-scenario-select {
+  background: #18181b;
+  color: #fbbf24;
+  border: 1px solid #3f3f46;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  cursor: pointer;
+  outline: none;
+}
+.arcade-scenario-select:focus {
+  border-color: #fbbf24;
+}
+
+/* 5. MODAL DE COMPARTILHAMENTO DE STORY (9:16) */
+.story-share-dialog {
+  max-width: 480px;
+  width: 95vw;
+  background: #121620;
+  color: #fff;
+  border: 1px solid #273147;
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+.story-share-dialog::backdrop {
+  background: rgba(4, 7, 14, 0.85);
+  backdrop-filter: blur(4px);
+}
+.story-preview-container {
+  display: flex;
+  justify-content: center;
+  margin: 14px 0 16px;
+  background: #090c13;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #1e2638;
+}
+.story-preview-img {
+  max-height: 54vh;
+  width: auto;
+  border-radius: 8px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  display: block;
+  object-fit: contain;
+}
+.story-actions-bar {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.btn-share-instagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  background: linear-gradient(135deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+  color: #ffffff;
+  border: 0;
+  border-radius: 6px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 4px 14px rgba(220, 39, 67, 0.35);
+}
+.btn-share-instagram:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+.story-secondary-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.btn-story-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  background: #1e2638;
+  color: #e2e8f0;
+  border: 1px solid #2d3b55;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.btn-story-secondary:hover {
+  background: #28344d;
+}
+
+/* 6. MODAL E GRID DE BADGES E CONQUISTAS */
+.badges-dialog {
+  max-width: 580px;
+  width: 95vw;
+}
+.badges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 12px;
+  margin: 16px 0;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding: 4px;
+}
+.badge-card {
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1.5px solid #dcdfd5;
+  background: #ffffff;
+  transition: all 0.18s ease;
+  position: relative;
+}
+.badge-card.unlocked {
+  border-color: #facc15;
+  background: linear-gradient(145deg, #fffef0 0%, #ffffff 100%);
+  box-shadow: 0 4px 16px rgba(250, 204, 21, 0.18);
+}
+.badge-card.locked {
+  opacity: 0.65;
+  background: #fbfbf9;
+}
+.badge-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.badge-icon {
+  font-size: 26px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: #f4f4ee;
+  border: 1px solid #d9dcd2;
+  flex-shrink: 0;
+}
+.badge-card.unlocked .badge-icon {
+  background: #fef08a;
+  border-color: #eab308;
+  box-shadow: 0 0 12px rgba(250, 204, 21, 0.4);
+}
+.badge-title-wrap {
+  display: flex;
+  flex-direction: column;
+}
+.badge-title {
+  font-size: 13px;
+  font-weight: 800;
+  color: #181915;
+  font-family: var(--display);
+  letter-spacing: 0.02em;
+}
+.badge-status-tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #85887e;
+  letter-spacing: 0.05em;
+}
+.badge-card.unlocked .badge-status-tag {
+  color: #ca8a04;
+}
+.badge-desc {
+  font-size: 11px;
+  color: #55574f;
+  line-height: 1.35;
+  margin: 0 0 10px;
+  flex: 1;
+}
+.badge-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px dashed #e2e4dc;
+  padding-top: 6px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #71736b;
+}
+
+/* 7. MODAL DE CELEBRAÇÃO DE CONQUISTA DESBLOQUEADA */
+.badge-celebration-dialog {
+  max-width: 420px;
+  width: 90vw;
+  text-align: center;
+  background: #11141d;
+  color: #fff;
+  border: 2px solid #facc15;
+  border-radius: 14px;
+  padding: 28px 20px;
+  box-shadow: 0 18px 50px rgba(250, 204, 21, 0.28);
+}
+.badge-celebration-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(6px);
+}
+.celebration-glow {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 16px;
+  background: radial-gradient(circle, #fde047 0%, rgba(250, 204, 21, 0.1) 70%);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 42px;
+  animation: pulseBadgeGlow 2s infinite ease-in-out;
+}
+@keyframes pulseBadgeGlow {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 14px #eab308); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 24px #facc15); }
+}
+
+/* 8. ALERTA FLUTUANTE DE RIVAL */
+.rival-alert-toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-100px);
+  z-index: 100010;
+  background: #18181b;
+  color: #ffffff;
+  border: 1.5px solid var(--lime);
+  border-radius: 8px;
+  padding: 12px 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 90vw;
+}
+.rival-alert-toast.visible {
+  transform: translateX(-50%) translateY(0);
+}
+.rival-alert-icon {
+  font-size: 22px;
+}
+.rival-alert-content {
+  display: flex;
+  flex-direction: column;
+}
+.rival-alert-content strong {
+  font-size: 13px;
+  color: var(--lime);
+  font-family: var(--display);
+}
+.rival-alert-content span {
+  font-size: 11px;
+  color: #e4e4e7;
+}
+.btn-active-notif {
+  background: #15803d !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

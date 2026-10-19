@@ -1,4 +1,4 @@
-const CACHE_NAME = "rep-club-pwa-v18";
+const CACHE_NAME = "rep-club-pwa-v19";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -69,5 +69,23 @@ self.addEventListener("fetch", (event) => {
       .catch(() => {
         return caches.match(event.request);
       })
+  );
+});
+
+// NOTIFICAÇÃO CLICADA: foca janela existente ou abre app
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const urlToOpen = event.notification.data?.url || "./";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes("index.html") && "focus" in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });
