@@ -16,11 +16,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css?v=2.8.0" />
+    <link rel="stylesheet" href="styles.css?v=2.8.1" />
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <script src="app.js?v=2.8.0" defer></script>
+    <script src="app.js?v=2.8.1" defer></script>
   </head>
   <body>
     <div class="app-shell">
@@ -67,7 +67,7 @@
             <select id="challenge-select" class="challenge-select" aria-label="Desafio selecionado"></select>
           </div>
           <div class="topbar-right-wrap">
-            <button type="button" class="topbar-btn" id="btn-toggle-notifications" title="Notificações de treino do rival" aria-label="Notificações">🔔 Alertas</button>
+            <button type="button" class="topbar-btn" id="btn-toggle-notifications" title="Notificações de treino do rival" aria-label="Notificações">🔔</button>
             <button type="button" class="topbar-btn" id="btn-open-badges-topbar" title="Suas Conquistas e Badges" aria-label="Conquistas">🏆</button>
             <a href="solo.html" class="topbar-btn topbar-btn-solo" id="topbar-solo-link" title="Abrir Modo Solo (treino individual)">🎯 MS</a>
             <div class="gear-menu-wrap">
@@ -120,13 +120,13 @@
               <span id="days-remaining">FALTAM 0 DIAS</span>
             </div>
             <div class="scoreboard-top-actions">
-              <button class="button-tag" id="btn-open-badges" type="button" title="Ver Conquistas & Badges">🏆 Conquistas</button>
-              <button class="button-tag" id="btn-open-story-card" type="button" title="Gerar Story para Instagram (9:16)">📸 Story</button>
-              <button class="button-tag" id="btn-open-raiox" type="button" title="Abrir Raio-X por modalidade e comentários">🔍 Modo Raio-X</button>
-              <button class="button-tag" id="open-setup-btn" type="button" title="Gerenciar participantes do duelo">👥 Participantes</button>
+              <button class="button-tag icon-only-btn" id="btn-open-badges" type="button" title="Conquistas & Badges" aria-label="Conquistas">🏆</button>
+              <button class="button-tag icon-only-btn" id="btn-open-story-card" type="button" title="Gerar Story para Instagram (9:16)" aria-label="Story">📸</button>
+              <button class="button-tag icon-only-btn" id="btn-open-raiox" type="button" title="Modo Raio-X" aria-label="Raio-X">🔍</button>
+              <button class="button-tag icon-only-btn" id="open-setup-btn" type="button" title="Participantes do duelo" aria-label="Participantes">👥</button>
               <div class="score-style-toggle" role="radiogroup" aria-label="Estilo visual do placar">
-                <button type="button" class="style-toggle-btn active" id="btn-style-classic" data-style="classic" aria-pressed="true">⚔️ Clássico</button>
-                <button type="button" class="style-toggle-btn" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="false">⚡ Kamehameha</button>
+                <button type="button" class="style-toggle-btn active icon-only-btn" id="btn-style-classic" data-style="classic" aria-pressed="true" title="Placar Clássico" aria-label="Clássico">⚔️</button>
+                <button type="button" class="style-toggle-btn icon-only-btn" id="btn-style-kamehameha" data-style="kamehameha" aria-pressed="false" title="Placar Arcade Kamehameha" aria-label="Kamehameha">⚡</button>
               </div>
             </div>
           </div>

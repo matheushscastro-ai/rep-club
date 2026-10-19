@@ -1,4 +1,4 @@
-const CACHE_NAME = "rep-club-pwa-v19";
+const CACHE_NAME = "rep-club-pwa-v20";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -17,7 +17,25 @@ const ASSETS_TO_CACHE = [
   "./assets/dbz/clash_epicenter.png",
   "./assets/dbz/clash_epicenter_b.png",
   "./assets/dbz/goku_beam.png",
-  "./assets/dbz/cell_beam.png"
+  "./assets/dbz/cell_beam.png",
+  "./assets/sf/ryu.png",
+  "./assets/sf/ken.png",
+  "./assets/sf/ryu_blast.png",
+  "./assets/sf/ken_blast.png",
+  "./assets/sf/ryu_beam.png",
+  "./assets/sf/ken_beam.png",
+  "./assets/dbz_vb/vegeta.png",
+  "./assets/dbz_vb/boo.png",
+  "./assets/dbz_vb/vegeta_blast.png",
+  "./assets/dbz_vb/boo_blast.png",
+  "./assets/dbz_vb/vegeta_beam.png",
+  "./assets/dbz_vb/boo_beam.png",
+  "./assets/rpg/warrior.png",
+  "./assets/rpg/mage.png",
+  "./assets/rpg/warrior_blast.png",
+  "./assets/rpg/mage_blast.png",
+  "./assets/rpg/warrior_beam.png",
+  "./assets/rpg/mage_beam.png"
 ];
 
 self.addEventListener("install", (event) => {

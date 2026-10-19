@@ -1850,7 +1850,6 @@ const ARCADE_SCENARIOS = {
     p2BeamColor: "#eab308",
     p1AuraColor: (tier) => tier === 3 ? "rgba(56, 189, 248, " : "rgba(250, 204, 21, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(234, 179, 8, " : "rgba(168, 85, 247, ",
-    useDbzSprites: true,
   },
   dbz_vegeta_boo: {
     id: "dbz_vegeta_boo",
@@ -1861,7 +1860,6 @@ const ARCADE_SCENARIOS = {
     p2BeamColor: "#ec4899",
     p1AuraColor: (tier) => tier === 3 ? "rgba(96, 165, 250, " : "rgba(250, 204, 21, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(236, 72, 153, " : "rgba(217, 70, 239, ",
-    useDbzSprites: false,
   },
   sf_ryu_ken: {
     id: "sf_ryu_ken",
@@ -1872,7 +1870,6 @@ const ARCADE_SCENARIOS = {
     p2BeamColor: "#f97316",
     p1AuraColor: (tier) => tier === 3 ? "rgba(59, 130, 246, " : "rgba(147, 197, 253, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(239, 68, 68, " : "rgba(249, 115, 22, ",
-    useDbzSprites: false,
   },
   rpg_champions: {
     id: "rpg_champions",
@@ -1883,28 +1880,93 @@ const ARCADE_SCENARIOS = {
     p2BeamColor: "#8b5cf6",
     p1AuraColor: (tier) => tier === 3 ? "rgba(220, 38, 38, " : "rgba(248, 113, 113, ",
     p2AuraColor: (tier) => tier === 3 ? "rgba(139, 92, 246, " : "rgba(192, 132, 252, ",
-    useDbzSprites: false,
   }
 };
 
-const DBZ_ASSETS = {
-  goku: new Image(),
-  cell: new Image(),
-  gokuBlast: new Image(),
-  cellBlast: new Image(),
+const ARCADE_ASSETS = {
+  dbz_goku_cell: {
+    p1: new Image(),
+    p2: new Image(),
+    p1Blast: new Image(),
+    p2Blast: new Image(),
+    p1Beam: new Image(),
+    p2Beam: new Image(),
+    p1X: 8, p1Y: 48,
+    p2X: 518, p2Y: 28,
+    p1BlastX: 57, p1BlastY: 42,
+    p2BlastX: 450, p2BlastY: 42,
+  },
+  dbz_vegeta_boo: {
+    p1: new Image(),
+    p2: new Image(),
+    p1Blast: new Image(),
+    p2Blast: new Image(),
+    p1Beam: new Image(),
+    p2Beam: new Image(),
+    p1X: 8, p1Y: 42,
+    p2X: 512, p2Y: 34,
+    p1BlastX: 68, p1BlastY: 42,
+    p2BlastX: 442, p2BlastY: 42,
+  },
+  sf_ryu_ken: {
+    p1: new Image(),
+    p2: new Image(),
+    p1Blast: new Image(),
+    p2Blast: new Image(),
+    p1Beam: new Image(),
+    p2Beam: new Image(),
+    p1X: 8, p1Y: 50,
+    p2X: 478, p2Y: 50,
+    p1BlastX: 82, p1BlastY: 42,
+    p2BlastX: 432, p2BlastY: 42,
+  },
+  rpg_champions: {
+    p1: new Image(),
+    p2: new Image(),
+    p1Blast: new Image(),
+    p2Blast: new Image(),
+    p1Beam: new Image(),
+    p2Beam: new Image(),
+    p1X: 10, p1Y: 40,
+    p2X: 485, p2Y: 40,
+    p1BlastX: 78, p1BlastY: 42,
+    p2BlastX: 438, p2BlastY: 42,
+  },
   clashA: new Image(),
   clashB: new Image(),
-  gokuBeam: new Image(),
-  cellBeam: new Image(),
 };
-DBZ_ASSETS.goku.src = "assets/dbz/goku_ssj.png";
-DBZ_ASSETS.cell.src = "assets/dbz/cell_perfect.png";
-DBZ_ASSETS.gokuBlast.src = "assets/dbz/goku_blast.png";
-DBZ_ASSETS.cellBlast.src = "assets/dbz/cell_blast.png";
-DBZ_ASSETS.clashA.src = "assets/dbz/clash_epicenter.png";
-DBZ_ASSETS.clashB.src = "assets/dbz/clash_epicenter_b.png";
-DBZ_ASSETS.gokuBeam.src = "assets/dbz/goku_beam.png";
-DBZ_ASSETS.cellBeam.src = "assets/dbz/cell_beam.png";
+
+ARCADE_ASSETS.dbz_goku_cell.p1.src = "assets/dbz/goku_ssj.png";
+ARCADE_ASSETS.dbz_goku_cell.p2.src = "assets/dbz/cell_perfect.png";
+ARCADE_ASSETS.dbz_goku_cell.p1Blast.src = "assets/dbz/goku_blast.png";
+ARCADE_ASSETS.dbz_goku_cell.p2Blast.src = "assets/dbz/cell_blast.png";
+ARCADE_ASSETS.dbz_goku_cell.p1Beam.src = "assets/dbz/goku_beam.png";
+ARCADE_ASSETS.dbz_goku_cell.p2Beam.src = "assets/dbz/cell_beam.png";
+
+ARCADE_ASSETS.dbz_vegeta_boo.p1.src = "assets/dbz_vb/vegeta.png";
+ARCADE_ASSETS.dbz_vegeta_boo.p2.src = "assets/dbz_vb/boo.png";
+ARCADE_ASSETS.dbz_vegeta_boo.p1Blast.src = "assets/dbz_vb/vegeta_blast.png";
+ARCADE_ASSETS.dbz_vegeta_boo.p2Blast.src = "assets/dbz_vb/boo_blast.png";
+ARCADE_ASSETS.dbz_vegeta_boo.p1Beam.src = "assets/dbz_vb/vegeta_beam.png";
+ARCADE_ASSETS.dbz_vegeta_boo.p2Beam.src = "assets/dbz_vb/boo_beam.png";
+
+ARCADE_ASSETS.sf_ryu_ken.p1.src = "assets/sf/ryu.png";
+ARCADE_ASSETS.sf_ryu_ken.p2.src = "assets/sf/ken.png";
+ARCADE_ASSETS.sf_ryu_ken.p1Blast.src = "assets/sf/ryu_blast.png";
+ARCADE_ASSETS.sf_ryu_ken.p2Blast.src = "assets/sf/ken_blast.png";
+ARCADE_ASSETS.sf_ryu_ken.p1Beam.src = "assets/sf/ryu_beam.png";
+ARCADE_ASSETS.sf_ryu_ken.p2Beam.src = "assets/sf/ken_beam.png";
+
+ARCADE_ASSETS.rpg_champions.p1.src = "assets/rpg/warrior.png";
+ARCADE_ASSETS.rpg_champions.p2.src = "assets/rpg/mage.png";
+ARCADE_ASSETS.rpg_champions.p1Blast.src = "assets/rpg/warrior_blast.png";
+ARCADE_ASSETS.rpg_champions.p2Blast.src = "assets/rpg/mage_blast.png";
+ARCADE_ASSETS.rpg_champions.p1Beam.src = "assets/rpg/warrior_beam.png";
+ARCADE_ASSETS.rpg_champions.p2Beam.src = "assets/rpg/mage_beam.png";
+
+ARCADE_ASSETS.clashA.src = "assets/dbz/clash_epicenter.png";
+ARCADE_ASSETS.clashB.src = "assets/dbz/clash_epicenter_b.png";
+const DBZ_ASSETS = ARCADE_ASSETS.dbz_goku_cell;
 
 let currentClashRatio = 50;
 let targetClashRatio = 50;
@@ -1921,6 +1983,7 @@ function startKamehamehaLoop() {
       const ctx = canvas.getContext("2d");
       if (ctx) {
         const scenario = ARCADE_SCENARIOS[currentArcadeScenario] || ARCADE_SCENARIOS.dbz_goku_cell;
+        const assets = ARCADE_ASSETS[currentArcadeScenario] || ARCADE_ASSETS.dbz_goku_cell;
 
         // Interpolação suave em direção à pontuação real
         currentClashRatio += (targetClashRatio - currentClashRatio) * 0.08;
@@ -1962,45 +2025,45 @@ function startKamehamehaLoop() {
 
         // 1. FEIXE HORIZONTAL DO LUTADOR 1 (x=142 até clashX - 35, y=62, altura 27)
         if (clashX > 142) {
-          const gokuBeamWidth = Math.max(0, (clashX - 35) - 142);
-          if (gokuBeamWidth > 0) {
-            if (scenario.useDbzSprites && DBZ_ASSETS.gokuBeam.complete) {
-              ctx.drawImage(DBZ_ASSETS.gokuBeam, 0, 0, 1, 27, 142, 62, gokuBeamWidth, 27);
+          const p1BeamWidth = Math.max(0, (clashX - 35) - 142);
+          if (p1BeamWidth > 0) {
+            if (assets.p1Beam && assets.p1Beam.complete && assets.p1Beam.naturalWidth > 0) {
+              ctx.drawImage(assets.p1Beam, 0, 0, 1, 27, 142, 62, p1BeamWidth, 27);
             } else {
               const grad1 = ctx.createLinearGradient(142, 62, clashX - 35, 89);
               grad1.addColorStop(0, scenario.p1BeamColor);
               grad1.addColorStop(0.5, "#ffffff");
               grad1.addColorStop(1, scenario.p1BeamColor);
               ctx.fillStyle = grad1;
-              ctx.fillRect(142, 67, gokuBeamWidth, 18);
+              ctx.fillRect(142, 67, p1BeamWidth, 18);
               ctx.fillStyle = "#ffffff";
-              ctx.fillRect(142, 72, gokuBeamWidth, 8);
+              ctx.fillRect(142, 72, p1BeamWidth, 8);
             }
           }
         }
 
         // 2. FEIXE HORIZONTAL DO LUTADOR 2 (clashX + 35 até x=450, y=62, altura 27)
         if (clashX < 450) {
-          const cellBeamWidth = Math.max(0, 450 - (clashX + 35));
-          if (cellBeamWidth > 0) {
-            if (scenario.useDbzSprites && DBZ_ASSETS.cellBeam.complete) {
-              ctx.drawImage(DBZ_ASSETS.cellBeam, 0, 0, 1, 27, clashX + 35, 62, cellBeamWidth, 27);
+          const p2BeamWidth = Math.max(0, 450 - (clashX + 35));
+          if (p2BeamWidth > 0) {
+            if (assets.p2Beam && assets.p2Beam.complete && assets.p2Beam.naturalWidth > 0) {
+              ctx.drawImage(assets.p2Beam, 0, 0, 1, 27, clashX + 35, 62, p2BeamWidth, 27);
             } else {
               const grad2 = ctx.createLinearGradient(clashX + 35, 62, 450, 89);
               grad2.addColorStop(0, scenario.p2BeamColor);
               grad2.addColorStop(0.5, "#ffffff");
               grad2.addColorStop(1, scenario.p2BeamColor);
               ctx.fillStyle = grad2;
-              ctx.fillRect(clashX + 35, 67, cellBeamWidth, 18);
+              ctx.fillRect(clashX + 35, 67, p2BeamWidth, 18);
               ctx.fillStyle = "#ffffff";
-              ctx.fillRect(clashX + 35, 72, cellBeamWidth, 8);
+              ctx.fillRect(clashX + 35, 72, p2BeamWidth, 8);
             }
           }
         }
 
         // 3. SPRITE DO LUTADOR 1
-        if (scenario.useDbzSprites && DBZ_ASSETS.goku.complete) {
-          ctx.drawImage(DBZ_ASSETS.goku, 8, 48);
+        if (assets.p1 && assets.p1.complete && assets.p1.naturalWidth > 0) {
+          ctx.drawImage(assets.p1, assets.p1X, assets.p1Y);
         } else {
           ctx.fillStyle = scenario.p1BeamColor;
           ctx.beginPath();
@@ -2013,8 +2076,8 @@ function startKamehamehaLoop() {
         }
 
         // 4. ESFERA DE ORIGEM DO LUTADOR 1
-        if (scenario.useDbzSprites && DBZ_ASSETS.gokuBlast.complete) {
-          ctx.drawImage(DBZ_ASSETS.gokuBlast, 57 + shakeX * 0.4, 42 + shakeY * 0.4);
+        if (assets.p1Blast && assets.p1Blast.complete && assets.p1Blast.naturalWidth > 0) {
+          ctx.drawImage(assets.p1Blast, assets.p1BlastX + shakeX * 0.4, assets.p1BlastY + shakeY * 0.4);
         } else {
           ctx.fillStyle = scenario.p1BeamColor;
           ctx.beginPath();
@@ -2023,8 +2086,8 @@ function startKamehamehaLoop() {
         }
 
         // 5. SPRITE DO LUTADOR 2
-        if (scenario.useDbzSprites && DBZ_ASSETS.cell.complete) {
-          ctx.drawImage(DBZ_ASSETS.cell, 518, 28);
+        if (assets.p2 && assets.p2.complete && assets.p2.naturalWidth > 0) {
+          ctx.drawImage(assets.p2, assets.p2X, assets.p2Y);
         } else {
           ctx.fillStyle = scenario.p2BeamColor;
           ctx.beginPath();
@@ -2037,8 +2100,8 @@ function startKamehamehaLoop() {
         }
 
         // 6. ESFERA DE ORIGEM DO LUTADOR 2
-        if (scenario.useDbzSprites && DBZ_ASSETS.cellBlast.complete) {
-          ctx.drawImage(DBZ_ASSETS.cellBlast, 450 + shakeX * 0.4, 42 + shakeY * 0.4);
+        if (assets.p2Blast && assets.p2Blast.complete && assets.p2Blast.naturalWidth > 0) {
+          ctx.drawImage(assets.p2Blast, assets.p2BlastX + shakeX * 0.4, assets.p2BlastY + shakeY * 0.4);
         } else {
           ctx.fillStyle = scenario.p2BeamColor;
           ctx.beginPath();
@@ -2074,8 +2137,8 @@ function startKamehamehaLoop() {
 
         // 7. EPICENTRO DA COLISÃO (centralizado em clashX, y=76 -> canto superior esquerdo clashX - 53, y=20)
         const useFrameB = (Math.floor(Date.now() / 110) % 2 === 0);
-        const clashImg = (useFrameB && DBZ_ASSETS.clashB.complete) ? DBZ_ASSETS.clashB : DBZ_ASSETS.clashA;
-        if (clashImg.complete) {
+        const clashImg = (useFrameB && ARCADE_ASSETS.clashB.complete) ? ARCADE_ASSETS.clashB : ARCADE_ASSETS.clashA;
+        if (clashImg && clashImg.complete) {
           ctx.drawImage(clashImg, clashX - 53 + shakeX, 20 + shakeY);
         }
       }
@@ -4163,7 +4226,7 @@ if ("serviceWorker" in navigator) {
   });
 
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("./sw.js?v=2.7.8").then((reg) => {
+    navigator.serviceWorker.register("./sw.js?v=2.8.1").then((reg) => {
       reg.update();
     }).catch((err) => {
       console.warn("Falha no registro do ServiceWorker PWA:", err);
@@ -5387,14 +5450,14 @@ function initNotificationControls() {
       return;
     }
     if (Notification.permission === "granted") {
-      btn.textContent = "🔔 Alertas: On";
+      btn.textContent = "🔔";
       btn.classList.add("btn-active-notif");
       btn.title = "Alertas de rival ativos! Clique para testar notificação.";
     } else if (Notification.permission === "denied") {
-      btn.textContent = "🔕 Alertas: Bloqueados";
+      btn.textContent = "🔕";
       btn.title = "Notificações bloqueadas nas configurações do navegador.";
     } else {
-      btn.textContent = "🔔 Ativar Alertas";
+      btn.textContent = "🔔";
       btn.title = "Clique para receber alertas em tempo real quando o rival treinar!";
     }
   }
