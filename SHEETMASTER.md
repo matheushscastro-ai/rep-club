@@ -11,7 +11,7 @@
 | **Repositório GitHub** | [`https://github.com/matheushscastro-ai/rep-club`](https://github.com/matheushscastro-ai/rep-club) |
 | **Branch Ativa / Produção** | `main` |
 | **Live URL (PWA)** | [`https://matheushscastro-ai.github.io/rep-club/`](https://matheushscastro-ai.github.io/rep-club/) |
-| **Versão Atual** | `v2.8.6` (Service Worker `rep-club-pwa-v25`) |
+| **Versão Atual** | `v2.8.7` (Service Worker `rep-club-pwa-v26`) |
 | **Stack Tecnológica** | HTML5 Semântico, CSS3 Moderno, JavaScript Vanilla (ES6+), Web Audio API, Canvas 2D API |
 | **Backend & Sync** | Firebase Realtime Database (RTDB), Firebase Authentication (Anônimo + Email/UID) |
 | **Distribuição & Plataforma** | PWA (Progressive Web App) instalável em iOS, Android, MacOS e Windows com suporte offline |
