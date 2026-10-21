@@ -5,6 +5,15 @@ const PERIOD_STORAGE_KEY = "rep-club-period-v1";
 const SCOREBOARD_STYLE_KEY = "rep-club-score-style-v2";
 const CHALLENGES_STORAGE_KEY = "rep-club-challenges-v2";
 const ACTIVE_CHALLENGE_KEY = "rep-club-active-challenge-v2";
+let challenges = null;
+let activeChallengeId = null;
+
+function formatDisplayDate(dateStr) {
+  if (!dateStr) return "";
+  const parts = String(dateStr).split("-");
+  if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  return String(dateStr);
+}
 const firebaseConfig = {
   apiKey: "AIzaSyCWCyQ-2XLKrkJ_Z1_saihANmcD1Oz6lCI",
   authDomain: "mathub-f08b6.firebaseapp.com",
@@ -1639,8 +1648,8 @@ function loadChallenges() {
   }];
 }
 
-let challenges = loadChallenges();
-let activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || (challenges[0]?.id || "challenge-1");
+challenges = loadChallenges();
+activeChallengeId = localStorage.getItem(ACTIVE_CHALLENGE_KEY) || (challenges[0]?.id || "challenge-1");
 if (!challenges.some((c) => c.id === activeChallengeId)) {
   activeChallengeId = challenges[0]?.id || "challenge-1";
 }
@@ -1656,7 +1665,8 @@ function getActiveChallenge() {
       return userChallenges[0];
     }
   }
-  return challenges.find((c) => c.id === activeChallengeId) || challenges[0] || null;
+  const list = Array.isArray(challenges) ? challenges : [];
+  return list.find((c) => c.id === activeChallengeId) || list[0] || null;
 }
 
 function saveChallenges() {
@@ -2929,6 +2939,7 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
       </div>
       <p class="effort-hint">O esforço conta em todas as modalidades. 7–8 aproxima do máximo; 9–10 completa o bônus.</p>
     </div>`);
+  byId("effort-input")?.addEventListener("input", updateEffortLabel);
   updateEffortLabel();
   updatePointsPreview();
 
