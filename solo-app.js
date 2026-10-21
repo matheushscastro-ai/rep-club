@@ -2,6 +2,19 @@ const SOLO_KEY = "rep-club-solo-workouts-v2";
 const PROGRAMS_STORAGE_KEY = "rep-club-training-programs-v2";
 const AUTH_USER_KEY = "rep-club-auth-user-v2";
 
+const EFFORT_LABELS = {
+  1: "1 · Só bateu ponto (Muito Leve)",
+  2: "2 · Era melhor nem ter vindo (Leve)",
+  3: "3 · Treino culposo (Leve)",
+  4: "4 · Uma bosta (Abaixo da média)",
+  5: "5 · Meio bosta (Moderado)",
+  6: "6 · Fisioterapia disfarçada (Sentiu o peso)",
+  7: "7 · Treininho honesto (Forte · Cara de treino)",
+  8: "8 · Máquina (Muito Forte · No limite)",
+  9: "9 · Rambo (Insano · 1 rep na reserva)",
+  10: "10 · Morreu, mas entregou (Falha total)",
+};
+
 function getSoloUser() {
   try {
     const saved = JSON.parse(localStorage.getItem(AUTH_USER_KEY));
@@ -762,9 +775,21 @@ function renderSoloFields() {
         <label>DURAÇÃO (MINUTOS)
           <input name="duration" id="solo-duration" type="number" min="10" max="240" value="${isBjj ? 60 : 35}" required />
         </label>
-        <label>ESCALA DE ESFORÇO (1 A 10)
-          <input name="effort" id="solo-effort" type="range" min="1" max="10" value="7" />
-        </label>
+        <div class="solo-effort-box" style="margin-top:10px;">
+          <div class="effort-header">
+            <span class="effort-title">AVALIAÇÃO DE ESFORÇO (1 A 10)</span>
+            <output id="solo-effort-label" class="effort-badge">7 · Treininho honesto (Forte · Cara de treino)</output>
+          </div>
+          <input class="effort-range" id="solo-effort" name="effort" type="range" min="1" max="10" step="1" value="7" />
+          <div class="effort-scale-ticks">
+            <span>1 · Leve</span>
+            <span>3</span>
+            <span>5 · Médio</span>
+            <span>7 · Forte</span>
+            <span>8</span>
+            <span>10 · Máximo</span>
+          </div>
+        </div>
       </div>
       <div style="font-size:11px; color:#62645c; margin-top:6px; font-weight:600;">
         Pontuação estimada: <strong id="solo-pts-estimate" style="color:var(--ink);">${isBjj ? "20" : "18"} pts</strong>
@@ -783,8 +808,12 @@ function renderSoloFields() {
       }
       if (soloById("solo-pts-estimate")) soloById("solo-pts-estimate").textContent = `${pts} pts`;
     };
-    effInput?.addEventListener("input", updateEstimate);
+    effInput?.addEventListener("input", () => {
+      updateSoloEffortLabel();
+      updateEstimate();
+    });
     durInput?.addEventListener("input", updateEstimate);
+    updateSoloEffortLabel();
     return;
   }
 
@@ -813,6 +842,16 @@ function renderSoloFields() {
     <div class="solo-accordion-bar">
       <span class="solo-accordion-bar-title">EXERCÍCIOS DA SESSÃO (${session.exercises.length})</span>
       <div class="solo-accordion-bar-btns">
+        <div class="modal-sound-control" title="Som do alarme de descanso">
+          <span>🔔</span>
+          <select class="modal-sound-select" id="solo-modal-sound-select">
+            <option value="boxing-gong" ${soloTimerSoundSelected === "boxing-gong" ? "selected" : ""}>🥊 Gongo</option>
+            <option value="digital-beep" ${soloTimerSoundSelected === "digital-beep" ? "selected" : ""}>⏱️ Beep Alto</option>
+            <option value="whistle" ${soloTimerSoundSelected === "whistle" ? "selected" : ""}>📢 Apito</option>
+            <option value="arcade" ${soloTimerSoundSelected === "arcade" ? "selected" : ""}>🕹️ 8-Bit</option>
+            <option value="chime" ${soloTimerSoundSelected === "chime" ? "selected" : ""}>🔔 Chime</option>
+          </select>
+        </div>
         <button type="button" class="solo-accordion-toggle-all-btn" data-solo-action="expand-all">Expandir todos</button>
         <button type="button" class="solo-accordion-toggle-all-btn" data-solo-action="collapse-all">Recolher todos</button>
       </div>
@@ -912,11 +951,35 @@ function renderSoloFields() {
       <span>VOLUME TOTAL LEVANTADO:</span>
       <strong id="solo-total-volume" style="font-family:var(--display); font-size:16px;">0 kg</strong>
     </div>
-    <label class="form-field" style="margin-top:10px;">
-      <span>AVALIAÇÃO DE ESFORÇO · 1 A 10</span>
-      <input name="effort" id="solo-effort" type="range" min="1" max="10" value="7" />
-    </label>
+    <div class="solo-effort-box" style="margin-top:12px;">
+      <div class="effort-header">
+        <span class="effort-title">AVALIAÇÃO DE ESFORÇO (1 A 10)</span>
+        <output id="solo-effort-label" class="effort-badge">7 · Treininho honesto (Forte · Cara de treino)</output>
+      </div>
+      <input class="effort-range" id="solo-effort" name="effort" type="range" min="1" max="10" step="1" value="7" />
+      <div class="effort-scale-ticks">
+        <span>1 · Leve</span>
+        <span>3</span>
+        <span>5 · Médio</span>
+        <span>7 · Forte</span>
+        <span>8</span>
+        <span>10 · Máximo</span>
+      </div>
+      <p class="effort-hint" style="margin: 8px 0 0; color: #777970; font-size: 9px; line-height: 1.45;">O esforço individual conta na consistência e na pontuação diária.</p>
+    </div>
   `;
+
+  const effInput = soloById("solo-effort");
+  effInput?.addEventListener("input", updateSoloEffortLabel);
+  updateSoloEffortLabel();
+
+  const modalSoundSelect = soloById("solo-modal-sound-select");
+  if (modalSoundSelect) {
+    modalSoundSelect.value = soloTimerSoundSelected;
+    modalSoundSelect.addEventListener("change", (e) => {
+      setSoloTimerSound(e.target.value, true);
+    });
+  }
 
   setTimeout(updateSoloVolumePreview, 50);
   setTimeout(updateAllSoloExerciseProgressBadges, 60);
@@ -927,6 +990,14 @@ function renderSoloFields() {
       handleAddExerciseToCurrentSoloWorkout(exName);
     });
   }
+}
+
+function updateSoloEffortLabel() {
+  const input = soloById("solo-effort");
+  const output = soloById("solo-effort-label");
+  if (!input || !output) return;
+  const effort = Number(input.value);
+  output.textContent = EFFORT_LABELS[effort] || `Nível ${effort}`;
 }
 
 function handleAddExerciseToCurrentSoloWorkout(inputOrName) {
@@ -2145,6 +2216,7 @@ window.drawSoloHistory = drawSoloHistory;
 // ==========================================
 let soloAudioCtx = null;
 let soloSoundEnabled = localStorage.getItem("rep-club-sound-enabled") !== "false";
+let soloTimerSoundSelected = localStorage.getItem("rep-club-timer-sound") || "boxing-gong";
 let soloRestTimerInterval = null;
 let soloRestSecondsRemaining = 0;
 let activeSoloExerciseTimerIndex = null;
@@ -2160,11 +2232,136 @@ function getSoloAudioContext() {
   return soloAudioCtx;
 }
 
-function playSoloBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
+let soloMasterCompressor = null;
+function getSoloMasterDestination(ctx) {
+  if (!soloMasterCompressor || soloMasterCompressor.context !== ctx) {
+    try {
+      soloMasterCompressor = ctx.createDynamicsCompressor();
+      soloMasterCompressor.threshold.setValueAtTime(-10, ctx.currentTime);
+      soloMasterCompressor.knee.setValueAtTime(24, ctx.currentTime);
+      soloMasterCompressor.ratio.setValueAtTime(10, ctx.currentTime);
+      soloMasterCompressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      soloMasterCompressor.release.setValueAtTime(0.20, ctx.currentTime);
+      soloMasterCompressor.connect(ctx.destination);
+    } catch (e) {
+      return ctx.destination;
+    }
+  }
+  return soloMasterCompressor;
+}
+
+function playSoloBoxingGong(ctx, dest) {
+  const now = ctx.currentTime;
+  const freqs = [
+    { f: 220, type: "sawtooth", gain: 0.75, decay: 1.6 },
+    { f: 440, type: "sine", gain: 0.55, decay: 1.3 },
+    { f: 880, type: "sine", gain: 0.38, decay: 0.9 },
+    { f: 1280, type: "triangle", gain: 0.28, decay: 0.6 }
+  ];
+  freqs.forEach(({ f, type, gain: maxGain, decay }) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f, now);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.98, now + decay);
+    g.gain.setValueAtTime(maxGain, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(now);
+    osc.stop(now + decay);
+  });
+}
+
+function playSoloHighDigitalBeep(ctx, dest) {
+  const now = ctx.currentTime;
+  const beeps = [0, 0.12, 0.24];
+  beeps.forEach((startOffset, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const start = now + startOffset;
+    const dur = 0.08;
+    osc.type = "square";
+    const freq = i === 2 ? 1480 : 1175;
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.7, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playSoloRefereeWhistle(ctx, dest) {
+  const now = ctx.currentTime;
+  [0, 0.22].forEach((offset) => {
+    const start = now + offset;
+    const dur = 0.16;
+    [2350, 2550].forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, start);
+      g.gain.setValueAtTime(0.68, start);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(start);
+      osc.stop(start + dur);
+    });
+  });
+}
+
+function playSoloArcadeVictory(ctx, dest) {
+  const now = ctx.currentTime;
+  const notes = [
+    { f: 523.25, time: 0 },
+    { f: 659.25, time: 0.08 },
+    { f: 783.99, time: 0.16 },
+    { f: 1046.50, time: 0.24 }
+  ];
+  notes.forEach(({ f, time }) => {
+    const start = now + time;
+    const dur = time === 0.24 ? 0.35 : 0.09;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(f, start);
+    g.gain.setValueAtTime(0.62, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playSoloCrystalChime(ctx, dest) {
+  const now = ctx.currentTime;
+  const freqs = [587.33, 880.00, 1174.66, 1479.98];
+  freqs.forEach((f, idx) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    const start = now + (idx * 0.04);
+    const dur = 1.4;
+    osc.frequency.setValueAtTime(f, start);
+    g.gain.setValueAtTime(0.7 / (idx * 0.3 + 1), start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playSoloBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.5) {
   if (!soloSoundEnabled) return;
   try {
     const ctx = getSoloAudioContext();
     if (!ctx) return;
+    const dest = getSoloMasterDestination(ctx);
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -2172,7 +2369,7 @@ function playSoloBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15)
     gain.gain.setValueAtTime(gainVal, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(dest);
     osc.start();
     osc.stop(ctx.currentTime + duration);
   } catch (e) {
@@ -2181,12 +2378,79 @@ function playSoloBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15)
 }
 
 function playSoloRestCountdownBeep() {
-  playSoloBeep(520, "sine", 0.08, 0.18);
+  if (!soloSoundEnabled) return;
+  try {
+    const ctx = getSoloAudioContext();
+    if (!ctx) return;
+    const dest = getSoloMasterDestination(ctx);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.55, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.09);
+  } catch (e) {
+    console.warn("Solo countdown error", e);
+  }
+}
+
+function playSoloTimerFinishedSound(soundKey = soloTimerSoundSelected) {
+  if (!soloSoundEnabled) return;
+  try {
+    const ctx = getSoloAudioContext();
+    if (!ctx) return;
+    const dest = getSoloMasterDestination(ctx);
+    switch (soundKey) {
+      case "boxing-gong":
+        playSoloBoxingGong(ctx, dest);
+        break;
+      case "digital-beep":
+        playSoloHighDigitalBeep(ctx, dest);
+        break;
+      case "whistle":
+        playSoloRefereeWhistle(ctx, dest);
+        break;
+      case "arcade":
+        playSoloArcadeVictory(ctx, dest);
+        break;
+      case "chime":
+        playSoloCrystalChime(ctx, dest);
+        break;
+      default:
+        playSoloBoxingGong(ctx, dest);
+        break;
+    }
+  } catch (e) {
+    console.warn("Solo finish sound error", e);
+  }
 }
 
 function playSoloRestFinishedAlert() {
-  playSoloBeep(660, "sine", 0.14, 0.22);
-  setTimeout(() => playSoloBeep(880, "sine", 0.32, 0.25), 120);
+  playSoloTimerFinishedSound();
+}
+
+function setSoloTimerSound(soundKey, preview = true) {
+  soloTimerSoundSelected = soundKey;
+  localStorage.setItem("rep-club-timer-sound", soundKey);
+  const dockSelect = soloById("solo-timer-sound-select");
+  if (dockSelect && dockSelect.value !== soundKey) dockSelect.value = soundKey;
+  const modalSelect = soloById("solo-modal-sound-select");
+  if (modalSelect && modalSelect.value !== soundKey) modalSelect.value = soundKey;
+  if (preview) {
+    playSoloTimerFinishedSound(soundKey);
+    const soundNames = {
+      "boxing-gong": "🥊 Gongo de Boxe",
+      "digital-beep": "⏱️ Beep Alto Digital",
+      "whistle": "📢 Apito",
+      "arcade": "🕹️ 8-Bit Arcade",
+      "chime": "🔔 Chime Cristalino"
+    };
+    showToast(`🔔 Som do descanso: ${soundNames[soundKey] || soundKey}`);
+  }
 }
 
 function toggleSoloSound() {
@@ -2194,7 +2458,7 @@ function toggleSoloSound() {
   localStorage.setItem("rep-club-sound-enabled", String(soloSoundEnabled));
   updateSoloSoundToggleUI();
   if (soloSoundEnabled) {
-    playSoloBeep(600, "sine", 0.09, 0.16);
+    playSoloTimerFinishedSound(soloTimerSoundSelected);
     showToast("🔊 Áudio do cronômetro ativado");
   } else {
     showToast("🔇 Áudio do cronômetro silenciado");
@@ -2278,6 +2542,11 @@ document.querySelectorAll("[data-solo-rest]").forEach((btn) => {
 });
 soloById("solo-timer-reset")?.addEventListener("click", resetSoloRestTimer);
 soloById("solo-timer-sound-toggle")?.addEventListener("click", toggleSoloSound);
+const soloDockSoundSelect = soloById("solo-timer-sound-select");
+if (soloDockSoundSelect) {
+  soloDockSoundSelect.value = soloTimerSoundSelected;
+  soloDockSoundSelect.addEventListener("change", (e) => setSoloTimerSound(e.target.value, true));
+}
 updateSoloSoundToggleUI();
 
 // Preenchimento de sobrecarga progressiva com 1 clique

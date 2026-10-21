@@ -834,10 +834,13 @@ dialog::backdrop {
 .exercise-mean { color: #55574f; font-size: 8px; font-weight: 700; }
 .cardio-block-field input { width: 100%; min-height: 40px; padding: 0 9px; border: 1px solid #cccdc4; border-radius: 3px; background: #f8f8f3; font-size: 12px; }
 .cardio-block-field small { color: #777970; font-size: 9px; }
-.effort-field { margin-top: 13px; }
-.effort-scale-caption { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; color: #85877d; font-size: 7px; font-weight: 700; letter-spacing: .04em; }
-.effort-scale-caption output { max-width: 58%; color: var(--ink); font-size: 9px; letter-spacing: 0; text-align: center; }
-.effort-range { width: 100%; margin: 5px 0 0; accent-color: #a9c92a; cursor: pointer; }
+.effort-field { margin-top: 14px; padding: 10px 12px; background: #f6f7f0; border: 1px solid #dcded4; border-radius: 6px; }
+.effort-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.effort-title { font-size: 9px; font-weight: 700; letter-spacing: .06em; color: #55574f; text-transform: uppercase; }
+.effort-badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 4px; background: #20211d; color: #a9c92a; font-size: 10px; font-weight: 700; letter-spacing: .02em; }
+.effort-range { width: 100%; margin: 6px 0 2px; accent-color: #a9c92a; cursor: pointer; }
+.effort-scale-ticks { display: flex; justify-content: space-between; margin-top: 4px; padding: 0 2px; color: #777970; font-size: 8px; font-weight: 700; }
+.effort-scale-caption { display: none; }
 .effort-hint { margin: 8px 0 0; color: #777970; font-size: 9px; line-height: 1.45; }
 .sport-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .points-preview { margin: 15px 0 0; padding: 11px; background: #e6e9db; color: #66695e; font-size: 10px; }
@@ -847,6 +850,11 @@ dialog::backdrop {
 .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px; }
 .button-quiet { background: transparent; color: #6d6f67; }
 .rest-dock { position: fixed; right: 18px; bottom: 16px; z-index: 6; display: flex; min-height: 54px; align-items: center; gap: 7px; padding: 7px 9px 7px 12px; border: 1px solid #3b3c36; border-radius: 4px; background: #242520; color: #f4f4ee; box-shadow: 0 8px 30px rgb(25 26 22 / 18%); }
+.timer-sound-select-wrap { display: inline-flex; align-items: center; background: #32332c; border: 1px solid #4a4b41; border-radius: 3px; padding: 0 4px; height: 26px; }
+.timer-sound-dropdown { background: transparent; border: none; color: #f4f4ee; font-size: 9px; font-weight: 700; cursor: pointer; outline: none; max-width: 115px; }
+.timer-sound-dropdown option { background: #242520; color: #f4f4ee; padding: 4px; }
+.modal-sound-control { display: inline-flex; align-items: center; gap: 4px; font-size: 8px; font-weight: 700; color: #55574f; background: #ffffff; border: 1px solid #d5d7cd; border-radius: 3px; padding: 2px 6px; }
+.modal-sound-select { border: none; background: transparent; font-size: 8px; font-weight: 700; color: #20211d; cursor: pointer; outline: none; }
 .timer-readout { display: grid; gap: 2px; min-width: 54px; }
 .timer-readout span { color: #a9aaa1; font-size: 7px; font-weight: 700; letter-spacing: .08em; }
 .timer-readout strong { font-family: var(--display); font-size: 20px; line-height: 1; }

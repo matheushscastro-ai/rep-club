@@ -528,16 +528,16 @@ const MODALITIES = {
   cardio: { label: "Cardio", basePoints: 8, effortMax: 8, targetMinutes: 30, durationMax: 4 },
 };
 const EFFORT_LABELS = {
-  1: "Só bateu ponto",
-  2: "Era melhor nem ter vindo",
-  3: "Treino culposo",
-  4: "Uma bosta",
-  5: "Meio bosta",
-  6: "Fisioterapia disfarçada",
-  7: "Treininho honesto",
-  8: "Máquina",
-  9: "Rambo",
-  10: "Morreu, mas entregou",
+  1: "1 · Só bateu ponto (Muito Leve)",
+  2: "2 · Era melhor nem ter vindo (Leve)",
+  3: "3 · Treino culposo (Leve)",
+  4: "4 · Uma bosta (Abaixo da média)",
+  5: "5 · Meio bosta (Moderado)",
+  6: "6 · Fisioterapia disfarçada (Sentiu o peso)",
+  7: "7 · Treininho honesto (Forte · Cara de treino)",
+  8: "8 · Máquina (Muito Forte · No limite)",
+  9: "9 · Rambo (Insano · 1 rep na reserva)",
+  10: "10 · Morreu, mas entregou (Falha total)",
 };
 const TRASH_TALK_MESSAGES = {
   tie: [
@@ -2793,6 +2793,16 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
         <div class="exercise-accordion-bar">
           <span class="accordion-bar-title">EXERCÍCIOS DA SESSÃO (${plan.exercises.length})</span>
           <div class="accordion-bar-btns">
+            <div class="modal-sound-control" title="Som do alarme de descanso">
+              <span>🔔</span>
+              <select class="modal-sound-select" id="workout-sound-select">
+                <option value="boxing-gong" ${timerSoundSelected === "boxing-gong" ? "selected" : ""}>🥊 Gongo</option>
+                <option value="digital-beep" ${timerSoundSelected === "digital-beep" ? "selected" : ""}>⏱️ Beep Alto</option>
+                <option value="whistle" ${timerSoundSelected === "whistle" ? "selected" : ""}>📢 Apito</option>
+                <option value="arcade" ${timerSoundSelected === "arcade" ? "selected" : ""}>🕹️ 8-Bit</option>
+                <option value="chime" ${timerSoundSelected === "chime" ? "selected" : ""}>🔔 Chime</option>
+              </select>
+            </div>
             <button type="button" class="accordion-toggle-all-btn" data-action="expand-all">Expandir todos</button>
             <button type="button" class="accordion-toggle-all-btn" data-action="collapse-all">Recolher todos</button>
           </div>
@@ -2903,8 +2913,22 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
       <p class="effort-hint">${isBjj ? "Referência: 60 min de tatame." : "Referência: 30 min de cardio."}</p>`;
   }
   fields.insertAdjacentHTML("beforeend", `
-    <label class="form-field effort-field"><span>AVALIAÇÃO DE ESFORÇO</span><div class="effort-scale-caption"><span>1 · FRACO</span><output id="effort-label" for="effort-input">7 · Cara de quem treina</output><span>10 · FORTE</span></div><input class="effort-range" id="effort-input" name="effort" type="range" min="1" max="10" step="1" value="7" /></label>
-    <p class="effort-hint">O esforço conta em todas as modalidades. 7–8 aproxima do máximo; 9–10 completa o bônus. O máximo continua limitado.</p>`);
+    <div class="form-field effort-field">
+      <div class="effort-header">
+        <span class="effort-title">AVALIAÇÃO DE ESFORÇO (1 A 10)</span>
+        <output id="effort-label" class="effort-badge">7 · Treininho honesto (Forte · Cara de treino)</output>
+      </div>
+      <input class="effort-range" id="effort-input" name="effort" type="range" min="1" max="10" step="1" value="7" />
+      <div class="effort-scale-ticks">
+        <span>1 · Leve</span>
+        <span>3</span>
+        <span>5 · Médio</span>
+        <span>7 · Forte</span>
+        <span>8</span>
+        <span>10 · Máximo</span>
+      </div>
+      <p class="effort-hint">O esforço conta em todas as modalidades. 7–8 aproxima do máximo; 9–10 completa o bônus.</p>
+    </div>`);
   updateEffortLabel();
   updatePointsPreview();
 
@@ -2916,6 +2940,14 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
       });
     }
     updateAllExerciseProgressBadges();
+
+    const modalSoundSelect = byId("workout-sound-select");
+    if (modalSoundSelect) {
+      modalSoundSelect.value = timerSoundSelected;
+      modalSoundSelect.addEventListener("change", (e) => {
+        setTimerSound(e.target.value, true);
+      });
+    }
   }
 }
 
@@ -2924,7 +2956,7 @@ function updateEffortLabel() {
   const output = byId("effort-label");
   if (!input || !output) return;
   const effort = Number(input.value);
-  output.textContent = `${effort} · ${EFFORT_LABELS[effort]}`;
+  output.textContent = EFFORT_LABELS[effort] || `Nível ${effort}`;
 }
 
 function updatePointsPreview() {
@@ -3137,6 +3169,7 @@ function showToast(message) {
 // SÍNTESE DE ÁUDIO WEB AUDIO API PARA O DESCANSO & ALERTAS
 let audioCtx = null;
 let soundEnabled = localStorage.getItem("rep-club-sound-enabled") !== "false";
+let timerSoundSelected = localStorage.getItem("rep-club-timer-sound") || "boxing-gong";
 
 function getAudioContext() {
   if (!audioCtx) {
@@ -3149,11 +3182,137 @@ function getAudioContext() {
   return audioCtx;
 }
 
-function playBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
+// Master compressor para volume máximo sem distorção ou clipping
+let masterCompressor = null;
+function getMasterDestination(ctx) {
+  if (!masterCompressor || masterCompressor.context !== ctx) {
+    try {
+      masterCompressor = ctx.createDynamicsCompressor();
+      masterCompressor.threshold.setValueAtTime(-10, ctx.currentTime);
+      masterCompressor.knee.setValueAtTime(24, ctx.currentTime);
+      masterCompressor.ratio.setValueAtTime(10, ctx.currentTime);
+      masterCompressor.attack.setValueAtTime(0.003, ctx.currentTime);
+      masterCompressor.release.setValueAtTime(0.20, ctx.currentTime);
+      masterCompressor.connect(ctx.destination);
+    } catch (e) {
+      return ctx.destination;
+    }
+  }
+  return masterCompressor;
+}
+
+function playBoxingGong(ctx, dest) {
+  const now = ctx.currentTime;
+  const freqs = [
+    { f: 220, type: "sawtooth", gain: 0.75, decay: 1.6 },
+    { f: 440, type: "sine", gain: 0.55, decay: 1.3 },
+    { f: 880, type: "sine", gain: 0.38, decay: 0.9 },
+    { f: 1280, type: "triangle", gain: 0.28, decay: 0.6 }
+  ];
+  freqs.forEach(({ f, type, gain: maxGain, decay }) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(f, now);
+    osc.frequency.exponentialRampToValueAtTime(f * 0.98, now + decay);
+    g.gain.setValueAtTime(maxGain, now);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + decay);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(now);
+    osc.stop(now + decay);
+  });
+}
+
+function playHighDigitalBeep(ctx, dest) {
+  const now = ctx.currentTime;
+  const beeps = [0, 0.12, 0.24];
+  beeps.forEach((startOffset, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    const start = now + startOffset;
+    const dur = 0.08;
+    osc.type = "square";
+    const freq = i === 2 ? 1480 : 1175;
+    osc.frequency.setValueAtTime(freq, start);
+    g.gain.setValueAtTime(0.7, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playRefereeWhistle(ctx, dest) {
+  const now = ctx.currentTime;
+  [0, 0.22].forEach((offset) => {
+    const start = now + offset;
+    const dur = 0.16;
+    [2350, 2550].forEach((freq) => {
+      const osc = ctx.createOscillator();
+      const g = ctx.createGain();
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(freq, start);
+      g.gain.setValueAtTime(0.68, start);
+      g.gain.exponentialRampToValueAtTime(0.001, start + dur);
+      osc.connect(g);
+      g.connect(dest);
+      osc.start(start);
+      osc.stop(start + dur);
+    });
+  });
+}
+
+function playArcadeVictory(ctx, dest) {
+  const now = ctx.currentTime;
+  const notes = [
+    { f: 523.25, time: 0 },
+    { f: 659.25, time: 0.08 },
+    { f: 783.99, time: 0.16 },
+    { f: 1046.50, time: 0.24 }
+  ];
+  notes.forEach(({ f, time }) => {
+    const start = now + time;
+    const dur = time === 0.24 ? 0.35 : 0.09;
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "square";
+    osc.frequency.setValueAtTime(f, start);
+    g.gain.setValueAtTime(0.62, start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playCrystalChime(ctx, dest) {
+  const now = ctx.currentTime;
+  const freqs = [587.33, 880.00, 1174.66, 1479.98];
+  freqs.forEach((f, idx) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = "sine";
+    const start = now + (idx * 0.04);
+    const dur = 1.4;
+    osc.frequency.setValueAtTime(f, start);
+    g.gain.setValueAtTime(0.7 / (idx * 0.3 + 1), start);
+    g.gain.exponentialRampToValueAtTime(0.0001, start + dur);
+    osc.connect(g);
+    g.connect(dest);
+    osc.start(start);
+    osc.stop(start + dur);
+  });
+}
+
+function playBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.5) {
   if (!soundEnabled) return;
   try {
     const ctx = getAudioContext();
     if (!ctx) return;
+    const dest = getMasterDestination(ctx);
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
     osc.type = type;
@@ -3161,7 +3320,7 @@ function playBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
     gain.gain.setValueAtTime(gainVal, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
     osc.connect(gain);
-    gain.connect(ctx.destination);
+    gain.connect(dest);
     osc.start();
     osc.stop(ctx.currentTime + duration);
   } catch (e) {
@@ -3170,12 +3329,79 @@ function playBeep(freq = 440, type = "sine", duration = 0.1, gainVal = 0.15) {
 }
 
 function playRestCountdownBeep() {
-  playBeep(520, "sine", 0.08, 0.18);
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const dest = getMasterDestination(ctx);
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(880, ctx.currentTime);
+    gain.gain.setValueAtTime(0.55, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.09);
+    osc.connect(gain);
+    gain.connect(dest);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.09);
+  } catch (e) {
+    console.warn("Audio countdown error", e);
+  }
+}
+
+function playTimerFinishedSound(soundKey = timerSoundSelected) {
+  if (!soundEnabled) return;
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+    const dest = getMasterDestination(ctx);
+    switch (soundKey) {
+      case "boxing-gong":
+        playBoxingGong(ctx, dest);
+        break;
+      case "digital-beep":
+        playHighDigitalBeep(ctx, dest);
+        break;
+      case "whistle":
+        playRefereeWhistle(ctx, dest);
+        break;
+      case "arcade":
+        playArcadeVictory(ctx, dest);
+        break;
+      case "chime":
+        playCrystalChime(ctx, dest);
+        break;
+      default:
+        playBoxingGong(ctx, dest);
+        break;
+    }
+  } catch (e) {
+    console.warn("Audio finish sound error", e);
+  }
 }
 
 function playRestFinishedAlert() {
-  playBeep(660, "sine", 0.14, 0.22);
-  setTimeout(() => playBeep(880, "sine", 0.32, 0.25), 120);
+  playTimerFinishedSound();
+}
+
+function setTimerSound(soundKey, preview = true) {
+  timerSoundSelected = soundKey;
+  localStorage.setItem("rep-club-timer-sound", soundKey);
+  const dockSelect = byId("timer-sound-select");
+  if (dockSelect && dockSelect.value !== soundKey) dockSelect.value = soundKey;
+  const modalSelect = byId("workout-sound-select");
+  if (modalSelect && modalSelect.value !== soundKey) modalSelect.value = soundKey;
+  if (preview) {
+    playTimerFinishedSound(soundKey);
+    const soundNames = {
+      "boxing-gong": "🥊 Gongo de Boxe",
+      "digital-beep": "⏱️ Beep Alto Digital",
+      "whistle": "📢 Apito",
+      "arcade": "🕹️ 8-Bit Arcade",
+      "chime": "🔔 Chime Cristalino"
+    };
+    showToast(`🔔 Som do descanso: ${soundNames[soundKey] || soundKey}`);
+  }
 }
 
 function toggleSound() {
@@ -3183,7 +3409,7 @@ function toggleSound() {
   localStorage.setItem("rep-club-sound-enabled", String(soundEnabled));
   updateSoundToggleUI();
   if (soundEnabled) {
-    playBeep(600, "sine", 0.09, 0.16);
+    playTimerFinishedSound(timerSoundSelected);
     showToast("🔊 Áudio do cronômetro ativado");
   } else {
     showToast("🔇 Áudio do cronômetro silenciado");
@@ -3975,6 +4201,11 @@ window.addEventListener("resize", drawHistoryChart);
 document.querySelectorAll("[data-rest-seconds]").forEach((button) => button.addEventListener("click", () => startRestTimer(Number(button.dataset.restSeconds))));
 byId("timer-reset").addEventListener("click", resetRestTimer);
 byId("timer-sound-toggle")?.addEventListener("click", toggleSound);
+const dockSoundSelect = byId("timer-sound-select");
+if (dockSoundSelect) {
+  dockSoundSelect.value = timerSoundSelected;
+  dockSoundSelect.addEventListener("change", (e) => setTimerSound(e.target.value, true));
+}
 updateSoundToggleUI();
 byId("program-list").addEventListener("click", (event) => {
   const button = event.target.closest("[data-start-template]");

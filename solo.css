@@ -476,3 +476,91 @@
   font-weight: 600;
   margin-top: 6px;
 }
+
+/* SOLO EFFORT BADGE & SCALE TICKS */
+.solo-effort-box {
+  margin-top: 14px;
+  padding: 10px 12px;
+  background: #f6f7f0;
+  border: 1px solid #dcded4;
+  border-radius: 6px;
+}
+.effort-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.effort-title {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  color: #55574f;
+  text-transform: uppercase;
+}
+.effort-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 4px;
+  background: #20211d;
+  color: #a9c92a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.effort-scale-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  padding: 0 2px;
+  color: #777970;
+  font-size: 8px;
+  font-weight: 700;
+}
+.timer-sound-select-wrap {
+  display: inline-flex;
+  align-items: center;
+  background: #32332c;
+  border: 1px solid #4a4b41;
+  border-radius: 3px;
+  padding: 0 4px;
+  height: 26px;
+}
+.timer-sound-dropdown {
+  background: transparent;
+  border: none;
+  color: #f4f4ee;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  outline: none;
+  max-width: 115px;
+}
+.timer-sound-dropdown option {
+  background: #242520;
+  color: #f4f4ee;
+  padding: 4px;
+}
+.modal-sound-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #55574f;
+  background: #ffffff;
+  border: 1px solid #d5d7cd;
+  border-radius: 3px;
+  padding: 2px 6px;
+}
+.modal-sound-select {
+  border: none;
+  background: transparent;
+  font-size: 8px;
+  font-weight: 700;
+  color: #20211d;
+  cursor: pointer;
+  outline: none;
+}
