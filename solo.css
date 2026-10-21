@@ -241,6 +241,192 @@
 .solo-sport { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .solo-sport label { display: grid; gap: 5px; color: #85877e; font-size: 8px; font-weight: 700; }
 
+/* SOLO ACORDEON DE EXERCÍCIOS & CARDS EXPANSÍVEIS */
+.solo-accordion-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  margin-bottom: 6px;
+  padding: 4px 2px;
+}
+.solo-accordion-bar-title {
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #777970;
+  text-transform: uppercase;
+}
+.solo-accordion-bar-btns {
+  display: flex;
+  gap: 6px;
+}
+.solo-accordion-toggle-all-btn {
+  background: transparent;
+  border: 1px solid #d5d7cd;
+  border-radius: 3px;
+  padding: 2px 7px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #5d6055;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.solo-accordion-toggle-all-btn:hover {
+  background: #e9ecde;
+  color: var(--ink);
+  border-color: #bcc0b2;
+}
+.solo-exercise-collapsible {
+  padding: 0 !important;
+  border: 1px solid #dcded4;
+  border-radius: 5px;
+  background: #fbfbf7;
+  overflow: hidden;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.solo-exercise-collapsible.is-open {
+  border-color: #b5b8aa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .04);
+}
+.solo-exercise-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: #f5f6ee;
+  border: none;
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  text-align: left;
+  user-select: none;
+  transition: background .15s ease;
+}
+.solo-exercise-header:hover {
+  background: #edeedf;
+}
+.solo-exercise-collapsible.is-open .solo-exercise-header {
+  background: #ebede0;
+  border-bottom-color: #d8dbcf;
+}
+.solo-header-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+.solo-chevron-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 11px;
+  color: #6a6c62;
+  transition: transform .2s ease;
+  flex-shrink: 0;
+}
+.solo-exercise-collapsible.is-open .solo-chevron-icon {
+  transform: rotate(90deg);
+}
+.solo-header-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.solo-title-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #20211d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.solo-prescription-tag {
+  font-size: 8px;
+  color: #7d8075;
+  font-weight: 600;
+}
+.solo-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+.solo-progress-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 7px;
+  border-radius: 12px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  background: #e2e4d8;
+  color: #55574f;
+  transition: all .2s ease;
+}
+.solo-progress-pill.in-progress {
+  background: #f7e6a6;
+  color: #6d5402;
+}
+.solo-progress-pill.completed {
+  background: #a9c92a;
+  color: #172404;
+  box-shadow: 0 0 6px rgba(169, 201, 42, .4);
+}
+.solo-exercise-body {
+  padding: 10px 12px 12px;
+  background: #fafaf5;
+}
+.solo-exercise-collapsible.is-collapsed .solo-exercise-body {
+  display: none;
+}
+.solo-quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 10px;
+}
+.solo-quick-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: #ffffff;
+  border: 1px solid #d0d2c6;
+  border-radius: 4px;
+  font-size: 8px;
+  font-weight: 700;
+  color: #44473e;
+  cursor: pointer;
+  transition: all .15s ease;
+}
+.solo-quick-btn:hover {
+  background: #f1f3e8;
+  border-color: #a8ab9d;
+  color: #1f211c;
+}
+.solo-quick-btn:active {
+  transform: translateY(1px);
+}
+.solo-last-val-hint {
+  display: inline-flex;
+  align-items: center;
+  font-size: 8px;
+  font-weight: 600;
+  color: #73766b;
+  background: #e7e9dc;
+  border-radius: 3px;
+  padding: 1px 5px;
+  letter-spacing: .02em;
+  margin-left: 4px;
+}
+
 @media (max-width: 720px) {
   .solo-header { padding: 14px 16px; }
   .solo-main { width: calc(100% - 24px); padding-top: 20px; }

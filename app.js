@@ -2510,6 +2510,7 @@ function preserveSetEntries(logs) {
     });
   });
   updatePointsPreview();
+  updateAllExerciseProgressBadges();
 }
 
 function renderExercisePickerResults(query = "") {
@@ -2674,11 +2675,46 @@ function getHistoricalExercisePerformance(exerciseName, playerId) {
           topReps,
           est1RM,
           setsCount: validSets.length,
+          lastSets: validSets.map((s) => ({
+            reps: Number(s.reps) || 0,
+            load: Number(s.load) || 0
+          }))
         };
       }
     }
   }
   return null;
+}
+
+function updateExerciseProgressBadge(exIndex, container = byId("workout-fields")) {
+  if (!container) return;
+  const pill = container.querySelector(`[data-progress-for="${exIndex}"]`);
+  if (!pill) return;
+  const checkboxes = container.querySelectorAll(`input[name="done-${exIndex}"]`);
+  const total = checkboxes.length;
+  if (!total) return;
+  const completed = Array.from(checkboxes).filter((cb) => cb.checked).length;
+  if (completed === total) {
+    pill.textContent = `✓ ${completed}/${total}`;
+    pill.classList.add("completed");
+    pill.classList.remove("in-progress");
+  } else if (completed > 0) {
+    pill.textContent = `${completed}/${total}`;
+    pill.classList.add("in-progress");
+    pill.classList.remove("completed");
+  } else {
+    pill.textContent = `0/${total}`;
+    pill.classList.remove("completed", "in-progress");
+  }
+}
+
+function updateAllExerciseProgressBadges(container = byId("workout-fields")) {
+  if (!container) return;
+  const cards = container.querySelectorAll(".exercise-card-collapsible");
+  cards.forEach((card, idx) => {
+    const cardIdx = card.dataset.exerciseCard != null ? Number(card.dataset.exerciseCard) : idx;
+    updateExerciseProgressBadge(cardIdx, container);
+  });
 }
 
 function renderOverloadCardHtml(exerciseName, exerciseIndex) {
@@ -2753,37 +2789,91 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
     fields.innerHTML = `
       ${plan.cardioBlock ? `<label class="form-field cardio-block-field"><span>${plan.cardioBlock.label.toUpperCase()} · MINUTOS</span><input name="cardioMinutes" type="number" min="${plan.cardioBlock.min}" max="${plan.cardioBlock.max}" value="${plan.cardioBlock.min}" required /><small>Este cardio faz parte do treino ${plan.id}; o registro continua como Musculação.</small></label>` : ""}
       <p class="effort-hint log-instruction">Marque as séries e anote reps e kg por série. O seletor define como a carga entra no volume.</p>
-      ${plan.exercises.length ? `<div class="exercise-log-list">${plan.exercises.map((exercise, index) => `
-        <article class="exercise-log">
-          <div class="exercise-log-heading"><strong data-exercise-title="${index}">${escapeHTML(exercise.name)}</strong><span>${formatPrescription(exercise)}</span></div>
-          <input type="hidden" name="exerciseName-${index}" value="${escapeHTML(exercise.name)}" />
-          ${exercise.imagePath ? `<a class="exercise-selected-image" href="${exerciseCatalogPage({ images: [exercise.imagePath] })}" target="_blank" rel="noreferrer"><img src="${exerciseCatalogImage({ images: [exercise.imagePath] })}" alt="Demonstração de ${escapeHTML(exercise.name)}" loading="lazy" /><span>Imagem · GitHub</span></a>` : ""}
-          <button class="exercise-replace-button" type="button" data-pick-exercise="${index}">Substituir exercício no catálogo</button>
-          ${exercise.alternatives ? `<label class="exercise-variation"><span>VARIAÇÃO</span><select name="variation-${index}">${exercise.alternatives.map((alternative) => `<option value="${alternative}">${alternative}</option>`).join("")}</select></label>` : ""}
-          ${isCustomPlan ? `<div class="custom-prescription"><label>SÉRIES<input name="plannedSets-${index}" type="number" min="1" max="12" value="${exercise.sets}" /></label><label>REPS MÍN<input name="minReps-${index}" type="number" min="1" max="100" value="${exercise.min}" /></label><label>REPS MÁX<input name="maxReps-${index}" type="number" min="1" max="100" value="${exercise.max}" /></label><label>VOLUME<select name="loadFactor-${index}"><option value="1" ${(exercise.loadFactor || 1) === 1 ? "selected" : ""}>Aparelho / carga total</option><option value="2" ${exercise.loadFactor === 2 ? "selected" : ""}>Por halter / por lado</option><option value="4" ${exercise.loadFactor === 4 ? "selected" : ""}>Dois halteres / por perna</option></select></label></div>` : ""}
-          <div class="exercise-log-fields"><span class="bodyweight-note">${exercise.load === false ? "PESO CORPORAL · FORA DO VOLUME EXTERNO" : `CARGA ${exercise.loadFactor === 2 ? "POR HALTER" : exercise.loadFactor === 4 ? "DOIS HALTERES · POR PERNA" : "INDICADA NO APARELHO"}`}</span><output class="exercise-mean" data-mean-for="${index}">MÉDIA: —</output></div>
-          ${renderOverloadCardHtml(exercise.name, index)}
-          <div class="set-log-list">${Array.from({ length: exercise.sets }, (_, setIndex) => `
-            <div class="set-log-row">
-              <label class="set-check-label"><input class="set-check" name="done-${index}" type="checkbox" value="${setIndex}" /><span>SÉRIE ${setIndex + 1}</span></label>
-              <label class="set-reps-label"><span>${exercise.unit === "s" ? "SEGUNDOS" : "REPS"}</span><input name="reps-${index}-${setIndex}" type="number" min="1" max="${exercise.max}" step="1" value="${exercise.min}" required /></label>
-              ${exercise.load === false ? "" : `<label class="set-load-label"><span>KG</span><input name="load-${index}-${setIndex}" type="number" min="0.5" max="500" step="0.5" placeholder="kg" /></label>`}
-            </div>`).join("")}</div>
-          <div class="exercise-rest-bar" data-exercise-index="${index}">
-            <div class="exercise-rest-label">
-              <span class="exercise-rest-icon">⏱️</span>
-              <span class="exercise-rest-text">Descanso:</span>
-            </div>
-            <div class="exercise-rest-input-wrap">
-              <input type="number" class="exercise-rest-input" name="restDuration-${index}" id="rest-duration-${index}" min="5" max="600" step="5" value="${exercise.restDuration || 60}" inputmode="numeric" aria-label="Segundos de descanso" />
-              <span class="exercise-rest-unit">seg</span>
-            </div>
-            <button type="button" class="exercise-rest-btn ${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "running" : ""}" data-trigger-rest="${index}" aria-label="Iniciar descanso">
-              <span class="exercise-rest-btn-icon">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "⏹" : "▶"}</span>
-              <span class="exercise-rest-btn-text">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? String(Math.floor(restSecondsRemaining / 60)).padStart(2, "0") + ":" + String(restSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
-            </button>
+      ${plan.exercises.length ? `
+        <div class="exercise-accordion-bar">
+          <span class="accordion-bar-title">EXERCÍCIOS DA SESSÃO (${plan.exercises.length})</span>
+          <div class="accordion-bar-btns">
+            <button type="button" class="accordion-toggle-all-btn" data-action="expand-all">Expandir todos</button>
+            <button type="button" class="accordion-toggle-all-btn" data-action="collapse-all">Recolher todos</button>
           </div>
-        </article>`).join("")}</div>
+        </div>
+        <div class="exercise-log-list">${plan.exercises.map((exercise, index) => {
+          const perf = getHistoricalExercisePerformance(exercise.name, state.activePlayer);
+          return `
+          <article class="exercise-log exercise-card-collapsible is-collapsed" data-exercise-card="${index}">
+            <div class="exercise-card-header" data-toggle-exercise="${index}" role="button" tabindex="0" aria-expanded="false" title="Clique para abrir/fechar este exercício">
+              <div class="exercise-header-title-wrap">
+                <span class="exercise-chevron-icon" aria-hidden="true">▸</span>
+                <div class="exercise-header-text">
+                  <strong class="exercise-title-text" data-exercise-title="${index}">${escapeHTML(exercise.name)}</strong>
+                  <span class="exercise-prescription-tag">${formatPrescription(exercise)}</span>
+                </div>
+              </div>
+              <div class="exercise-header-actions">
+                <span class="exercise-progress-pill" data-progress-for="${index}">0/${exercise.sets}</span>
+              </div>
+            </div>
+            <input type="hidden" name="exerciseName-${index}" value="${escapeHTML(exercise.name)}" />
+            <div class="exercise-card-body" id="exercise-card-body-${index}">
+              ${exercise.imagePath ? `<a class="exercise-selected-image" href="${exerciseCatalogPage({ images: [exercise.imagePath] })}" target="_blank" rel="noreferrer"><img src="${exerciseCatalogImage({ images: [exercise.imagePath] })}" alt="Demonstração de ${escapeHTML(exercise.name)}" loading="lazy" /><span>Imagem · GitHub</span></a>` : ""}
+              <button class="exercise-replace-button" type="button" data-pick-exercise="${index}">Substituir exercício no catálogo</button>
+              ${exercise.alternatives ? `<label class="exercise-variation"><span>VARIAÇÃO</span><select name="variation-${index}">${exercise.alternatives.map((alternative) => `<option value="${alternative}">${alternative}</option>`).join("")}</select></label>` : ""}
+              ${isCustomPlan ? `<div class="custom-prescription"><label>SÉRIES<input name="plannedSets-${index}" type="number" min="1" max="12" value="${exercise.sets}" /></label><label>REPS MÍN<input name="minReps-${index}" type="number" min="1" max="100" value="${exercise.min}" /></label><label>REPS MÁX<input name="maxReps-${index}" type="number" min="1" max="100" value="${exercise.max}" /></label><label>VOLUME<select name="loadFactor-${index}"><option value="1" ${(exercise.loadFactor || 1) === 1 ? "selected" : ""}>Aparelho / carga total</option><option value="2" ${exercise.loadFactor === 2 ? "selected" : ""}>Por halter / por lado</option><option value="4" ${exercise.loadFactor === 4 ? "selected" : ""}>Dois halteres / por perna</option></select></label></div>` : ""}
+              <div class="exercise-log-fields"><span class="bodyweight-note">${exercise.load === false ? "PESO CORPORAL · FORA DO VOLUME EXTERNO" : `CARGA ${exercise.loadFactor === 2 ? "POR HALTER" : exercise.loadFactor === 4 ? "DOIS HALTERES · POR PERNA" : "INDICADA NO APARELHO"}`}</span><output class="exercise-mean" data-mean-for="${index}">MÉDIA: —</output></div>
+              ${renderOverloadCardHtml(exercise.name, index)}
+              <div class="exercise-quick-actions">
+                ${perf && perf.lastSets && perf.lastSets.length > 0 ? `
+                  <button type="button" class="quick-action-btn" data-repeat-history="${index}" title="Preencher séries com valores da última sessão">
+                    <span class="btn-icon">📋</span> Repetir anterior
+                  </button>
+                ` : ""}
+                ${exercise.load !== false ? `
+                  <button type="button" class="quick-action-btn" data-replicate-first-load="${index}" title="Replicar carga da 1ª série para as demais">
+                    <span class="btn-icon">⬇️</span> Replicar 1ª carga
+                  </button>
+                ` : ""}
+              </div>
+              <div class="set-log-list">${Array.from({ length: exercise.sets }, (_, setIndex) => {
+                const prevSet = perf?.lastSets?.[setIndex] || perf?.lastSets?.[perf?.lastSets?.length - 1];
+                const prevLoad = prevSet && prevSet.load > 0 ? prevSet.load : null;
+                const prevReps = prevSet && prevSet.reps > 0 ? prevSet.reps : null;
+                const hasHint = Boolean(prevLoad || prevReps);
+                return `
+                <div class="set-log-row">
+                  <label class="set-check-label">
+                    <input class="set-check" name="done-${index}" type="checkbox" value="${setIndex}" />
+                    <span class="set-num-text">SÉRIE ${setIndex + 1}</span>
+                    ${hasHint ? `<span class="last-val-hint" title="Última sessão">${prevLoad ? `${prevLoad}kg` : ""}${prevLoad && prevReps ? " · " : ""}${prevReps ? `${prevReps} reps` : ""}</span>` : ""}
+                  </label>
+                  <label class="set-reps-label">
+                    <span>${exercise.unit === "s" ? "SEGUNDOS" : "REPS"}</span>
+                    <input name="reps-${index}-${setIndex}" type="number" min="1" max="${exercise.max * 2 || 100}" step="1" value="${exercise.min}" placeholder="${prevReps || exercise.min}" required />
+                  </label>
+                  ${exercise.load === false ? "" : `
+                    <label class="set-load-label">
+                      <span>KG</span>
+                      <input name="load-${index}-${setIndex}" type="number" min="0" max="500" step="0.5" placeholder="${prevLoad ? `${prevLoad}` : "kg"}" />
+                    </label>
+                  `}
+                </div>`;
+              }).join("")}</div>
+              <div class="exercise-rest-bar" data-exercise-index="${index}">
+                <div class="exercise-rest-label">
+                  <span class="exercise-rest-icon">⏱️</span>
+                  <span class="exercise-rest-text">Descanso:</span>
+                </div>
+                <div class="exercise-rest-input-wrap">
+                  <input type="number" class="exercise-rest-input" name="restDuration-${index}" id="rest-duration-${index}" min="5" max="600" step="5" value="${exercise.restDuration || 60}" inputmode="numeric" aria-label="Segundos de descanso" />
+                  <span class="exercise-rest-unit">seg</span>
+                </div>
+                <button type="button" class="exercise-rest-btn ${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "running" : ""}" data-trigger-rest="${index}" aria-label="Iniciar descanso">
+                  <span class="exercise-rest-btn-icon">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? "⏹" : "▶"}</span>
+                  <span class="exercise-rest-btn-text">${activeExerciseTimerIndex === index && restSecondsRemaining > 0 ? String(Math.floor(restSecondsRemaining / 60)).padStart(2, "0") + ":" + String(restSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
+                </button>
+              </div>
+            </div>
+          </article>`;
+        }).join("")}</div>
       ` : `<p class="custom-plan-empty">Ficha vazia. Adicione seu primeiro exercício pelo catálogo abaixo.</p>`}
       <div class="add-exercise-bar" style="margin: 14px 0 10px; padding: 12px; background: #f4f5ee; border: 1px solid #d5d7cd; border-radius: 6px;">
         <span style="display:block; font-size:10px; font-weight:700; color:#55574f; margin-bottom:8px; letter-spacing:0.04em;">ADICIONAR EXERCÍCIO AO TREINO</span>
@@ -2825,6 +2915,7 @@ function renderWorkoutFields(templateId = null, planOverride = null) {
         handleAddExerciseToCurrentWorkout(exName);
       });
     }
+    updateAllExerciseProgressBadges();
   }
 }
 
@@ -3653,9 +3744,10 @@ byId("workout-fields").addEventListener("change", (event) => {
   else {
     if (event.target.matches(".set-check")) {
       event.target.closest(".set-check-label").classList.toggle("done", event.target.checked);
+      const parts = event.target.name.split("-");
+      const exIdx = Number(parts[1]);
+      updateExerciseProgressBadge(exIdx, byId("workout-fields"));
       if (event.target.checked) {
-        const parts = event.target.name.split("-");
-        const exIdx = Number(parts[1]);
         const input = byId(`rest-duration-${exIdx}`);
         const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
         startRestTimer(sec, isNaN(exIdx) ? null : exIdx);
@@ -3702,10 +3794,110 @@ function handleAddExerciseToCurrentWorkout(inputOrName) {
   activeStrengthPlan.exercises.push(newExercise);
   renderWorkoutFields(activeStrengthPlan.id, activeStrengthPlan);
   preserveSetEntries(priorLogs);
+  const newIdx = activeStrengthPlan.exercises.length - 1;
+  const newCard = byId("workout-fields")?.querySelector(`[data-exercise-card="${newIdx}"]`);
+  if (newCard) {
+    newCard.classList.remove("is-collapsed");
+    newCard.classList.add("is-open");
+    const h = newCard.querySelector("[data-toggle-exercise]");
+    if (h) h.setAttribute("aria-expanded", "true");
+  }
   showToast(`Exercício "${exName}" adicionado ao treino!`);
 }
 
 byId("workout-fields").addEventListener("click", async (event) => {
+  const toggleHeader = event.target.closest("[data-toggle-exercise]");
+  if (toggleHeader) {
+    event.preventDefault();
+    const card = toggleHeader.closest(".exercise-card-collapsible");
+    if (card) {
+      const isCurrentlyOpen = card.classList.contains("is-open");
+      if (isCurrentlyOpen) {
+        card.classList.remove("is-open");
+        card.classList.add("is-collapsed");
+        toggleHeader.setAttribute("aria-expanded", "false");
+      } else {
+        card.classList.remove("is-collapsed");
+        card.classList.add("is-open");
+        toggleHeader.setAttribute("aria-expanded", "true");
+      }
+    }
+    return;
+  }
+  const expandAllBtn = event.target.closest("[data-action='expand-all']");
+  if (expandAllBtn) {
+    event.preventDefault();
+    byId("workout-fields")?.querySelectorAll(".exercise-card-collapsible").forEach((c) => {
+      c.classList.remove("is-collapsed");
+      c.classList.add("is-open");
+      const h = c.querySelector("[data-toggle-exercise]");
+      if (h) h.setAttribute("aria-expanded", "true");
+    });
+    return;
+  }
+  const collapseAllBtn = event.target.closest("[data-action='collapse-all']");
+  if (collapseAllBtn) {
+    event.preventDefault();
+    byId("workout-fields")?.querySelectorAll(".exercise-card-collapsible").forEach((c) => {
+      c.classList.remove("is-open");
+      c.classList.add("is-collapsed");
+      const h = c.querySelector("[data-toggle-exercise]");
+      if (h) h.setAttribute("aria-expanded", "false");
+    });
+    return;
+  }
+  const repeatBtn = event.target.closest("[data-repeat-history]");
+  if (repeatBtn) {
+    event.preventDefault();
+    const exIdx = Number(repeatBtn.dataset.repeatHistory);
+    const exercise = activeStrengthPlan?.exercises?.[exIdx];
+    if (exercise) {
+      const perf = getHistoricalExercisePerformance(exercise.name, state.activePlayer);
+      if (perf && perf.lastSets && perf.lastSets.length > 0) {
+        for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
+          const prev = perf.lastSets[sIdx] || perf.lastSets[perf.lastSets.length - 1];
+          const repsInput = byId("workout-fields").querySelector(`[name="reps-${exIdx}-${sIdx}"]`);
+          const loadInput = byId("workout-fields").querySelector(`[name="load-${exIdx}-${sIdx}"]`);
+          if (repsInput && prev.reps > 0) {
+            repsInput.value = prev.reps;
+            repsInput.style.borderColor = "var(--lime)";
+            setTimeout(() => (repsInput.style.borderColor = ""), 800);
+          }
+          if (loadInput && prev.load > 0) {
+            loadInput.value = prev.load;
+            loadInput.style.borderColor = "var(--lime)";
+            setTimeout(() => (loadInput.style.borderColor = ""), 800);
+          }
+        }
+        updatePointsPreview();
+        showToast(`Sessão anterior copiada para ${exercise.name}!`);
+      } else {
+        showToast("Nenhum histórico anterior para este exercício.");
+      }
+    }
+    return;
+  }
+  const replicateBtn = event.target.closest("[data-replicate-first-load]");
+  if (replicateBtn) {
+    event.preventDefault();
+    const exIdx = Number(replicateBtn.dataset.replicateFirstLoad);
+    const firstInput = byId("workout-fields").querySelector(`[name="load-${exIdx}-0"]`);
+    const firstVal = firstInput ? Number(firstInput.value) : 0;
+    if (!firstVal || firstVal <= 0) {
+      showToast("Preencha a carga da 1ª série primeiro.");
+      if (firstInput) firstInput.focus();
+      return;
+    }
+    const allLoadInputs = byId("workout-fields").querySelectorAll(`[name^="load-${exIdx}-"]`);
+    allLoadInputs.forEach((inp) => {
+      inp.value = firstVal;
+      inp.style.borderColor = "var(--lime)";
+      setTimeout(() => (inp.style.borderColor = ""), 800);
+    });
+    updatePointsPreview();
+    showToast(`Carga de ${firstVal} kg replicada para todas as séries!`);
+    return;
+  }
   const restBtn = event.target.closest("[data-trigger-rest]");
   if (restBtn) {
     event.preventDefault();
@@ -3766,6 +3958,11 @@ byId("workout-fields").addEventListener("change", (event) => {
   }
 });
 byId("workout-fields").addEventListener("keydown", (event) => {
+  if ((event.key === "Enter" || event.key === " ") && event.target.closest("[data-toggle-exercise]")) {
+    event.preventDefault();
+    event.target.closest("[data-toggle-exercise]").click();
+    return;
+  }
   if (event.key === "Enter" && event.target.matches(".exercise-rest-input")) {
     event.preventDefault();
     const bar = event.target.closest(".exercise-rest-bar");

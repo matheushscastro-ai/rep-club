@@ -658,22 +658,57 @@ function getSoloHistoricalPerformance(exerciseName) {
       if (validSets.length > 0) {
         const loads = validSets.map((s) => Number(s.load) || 0);
         const maxLoad = Math.max(...loads);
-        if (maxLoad > 0) {
-          const topSet = validSets.find((s) => (Number(s.load) || 0) === maxLoad) || validSets[0];
-          const topReps = Number(topSet.reps) || 10;
-          const est1RM = Math.round(maxLoad * (1 + topReps / 30) * 10) / 10;
-          return {
-            date: w.date || (w.createdAt ? w.createdAt.split("T")[0] : null),
-            maxLoad,
-            topReps,
-            est1RM,
-            setsCount: validSets.length,
-          };
-        }
+        const topSet = validSets.find((s) => (Number(s.load) || 0) === maxLoad) || validSets[0];
+        const topReps = Number(topSet.reps) || 10;
+        const est1RM = maxLoad > 0 ? Math.round(maxLoad * (1 + topReps / 30) * 10) / 10 : 0;
+        return {
+          date: w.date || (w.createdAt ? w.createdAt.split("T")[0] : null),
+          maxLoad,
+          topReps,
+          est1RM,
+          setsCount: validSets.length,
+          lastSets: validSets.map((s) => ({
+            reps: Number(s.reps) || 0,
+            load: Number(s.load) || 0
+          }))
+        };
       }
     }
   }
   return null;
+}
+
+function updateSoloExerciseProgressBadge(exIndex) {
+  const container = soloById("solo-fields");
+  if (!container) return;
+  const pill = container.querySelector(`[data-solo-progress-for="${exIndex}"]`);
+  if (!pill) return;
+  const checkboxes = container.querySelectorAll(`input[name="done-${exIndex}"]`);
+  const total = checkboxes.length;
+  if (!total) return;
+  const completed = Array.from(checkboxes).filter((cb) => cb.checked).length;
+  if (completed === total) {
+    pill.textContent = `✓ ${completed}/${total}`;
+    pill.classList.add("completed");
+    pill.classList.remove("in-progress");
+  } else if (completed > 0) {
+    pill.textContent = `${completed}/${total}`;
+    pill.classList.add("in-progress");
+    pill.classList.remove("completed");
+  } else {
+    pill.textContent = `0/${total}`;
+    pill.classList.remove("completed", "in-progress");
+  }
+}
+
+function updateAllSoloExerciseProgressBadges() {
+  const container = soloById("solo-fields");
+  if (!container) return;
+  const cards = container.querySelectorAll(".solo-exercise-collapsible");
+  cards.forEach((card, idx) => {
+    const cardIdx = card.dataset.exerciseCard != null ? Number(card.dataset.exerciseCard) : idx;
+    updateSoloExerciseProgressBadge(cardIdx);
+  });
 }
 
 function renderSoloOverloadCardHtml(exerciseName, exerciseIndex) {
@@ -775,42 +810,83 @@ function renderSoloFields() {
 
   fieldsContainer.innerHTML = `
     ${cardioHtml}
+    <div class="solo-accordion-bar">
+      <span class="solo-accordion-bar-title">EXERCÍCIOS DA SESSÃO (${session.exercises.length})</span>
+      <div class="solo-accordion-bar-btns">
+        <button type="button" class="solo-accordion-toggle-all-btn" data-solo-action="expand-all">Expandir todos</button>
+        <button type="button" class="solo-accordion-toggle-all-btn" data-solo-action="collapse-all">Recolher todos</button>
+      </div>
+    </div>
     <div class="solo-fields">
       ${session.exercises.map((exercise, index) => {
         const isWeight = exercise.load !== false;
+        const perf = getSoloHistoricalPerformance(exercise.name);
         return `
-          <article class="solo-exercise">
-            <div class="solo-exercise-title">
-              <strong>${escapeHTML(exercise.name)}</strong>
-              <span>${exercise.sets} × ${exercise.min}–${exercise.max} ${exercise.unit || "reps"}</span>
-            </div>
-            <div class="solo-exercise-fields" style="display:flex; justify-content:space-between; align-items:center;">
-              <span style="font-size:8px; font-weight:700; color:#85877e;">${isWeight ? `CARGA ${exercise.factor === 2 ? "POR HALTER" : exercise.factor === 4 ? "DOIS HALTERES" : "APARELHO"}` : "PESO CORPORAL"}</span>
-              <output id="solo-mean-${index}" style="font-size:9px; font-weight:700; color:#20211d;">MÉDIA: —</output>
-            </div>
-            ${isWeight ? renderSoloOverloadCardHtml(exercise.name, index) : ""}
-            <div class="solo-set-list">
-              ${Array.from({ length: exercise.sets }, (_, set) => `
-                <div class="solo-set-row" style="grid-template-columns: 1fr 65px ${isWeight ? "65px" : ""};">
-                  <label><span><input name="done-${index}" type="checkbox" value="${set}" checked /> SÉRIE ${set + 1}</span></label>
-                  <label>REPS<input name="reps-${index}-${set}" type="number" min="1" max="${exercise.max * 2}" value="${exercise.min}" required /></label>
-                  ${isWeight ? `<label>KG<input name="load-${index}-${set}" type="number" min="0" max="500" step="0.5" placeholder="kg" /></label>` : ""}
+          <article class="solo-exercise solo-exercise-collapsible is-collapsed" data-exercise-card="${index}">
+            <div class="solo-exercise-header" data-solo-toggle-exercise="${index}" role="button" tabindex="0" aria-expanded="false" title="Clique para abrir/fechar este exercício">
+              <div class="solo-header-title-wrap">
+                <span class="solo-chevron-icon" aria-hidden="true">▸</span>
+                <div class="solo-header-text">
+                  <strong class="solo-title-text" data-solo-exercise-title="${index}">${escapeHTML(exercise.name)}</strong>
+                  <span class="solo-prescription-tag">${exercise.sets} × ${exercise.min}–${exercise.max} ${exercise.unit || "reps"}</span>
                 </div>
-              `).join("")}
+              </div>
+              <div class="solo-header-actions">
+                <span class="solo-progress-pill" data-solo-progress-for="${index}">0/${exercise.sets}</span>
+              </div>
             </div>
-            <div class="exercise-rest-bar solo-rest-bar" data-solo-exercise-index="${index}">
-              <div class="exercise-rest-label">
-                <span class="exercise-rest-icon">⏱️</span>
-                <span class="exercise-rest-text">Descanso:</span>
+            <div class="solo-exercise-body" id="solo-exercise-body-${index}">
+              <div class="solo-exercise-fields" style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="font-size:8px; font-weight:700; color:#85877e;">${isWeight ? `CARGA ${exercise.factor === 2 ? "POR HALTER" : exercise.factor === 4 ? "DOIS HALTERES" : "APARELHO"}` : "PESO CORPORAL"}</span>
+                <output id="solo-mean-${index}" style="font-size:9px; font-weight:700; color:#20211d;">MÉDIA: —</output>
               </div>
-              <div class="exercise-rest-input-wrap">
-                <input type="number" class="exercise-rest-input" name="soloRestDuration-${index}" id="solo-rest-input-${index}" min="5" max="600" step="5" value="60" inputmode="numeric" aria-label="Segundos de descanso" />
-                <span class="exercise-rest-unit">seg</span>
+              ${isWeight ? renderSoloOverloadCardHtml(exercise.name, index) : ""}
+              <div class="solo-quick-actions">
+                ${perf && perf.lastSets && perf.lastSets.length > 0 ? `
+                  <button type="button" class="solo-quick-btn" data-solo-repeat-history="${index}" title="Preencher séries com valores da última sessão">
+                    <span class="btn-icon">📋</span> Repetir anterior
+                  </button>
+                ` : ""}
+                ${isWeight ? `
+                  <button type="button" class="solo-quick-btn" data-solo-replicate-first-load="${index}" title="Replicar carga da 1ª série para as demais">
+                    <span class="btn-icon">⬇️</span> Replicar 1ª carga
+                  </button>
+                ` : ""}
               </div>
-              <button type="button" class="exercise-rest-btn ${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "running" : ""}" data-solo-trigger-rest="${index}" aria-label="Iniciar descanso">
-                <span class="exercise-rest-btn-icon">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "⏹" : "▶"}</span>
-                <span class="exercise-rest-btn-text">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? String(Math.floor(soloRestSecondsRemaining / 60)).padStart(2, "0") + ":" + String(soloRestSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
-              </button>
+              <div class="solo-set-list">
+                ${Array.from({ length: exercise.sets }, (_, set) => {
+                  const prevSet = perf?.lastSets?.[set] || perf?.lastSets?.[perf?.lastSets?.length - 1];
+                  const prevLoad = prevSet && prevSet.load > 0 ? prevSet.load : null;
+                  const prevReps = prevSet && prevSet.reps > 0 ? prevSet.reps : null;
+                  const hasHint = Boolean(prevLoad || prevReps);
+                  return `
+                  <div class="solo-set-row" style="grid-template-columns: 1fr 65px ${isWeight ? "65px" : ""};">
+                    <label>
+                      <span>
+                        <input name="done-${index}" type="checkbox" value="${set}" />
+                        SÉRIE ${set + 1}
+                      </span>
+                      ${hasHint ? `<span class="solo-last-val-hint" title="Última sessão">${prevLoad ? `${prevLoad}kg` : ""}${prevLoad && prevReps ? " · " : ""}${prevReps ? `${prevReps} reps` : ""}</span>` : ""}
+                    </label>
+                    <label>REPS<input name="reps-${index}-${set}" type="number" min="1" max="${exercise.max * 2}" value="${exercise.min}" placeholder="${prevReps || exercise.min}" required /></label>
+                    ${isWeight ? `<label>KG<input name="load-${index}-${set}" type="number" min="0" max="500" step="0.5" placeholder="${prevLoad ? `${prevLoad}` : "kg"}" /></label>` : ""}
+                  </div>`;
+                }).join("")}
+              </div>
+              <div class="exercise-rest-bar solo-rest-bar" data-solo-exercise-index="${index}">
+                <div class="exercise-rest-label">
+                  <span class="exercise-rest-icon">⏱️</span>
+                  <span class="exercise-rest-text">Descanso:</span>
+                </div>
+                <div class="exercise-rest-input-wrap">
+                  <input type="number" class="exercise-rest-input" name="soloRestDuration-${index}" id="solo-rest-input-${index}" min="5" max="600" step="5" value="60" inputmode="numeric" aria-label="Segundos de descanso" />
+                  <span class="exercise-rest-unit">seg</span>
+                </div>
+                <button type="button" class="exercise-rest-btn ${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "running" : ""}" data-solo-trigger-rest="${index}" aria-label="Iniciar descanso">
+                  <span class="exercise-rest-btn-icon">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? "⏹" : "▶"}</span>
+                  <span class="exercise-rest-btn-text">${activeSoloExerciseTimerIndex === index && soloRestSecondsRemaining > 0 ? String(Math.floor(soloRestSecondsRemaining / 60)).padStart(2, "0") + ":" + String(soloRestSecondsRemaining % 60).padStart(2, "0") : "Iniciar"}</span>
+                </button>
+              </div>
             </div>
           </article>
         `;
@@ -843,6 +919,7 @@ function renderSoloFields() {
   `;
 
   setTimeout(updateSoloVolumePreview, 50);
+  setTimeout(updateAllSoloExerciseProgressBadges, 60);
 
   const soloWidget = soloById("solo-exercise-autocomplete");
   if (soloWidget) {
@@ -908,6 +985,16 @@ function handleAddExerciseToCurrentSoloWorkout(inputOrName) {
     });
     updateSoloVolumePreview();
   }
+
+  const newIdx = session.exercises.length - 1;
+  const newCard = soloById("solo-fields")?.querySelector(`[data-exercise-card="${newIdx}"]`);
+  if (newCard) {
+    newCard.classList.remove("is-collapsed");
+    newCard.classList.add("is-open");
+    const h = newCard.querySelector("[data-solo-toggle-exercise]");
+    if (h) h.setAttribute("aria-expanded", "true");
+  }
+  updateAllSoloExerciseProgressBadges();
 
   showToast(`Exercício "${exName}" adicionado ao treino!`);
 }
@@ -1332,6 +1419,100 @@ soloById("solo-dialog-program-select")?.addEventListener("change", (e) => {
 soloById("solo-dialog-session-select")?.addEventListener("change", () => renderSoloFields());
 soloById("solo-fields")?.addEventListener("input", updateSoloVolumePreview);
 soloById("solo-fields")?.addEventListener("click", (e) => {
+  const toggleHeader = e.target.closest("[data-solo-toggle-exercise]");
+  if (toggleHeader) {
+    e.preventDefault();
+    const card = toggleHeader.closest(".solo-exercise-collapsible");
+    if (card) {
+      const isCurrentlyOpen = card.classList.contains("is-open");
+      if (isCurrentlyOpen) {
+        card.classList.remove("is-open");
+        card.classList.add("is-collapsed");
+        toggleHeader.setAttribute("aria-expanded", "false");
+      } else {
+        card.classList.remove("is-collapsed");
+        card.classList.add("is-open");
+        toggleHeader.setAttribute("aria-expanded", "true");
+      }
+    }
+    return;
+  }
+  const expandAllBtn = e.target.closest("[data-solo-action='expand-all']");
+  if (expandAllBtn) {
+    e.preventDefault();
+    soloById("solo-fields")?.querySelectorAll(".solo-exercise-collapsible").forEach((c) => {
+      c.classList.remove("is-collapsed");
+      c.classList.add("is-open");
+      const h = c.querySelector("[data-solo-toggle-exercise]");
+      if (h) h.setAttribute("aria-expanded", "true");
+    });
+    return;
+  }
+  const collapseAllBtn = e.target.closest("[data-solo-action='collapse-all']");
+  if (collapseAllBtn) {
+    e.preventDefault();
+    soloById("solo-fields")?.querySelectorAll(".solo-exercise-collapsible").forEach((c) => {
+      c.classList.remove("is-open");
+      c.classList.add("is-collapsed");
+      const h = c.querySelector("[data-solo-toggle-exercise]");
+      if (h) h.setAttribute("aria-expanded", "false");
+    });
+    return;
+  }
+  const repeatBtn = e.target.closest("[data-solo-repeat-history]");
+  if (repeatBtn) {
+    e.preventDefault();
+    const exIdx = Number(repeatBtn.dataset.soloRepeatHistory);
+    const sessId = soloById("solo-dialog-session-select")?.value || selectedSessionId;
+    const session = currentProgram.sessions.find((s) => s.id === sessId) || currentProgram.sessions[0];
+    const exercise = session?.exercises?.[exIdx];
+    if (exercise) {
+      const perf = getSoloHistoricalPerformance(exercise.name);
+      if (perf && perf.lastSets && perf.lastSets.length > 0) {
+        for (let sIdx = 0; sIdx < exercise.sets; sIdx++) {
+          const prev = perf.lastSets[sIdx] || perf.lastSets[perf.lastSets.length - 1];
+          const repsInput = soloById("solo-fields").querySelector(`[name="reps-${exIdx}-${sIdx}"]`);
+          const loadInput = soloById("solo-fields").querySelector(`[name="load-${exIdx}-${sIdx}"]`);
+          if (repsInput && prev.reps > 0) {
+            repsInput.value = prev.reps;
+            repsInput.style.borderColor = "var(--lime)";
+            setTimeout(() => (repsInput.style.borderColor = ""), 800);
+          }
+          if (loadInput && prev.load > 0) {
+            loadInput.value = prev.load;
+            loadInput.style.borderColor = "var(--lime)";
+            setTimeout(() => (loadInput.style.borderColor = ""), 800);
+          }
+        }
+        updateSoloVolumePreview();
+        showToast(`Sessão anterior copiada para ${exercise.name}!`);
+      } else {
+        showToast("Nenhum histórico anterior para este exercício.");
+      }
+    }
+    return;
+  }
+  const replicateBtn = e.target.closest("[data-solo-replicate-first-load]");
+  if (replicateBtn) {
+    e.preventDefault();
+    const exIdx = Number(replicateBtn.dataset.soloReplicateFirstLoad);
+    const firstInput = soloById("solo-fields").querySelector(`[name="load-${exIdx}-0"]`);
+    const firstVal = firstInput ? Number(firstInput.value) : 0;
+    if (!firstVal || firstVal <= 0) {
+      showToast("Preencha a carga da 1ª série primeiro.");
+      if (firstInput) firstInput.focus();
+      return;
+    }
+    const allLoadInputs = soloById("solo-fields").querySelectorAll(`[name^="load-${exIdx}-"]`);
+    allLoadInputs.forEach((inp) => {
+      inp.value = firstVal;
+      inp.style.borderColor = "var(--lime)";
+      setTimeout(() => (inp.style.borderColor = ""), 800);
+    });
+    updateSoloVolumePreview();
+    showToast(`Carga de ${firstVal} kg replicada para todas as séries!`);
+    return;
+  }
   const restBtn = e.target.closest("[data-solo-trigger-rest]");
   if (restBtn) {
     e.preventDefault();
@@ -1354,6 +1535,11 @@ soloById("solo-fields")?.addEventListener("click", (e) => {
   }
 });
 soloById("solo-fields")?.addEventListener("keydown", (e) => {
+  if ((e.key === "Enter" || e.key === " ") && e.target.closest("[data-solo-toggle-exercise]")) {
+    e.preventDefault();
+    e.target.closest("[data-solo-toggle-exercise]").click();
+    return;
+  }
   if (e.key === "Enter" && e.target.matches(".exercise-rest-input")) {
     e.preventDefault();
     const bar = e.target.closest(".exercise-rest-bar");
@@ -1363,9 +1549,10 @@ soloById("solo-fields")?.addEventListener("keydown", (e) => {
 });
 soloById("solo-fields")?.addEventListener("change", (e) => {
   if (e.target.matches("input[type='checkbox'][name^='done-']")) {
+    const parts = e.target.name.split("-");
+    const exIdx = Number(parts[1]);
+    updateSoloExerciseProgressBadge(exIdx);
     if (e.target.checked) {
-      const parts = e.target.name.split("-");
-      const exIdx = Number(parts[1]);
       const input = soloById(`solo-rest-input-${exIdx}`);
       const sec = Math.max(5, Math.min(600, Number(input?.value) || 60));
       startSoloRestTimer(sec, isNaN(exIdx) ? null : exIdx);
