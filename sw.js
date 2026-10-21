@@ -1,4 +1,4 @@
-const CACHE_NAME = "rep-club-pwa-v26";
+const CACHE_NAME = "rep-club-pwa-v27";
 const ASSETS_TO_CACHE = [
   "./",
   "./index.html",
@@ -8,6 +8,7 @@ const ASSETS_TO_CACHE = [
   "./solo.css",
   "./solo-app.js",
   "./manifest.webmanifest",
+  "./assets/icons/brand-logo.png",
   "./assets/icons/icon-192.png",
   "./assets/icons/icon-512.png",
   "./assets/dbz/goku_ssj.png",
